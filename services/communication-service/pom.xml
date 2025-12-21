@@ -12,8 +12,8 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>SERVICE_NAME_PLACEHOLDER</artifactId>
-    <name>SERVICE_NAME_PLACEHOLDER</name>
+    <artifactId>communication-service</artifactId>
+    <name>Communication Service</name>
 
     <dependencies>
         <!-- Shared Library -->
