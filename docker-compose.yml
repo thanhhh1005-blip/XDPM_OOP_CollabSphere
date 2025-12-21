@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  # 1. Database MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: collab-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: collab_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # 2. RabbitMQ (Cho tin nhắn)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: collab-rabbitmq
+    ports:
+      - "5672:5672"   # Cổng app kết nối
+      - "15672:15672" # Cổng quản trị web
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+volumes:
+  mysql_data:
