@@ -1,0 +1,45 @@
+### API 1: Tạo User mới (Giảng viên)
+POST http://localhost:8081/users
+Content-Type: application/json
+
+{
+  "username": "gv001",
+  "password": "password123",
+  "email": "giangvien@collabsphere.com",
+  "fullName": "Nguyen Van Giag Vien",
+  "role": "LECTURER",
+  "isActive": true
+}
+
+### API 2: Tạo User mới (Sinh viên)
+POST http://localhost:8081/users
+Content-Type: application/json
+
+{
+  "username": "sv2024",
+  "password": "password123",
+  "email": "sinhvien@collabsphere.com",
+  "fullName": "Tran Van Sinh Vien",
+  "role": "STUDENT",
+  "isActive": true
+}
+
+### API 3: Lấy danh sách tất cả User
+GET http://localhost:8081/users
+
+### API 4: Đăng nhập (Lấy Token)
+POST http://localhost:8081/auth/token
+Content-Type: application/json
+
+{
+  "username": "gv001", 
+  "password": "password123"
+}
+
+### API 5: Test Chat với AI Service (Chạy cổng 8082)
+POST http://localhost:8082/ai/chat
+Content-Type: application/json
+
+{
+  "message": "Xin chào, bạn có khỏe không?"
+}

@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  mysqldb:
+    image: mysql:8.0
+    container_name: mysqldb
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: identity_db 
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - collab-net
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - collab-net
+
+  nifi:
+    image: apache/nifi:latest
+    ports:
+      - "8443:8443"
+    environment:
+      NIFI_WEB_HTTP_PORT: 8443
+    networks:
+      - collab-net
+
+networks:
+  collab-net:
+    driver: bridge
