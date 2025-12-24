@@ -24,18 +24,23 @@ public class ResourceController {
     @PostMapping("/upload")
     public ResponseEntity<Resource> upload(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("uploadedBy") String uploadedBy,
-            @RequestParam("uploaderRole") String uploaderRole
+            @RequestParam String uploadedBy,
+            @RequestParam String uploaderRole
     ) {
-        return ResponseEntity.ok(
-                resourceService.upload(file, uploadedBy, uploaderRole)
-        );
+        Resource resource = resourceService.upload(file, uploadedBy, uploaderRole);
+        return ResponseEntity.ok(resource);
     }
 
     // ===================== LIST =====================
     @GetMapping
     public ResponseEntity<List<Resource>> getAll() {
         return ResponseEntity.ok(resourceService.getAll());
+    }
+
+    // ===================== GET BY ID (optional nhưng nên có) =====================
+    @GetMapping("/{id}")
+    public ResponseEntity<Resource> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(resourceService.getById(id));
     }
 
     // ===================== DOWNLOAD =====================
@@ -50,19 +55,22 @@ public class ResourceController {
         }
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + resource.getFileName() + "\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + resource.getFileName() + "\""
+                )
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentLength(file.length())
                 .body(new FileSystemResource(file));
     }
 
-    // ===================== DELETE =====================
+    // ===================== DELETE (SOFT DELETE) =====================
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<String> delete(
             @PathVariable Long id,
-            @RequestParam("requesterRole") String requesterRole
+            @RequestParam String requesterRole
     ) {
         resourceService.delete(id, requesterRole);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("Deleted successfully");
     }
 }
