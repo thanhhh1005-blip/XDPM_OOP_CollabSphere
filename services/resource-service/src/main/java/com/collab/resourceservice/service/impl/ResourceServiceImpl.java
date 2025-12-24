@@ -2,6 +2,7 @@ package com.collab.resourceservice.service.impl;
 
 import com.collab.resourceservice.entity.Resource;
 import com.collab.resourceservice.enums.ResourceType;
+import com.collab.resourceservice.enums.Role;
 import com.collab.resourceservice.repository.ResourceRepository;
 import com.collab.resourceservice.service.ResourceService;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +23,11 @@ public class ResourceServiceImpl implements ResourceService {
     // Thư mục lưu file local
     private static final String UPLOAD_DIR = "uploads";
 
+    // ===================== UPLOAD =====================
     @Override
     public Resource upload(MultipartFile file, String uploadedBy, String uploaderRole) {
+
+        validateUploadPermission(uploaderRole);
 
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File is empty");
@@ -59,26 +63,43 @@ public class ResourceServiceImpl implements ResourceService {
         return resourceRepository.save(resource);
     }
 
+    // ===================== LIST =====================
     @Override
     public List<Resource> getAll() {
         return resourceRepository.findByDeletedFalse();
     }
 
+    // ===================== DELETE =====================
     @Override
     public void delete(Long id, String requesterRole) {
 
+        validateDeletePermission(requesterRole);
+
         Resource resource = resourceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resource not found"));
-
-        // Chỉ ADMIN mới được xoá (tạm thời đơn giản)
-        if (!"ADMIN".equalsIgnoreCase(requesterRole)) {
-            throw new RuntimeException("No permission to delete resource");
-        }
 
         resource.setDeleted(true);
         resourceRepository.save(resource);
     }
 
+    // ===================== ROLE VALIDATION =====================
+    private void validateUploadPermission(String role) {
+        Role userRole = Role.valueOf(role.toUpperCase());
+
+        if (userRole == Role.USER) {
+            throw new RuntimeException("USER is not allowed to upload resource");
+        }
+    }
+
+    private void validateDeletePermission(String role) {
+        Role userRole = Role.valueOf(role.toUpperCase());
+
+        if (userRole != Role.ADMIN && userRole != Role.HEAD_DEPARTMENT) {
+            throw new RuntimeException("You do not have permission to delete resource");
+        }
+    }
+
+    // ===================== FILE TYPE =====================
     private ResourceType detectType(String fileName) {
 
         if (fileName == null) {
