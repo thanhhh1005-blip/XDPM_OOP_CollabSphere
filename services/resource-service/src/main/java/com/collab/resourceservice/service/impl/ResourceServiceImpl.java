@@ -3,6 +3,10 @@ package com.collab.resourceservice.service.impl;
 import com.collab.resourceservice.entity.Resource;
 import com.collab.resourceservice.enums.ResourceType;
 import com.collab.resourceservice.enums.Role;
+import com.collab.resourceservice.exception.BadRequestException;
+import com.collab.resourceservice.exception.FileStorageException;
+import com.collab.resourceservice.exception.ForbiddenException;
+import com.collab.resourceservice.exception.NotFoundException;
 import com.collab.resourceservice.repository.ResourceRepository;
 import com.collab.resourceservice.service.ResourceService;
 import lombok.RequiredArgsConstructor;
@@ -20,33 +24,31 @@ public class ResourceServiceImpl implements ResourceService {
 
     private final ResourceRepository resourceRepository;
 
-    // Thư mục lưu file local
     private static final String UPLOAD_DIR = "uploads";
 
     // ===================== UPLOAD =====================
     @Override
     public Resource upload(MultipartFile file, String uploadedBy, String uploaderRole) {
 
-        validateUploadPermission(uploaderRole);
+        Role role = parseRole(uploaderRole);
+        validateUploadPermission(role);
 
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File is empty");
+            throw new BadRequestException("File must not be empty");
         }
 
-        // Tạo thư mục nếu chưa tồn tại
         File uploadDir = new File(UPLOAD_DIR);
-        if (!uploadDir.exists()) {
-            uploadDir.mkdirs();
+        if (!uploadDir.exists() && !uploadDir.mkdirs()) {
+            throw new FileStorageException("Cannot create upload directory");
         }
 
-        // Tạo tên file lưu
         String storedFileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
         File dest = new File(uploadDir, storedFileName);
 
         try {
             file.transferTo(dest);
         } catch (IOException e) {
-            throw new RuntimeException("Upload file failed", e);
+            throw new FileStorageException("Upload file failed");
         }
 
         Resource resource = Resource.builder()
@@ -56,7 +58,7 @@ public class ResourceServiceImpl implements ResourceService {
                 .fileSize(file.getSize())
                 .type(detectType(file.getOriginalFilename()))
                 .uploadedBy(uploadedBy)
-                .uploaderRole(uploaderRole)
+                .uploaderRole(role.name())
                 .deleted(false)
                 .build();
 
@@ -73,29 +75,34 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     public void delete(Long id, String requesterRole) {
 
-        validateDeletePermission(requesterRole);
+        Role role = parseRole(requesterRole);
+        validateDeletePermission(role);
 
         Resource resource = resourceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Resource not found"));
+                .orElseThrow(() -> new NotFoundException("Resource not found with id: " + id));
 
         resource.setDeleted(true);
         resourceRepository.save(resource);
     }
 
     // ===================== ROLE VALIDATION =====================
-    private void validateUploadPermission(String role) {
-        Role userRole = Role.valueOf(role.toUpperCase());
-
-        if (userRole == Role.USER) {
-            throw new RuntimeException("USER is not allowed to upload resource");
+    private void validateUploadPermission(Role role) {
+        if (role == Role.USER) {
+            throw new ForbiddenException("USER is not allowed to upload resource");
         }
     }
 
-    private void validateDeletePermission(String role) {
-        Role userRole = Role.valueOf(role.toUpperCase());
+    private void validateDeletePermission(Role role) {
+        if (role != Role.ADMIN && role != Role.HEAD_DEPARTMENT) {
+            throw new ForbiddenException("You do not have permission to delete resource");
+        }
+    }
 
-        if (userRole != Role.ADMIN && userRole != Role.HEAD_DEPARTMENT) {
-            throw new RuntimeException("You do not have permission to delete resource");
+    private Role parseRole(String role) {
+        try {
+            return Role.valueOf(role.toUpperCase());
+        } catch (Exception e) {
+            throw new BadRequestException("Invalid role: " + role);
         }
     }
 
