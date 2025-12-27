@@ -1,0 +1,15 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: workspace-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/collab_db?createDatabaseIfNotExist=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update # Tự tạo bảng khi chạy code
+    show-sql: true
