@@ -23,6 +23,34 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+ 
+ # 3. Resource Service (Quản lý tài nguyên)
+  resource-service:
+    build:
+      context: ./services/resource-service
+    container_name: resource-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
 
+      # MySQL config
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/collab_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+      # RabbitMQ config
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+
+    depends_on:
+      - mysql
+      - rabbitmq
+
+    volumes:
+      - resource_uploads:/app/uploads
 volumes:
   mysql_data:
+  resource_uploads:
