@@ -1,5 +1,5 @@
 server:
-  port: 8081 # Chạy trên cổng 8081 để tránh đụng độ
+  port: 8083 # Chạy trên cổng 8081 để tránh đụng độ
 
 spring:
   application:

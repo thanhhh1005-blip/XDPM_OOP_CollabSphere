@@ -10,10 +10,10 @@ POST {{baseUrl}}/identity/users
 Content-Type: application/json
 
 {
-  "username": "giangvien_thinh123",
-  "password": "Password123!",
-  "email": "thinh.nguyen@daihoc.edu.vn12",
-  "fullName": "Nguyen Duc Thinh",
+  "username": "giangvien_thinh1233",
+  "password": "Password123d!",
+  "email": "thinh.nguyesn@daihfoc.edu.vn12",
+  "fullName": "Nguyen Duc dsaThinh",
   "role": "LECTURER",
   "isActive": true
 }
