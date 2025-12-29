@@ -23,20 +23,19 @@ spring:
       path: /h2-console
 
   rabbitmq:
-  host: ${RABBITMQ_HOST:localhost}
-  port: ${RABBITMQ_PORT:5672}
-  username: ${RABBITMQ_USERNAME:guest}
-  password: ${RABBITMQ_PASSWORD:guest}
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
 server:
   port: 8082
   servlet:
     context-path: /api/v1
 
-
 logging:
   level:
     root: INFO
-    "[com.collab]": DEBUG
+    com.collab: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"

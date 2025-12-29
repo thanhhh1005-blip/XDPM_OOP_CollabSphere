@@ -18,3 +18,8 @@ spring:
           uri: ws://localhost:8082
           predicates:
             - Path=/ws/**
+        # Định tuyến cho Evaluation Service
+        - id: evaluation-service
+          uri: http://evaluation-service:8082
+          predicates:
+            - Path=/api/v1/evaluations/**
