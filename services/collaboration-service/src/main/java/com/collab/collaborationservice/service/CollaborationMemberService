@@ -1,0 +1,21 @@
+package com.collab.collaborationservice.service;
+
+import com.collab.collaborationservice.enums.CollaborationRole;
+
+public interface CollaborationMemberService {
+
+    void addMember(
+            Long collaborationId,
+            String requesterId,
+            String userId,
+            CollaborationRole role
+    );
+
+    void removeMember(
+            Long collaborationId,
+            String requesterId,
+            String userId
+    );
+
+    boolean isMember(Long collaborationId, String userId);
+}
