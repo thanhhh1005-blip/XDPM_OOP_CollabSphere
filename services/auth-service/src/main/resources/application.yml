@@ -1,41 +1,21 @@
+server:
+  port: 8081 # Chạy trên cổng 8081 để tránh đụng độ
+
 spring:
   application:
-    name: SERVICE_NAME_PLACEHOLDER
-  profiles:
-    active: dev
-
+    name: identity-service
+  
   datasource:
-    url: jdbc:postgresql://${SPRING_DATASOURCE_URL:localhost:5432/collab_db}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
-    driver-class-name: org.postgresql.Driver
+    # Kết nối đến MySQL đang chạy trong Docker (hoặc Local)
+    url: jdbc:mysql://localhost:3307/identity_db?useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: false
+      ddl-auto: update # Tự động tạo bảng khi chạy code (chỉ dùng cho Dev)
+    show-sql: true # Hiện câu lệnh SQL để debug cho dễ
     properties:
       hibernate:
-        format_sql: true
-        use_sql_comments: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: /
-    connection-timeout: 10000ms
-
-server:
-  port: 8081
-  servlet:
-    context-path: /api/v1
-
-logging:
-  level:
-    root: INFO
-    "[com.collab]": DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+        dialect: org.hibernate.dialect.MySQLDialect

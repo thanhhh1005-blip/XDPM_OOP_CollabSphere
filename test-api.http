@@ -1,0 +1,71 @@
+@baseUrl = http://localhost:8080
+
+# ==========================================
+# PHẦN 1: IDENTITY SERVICE (QUẢN LÝ USER)
+# ==========================================
+
+### 1. Đăng ký Giảng viên (LECTURER)
+# API này sẽ đi qua Gateway -> Auth Service -> Lưu vào MySQL
+POST {{baseUrl}}/identity/users
+Content-Type: application/json
+
+{
+  "username": "giangvien_thinh123",
+  "password": "Password123!",
+  "email": "thinh.nguyen@daihoc.edu.vn12",
+  "fullName": "Nguyen Duc Thinh",
+  "role": "LECTURER",
+  "isActive": true
+}
+
+### 2. Đăng ký Sinh viên (STUDENT)
+POST {{baseUrl}}/identity/users
+Content-Type: application/json
+
+{
+  "username": "sinhvien_n",
+  "password": "Password123!",
+  "email": "sv1.a@daihoc.edu.vn",
+  "fullName": "Tran Vani Sinh Vien",
+  "role": "STUDENT",
+  "isActive": true
+}
+
+### 3. Test lỗi trùng Username (Gửi lại request 2 sẽ báo lỗi)
+POST {{baseUrl}}/identity/users
+Content-Type: application/json
+
+{
+  "username": "sinhvien_a",
+  "password": "Password123!",
+  "email": "fake@email.com",
+  "fullName": "Clone User",
+  "role": "STUDENT",
+  "isActive": true
+}
+
+### 4. Lấy danh sách tất cả User
+GET {{baseUrl}}/identity/users
+Content-Type: application/json
+
+
+# ==========================================
+# PHẦN 2: AI SERVICE (CHAT GEMINI)
+# ==========================================
+
+### 5. Chat với AI (Hỏi về lập trình)
+# API này sẽ đi qua Gateway -> AI Service -> Gọi Google Gemini -> Lưu lịch sử vào MySQL
+POST {{baseUrl}}/ai/chat
+Content-Type: application/json
+
+{
+  "question": "Lộ trình học Spring Boot cho người mới bắt đầu?"
+}
+
+### 6. Chat với AI (Câu hỏi ngắn)
+POST {{baseUrl}}/ai/chat
+Content-Type: application/json
+
+{
+  "question": "Java là gì?"
+}
