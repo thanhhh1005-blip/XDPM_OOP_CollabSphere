@@ -19,6 +19,7 @@
         <!-- Các service nghiệp vụ -->
         <module>services/workspace-service</module>
         <module>services/communication-service</module>
+        <module>services/evaluation-service</module>
         <!-- Sau này thêm service nào thì điền thêm vào đây -->
     </modules>
 

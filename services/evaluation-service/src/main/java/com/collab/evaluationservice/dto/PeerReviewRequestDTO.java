@@ -3,10 +3,10 @@ package com.collab.evaluationservice.dto;
 import lombok.Data;
 
 @Data
-public class TeamEvaluationRequestDTO {
+public class PeerReviewRequestDTO {
 
-    private Long teamId;
-    private Long evaluatorId;
+    private Long fromStudentId;
+    private Long toStudentId;
     private Integer score;
     private String comment;
 }
