@@ -16,6 +16,6 @@ spring:
 
 # 👇 CẤU HÌNH GEMINI (Đã sửa lại chuẩn)
 gemini:
-  api-key: "AIzaSyCXFn6ttvJ8bjjpz2Pgto9n3Ucfa2ei3JQ"
+  api-key: "AIzaSyDFpvJGUeILrbkM7o9md8cRrSJf8bxHaRA"
   # URL chuẩn cho model 1.5 Flash (Nhanh và Rẻ hơn), bỏ đoạn ?key= đi để code tự xử lý
   url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key="
