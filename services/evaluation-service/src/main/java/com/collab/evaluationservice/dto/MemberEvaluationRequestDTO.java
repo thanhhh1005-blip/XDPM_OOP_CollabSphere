@@ -3,9 +3,9 @@ package com.collab.evaluationservice.dto;
 import lombok.Data;
 
 @Data
-public class TeamEvaluationRequestDTO {
+public class MemberEvaluationRequestDTO {
 
-    private Long teamId;
+    private Long memberId;
     private Long evaluatorId;
     private Integer score;
     private String comment;

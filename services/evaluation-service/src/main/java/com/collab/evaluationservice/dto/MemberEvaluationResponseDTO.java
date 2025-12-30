@@ -4,10 +4,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class TeamEvaluationResponseDTO {
+public class MemberEvaluationResponseDTO {
 
     private Long id;
-    private Long teamId;
+    private Long memberId;
     private Long evaluatorId;
     private Integer score;
     private String comment;

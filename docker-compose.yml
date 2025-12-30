@@ -24,24 +24,18 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
 
-  evaluation-service:
-    build:
-      context: ./services/evaluation-service
-    container_name: evaluation-service
-    ports:
-      - "8082:8082"
-    environment:
-      RABBITMQ_HOST: rabbitmq
-    depends_on:
-      - rabbitmq
-
   api-gateway:
-    build:
-      context: ./services/api-gateway
+    build: ./services/api-gateway
     container_name: api-gateway
     ports:
       - "8080:8080"
     depends_on:
       - evaluation-service
+
+  evaluation-service:
+    build: ./services/evaluation-service
+    container_name: evaluation-service
+    ports:
+      - "8082:8082"
 volumes:
   mysql_data:

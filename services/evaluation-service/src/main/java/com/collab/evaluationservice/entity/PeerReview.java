@@ -6,17 +6,19 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "team_evaluations")
+@Table(name = "peer_reviews")
 @Data
-public class TeamEvaluation {
+public class PeerReview {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long teamId;
-    private Long evaluatorId;
+    private Long fromStudentId;
+    private Long toStudentId;
+
     private Integer score;
     private String comment;
+
     private LocalDateTime createdAt;
 }
