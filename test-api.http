@@ -1,71 +1,96 @@
-@baseUrl = http://localhost:8080
+# ==========================================
+# CẤU HÌNH BIẾN MÔI TRƯỜNG
+# ==========================================
+@identity_url = http://localhost:8083
+@ai_url = http://localhost:8084
+@gateway_url = http://localhost:8080
 
 # ==========================================
-# PHẦN 1: IDENTITY SERVICE (QUẢN LÝ USER)
+# PHẦN 1: IDENTITY SERVICE (TEST TRỰC TIẾP PORT 8083)
 # ==========================================
 
-### 1. Đăng ký Giảng viên (LECTURER)
-# API này sẽ đi qua Gateway -> Auth Service -> Lưu vào MySQL
-POST {{baseUrl}}/identity/users
+### 1. Tạo User mới (Đăng ký)
+POST {{identity_url}}/users
 Content-Type: application/json
 
 {
-  "username": "giangvien_thinh1233",
-  "password": "Password123d!",
-  "email": "thinh.nguyesn@daihfoc.edu.vn12",
-  "fullName": "Nguyen Duc dsaThinh",
+  "username": "giangvien_a",
+  "password": "Password123!",
+  "email": "gv@collabsphere.com",
+  "fullName": "Thay Giao A",
   "role": "LECTURER",
   "isActive": true
 }
 
-### 2. Đăng ký Sinh viên (STUDENT)
-POST {{baseUrl}}/identity/users
+### 2. Đăng nhập (Login)
+# 👉 Gửi request này -> Server trả về "token": "eyJ..."
+# 👉 COPY chuỗi token đó để dùng cho các bước sau (nếu cần test bảo mật)
+POST {{identity_url}}/auth/token
 Content-Type: application/json
 
 {
-  "username": "sinhvien_n",
-  "password": "Password123!",
-  "email": "sv1.a@daihoc.edu.vn",
-  "fullName": "Tran Vani Sinh Vien",
-  "role": "STUDENT",
-  "isActive": true
+  "username": "giangvien_a",
+  "password": "Password123!"
 }
 
-### 3. Test lỗi trùng Username (Gửi lại request 2 sẽ báo lỗi)
-POST {{baseUrl}}/identity/users
+### 3. Kiểm tra Token (Introspect)
+POST {{identity_url}}/auth/introspect
 Content-Type: application/json
 
 {
-  "username": "sinhvien_a",
-  "password": "Password123!",
-  "email": "fake@email.com",
-  "fullName": "Clone User",
-  "role": "STUDENT",
-  "isActive": true
+  "token": "eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJjb2xsYWJzcGhlcmUuY29tIiwic3ViIjoiZ2lhbmd2aWVuX2EiLCJleHAiOjE3NjcwODk0MzYsImlhdCI6MTc2NzA4NTgzNiwidXNlcklkIjoxMCwic2NvcGUiOiJMRUNUVVJFUiJ9.eddLXbdQErECCbaoWnMMl-kvo8ut-zmvrxOGmD1XXZ58MP5lxSyWGiHK_E6WJ7xmicC_BB7wMgGqgshCXn5ixg"
 }
-
-### 4. Lấy danh sách tất cả User
-GET {{baseUrl}}/identity/users
-Content-Type: application/json
 
 
 # ==========================================
-# PHẦN 2: AI SERVICE (CHAT GEMINI)
+# PHẦN 2: AI SERVICE (TEST TRỰC TIẾP PORT 8084)
 # ==========================================
 
-### 5. Chat với AI (Hỏi về lập trình)
-# API này sẽ đi qua Gateway -> AI Service -> Gọi Google Gemini -> Lưu lịch sử vào MySQL
-POST {{baseUrl}}/ai/chat
+### 4. Chat với AI (Hỏi đáp thông thường)
+POST {{ai_url}}/ai/chat
 Content-Type: application/json
 
 {
-  "question": "Lộ trình học Spring Boot cho người mới bắt đầu?"
+  "question": "Cho tôi 3 ý tưởng cho đồ án tốt nghiệp ngành CNTT"
 }
 
-### 6. Chat với AI (Câu hỏi ngắn)
-POST {{baseUrl}}/ai/chat
+### 5. Tạo Mốc Dự Án từ Đề Cương (Tính năng mới!)
+# Input: syllabus (String)
+# Output: JSON danh sách các mốc dự án
+POST {{ai_url}}/ai/generate-milestones
 Content-Type: application/json
 
 {
-  "question": "Java là gì?"
+  "syllabus": "Môn học: Lập trình Web nâng cao. Mục tiêu: Sinh viên xây dựng được website E-commerce hoàn chỉnh. Tuần 1-2: Phân tích yêu cầu & Thiết kế CSDL. Tuần 3-5: Xây dựng Backend API với Spring Boot. Tuần 6-8: Xây dựng Frontend với ReactJS. Tuần 9: Tích hợp Payment Gateway & Deploy. Tuần 10: Demo sản phẩm."
+}
+
+
+# ==========================================
+# PHẦN 3: TEST QUA API GATEWAY (PORT 8080)
+# (Đây là cách Frontend sẽ gọi thực tế)
+# ==========================================
+
+### 6. Đăng nhập qua Gateway
+POST {{gateway_url}}/identity/auth/token
+Content-Type: application/json
+
+{
+  "username": "giangvien_a",
+  "password": "Password123!"
+}
+
+### 7. Chat AI qua Gateway
+POST {{gateway_url}}/ai/chat
+Content-Type: application/json
+
+{
+  "question": "Làm sao để quản lý thời gian hiệu quả trong dự án nhóm?"
+}
+
+### 8. Tạo Mốc Dự Án qua Gateway (Quan trọng nhất)
+POST {{gateway_url}}/ai/generate-milestones
+Content-Type: application/json
+
+{
+  "syllabus": "Đồ án: Xây dựng ứng dụng quản lý chi tiêu cá nhân. Thời gian: 1 tháng. Công nghệ: Flutter & Firebase. Yêu cầu: Có chức năng nhập thu chi, vẽ biểu đồ báo cáo."
 }

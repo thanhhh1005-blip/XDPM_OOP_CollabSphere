@@ -6,13 +6,32 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      # ==========================================
+      # 1. CẤU HÌNH CORS (QUAN TRỌNG: ĐỂ REACT GỌI ĐƯỢC)
+      # ==========================================
+      globalcors:
+        cors-configurations:
+          '[/**]': # Áp dụng cho tất cả các đường dẫn
+            allowedOrigins: "http://localhost:5173" # Chỉ cho phép Frontend React này
+            allowedMethods: # Cho phép các phương thức này
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*" # Cho phép mọi header
+            allowCredentials: true # Cho phép cookie/token
+
+      # ==========================================
+      # 2. CÁC ROUTES (ĐỊNH TUYẾN)
+      # ==========================================
       routes:
         # Định tuyến cho Workspace Service
         - id: workspace-service
           uri: http://localhost:8081
           predicates:
             - Path=/api/workspace/**
-            
+
         # Định tuyến cho Communication Service (WebSocket)
         - id: communication-service
           uri: ws://localhost:8082
@@ -21,15 +40,15 @@ spring:
 
         # Định tuyến sang Identity Service
         - id: identity-service
-          uri: http://localhost:8083 # Địa chỉ thật của Identity
+          uri: http://localhost:8083
           predicates:
-            - Path=/identity/** 
+            - Path=/identity/**
           filters:
-            - StripPrefix=1 
+            - StripPrefix=1
 
         # Định tuyến sang AI Service
+        # (Lưu ý: Không dùng StripPrefix vì Controller của bạn đã có /ai)
         - id: ai-service
-          uri: http://localhost:8084 # Địa chỉ thật của AI
+          uri: http://localhost:8084 
           predicates:
-            - Path=/ai/** #
-            
+            - Path=/ai/**
