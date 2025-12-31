@@ -1,32 +1,45 @@
 package com.collab.subject.controller;
 
-import com.collab.subject.entity.Subject;
+import com.collab.shared.dto.SubjectDTO;
 import com.collab.subject.service.SubjectService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/subjects")
+@RequestMapping("/api/v1/subjects")
 @RequiredArgsConstructor
 public class SubjectController {
-    private final SubjectService service;
 
-    // API tạo môn học mới: POST http://localhost:8081/api/subjects
+    private final SubjectService subjectService;
+
+    // API thêm mới
     @PostMapping
-    public Subject create(@RequestBody Subject subject) {
-        return service.createSubject(subject);
+    public ResponseEntity<SubjectDTO> createSubject(@RequestBody SubjectDTO dto) {
+        return ResponseEntity.ok(subjectService.createSubject(dto));
     }
 
-    // API lấy danh sách môn học: GET http://localhost:8081/api/subjects
+    // API lấy danh sách
     @GetMapping
-    public List<Subject> getAll() {
-        return service.getAllSubjects();
+    public ResponseEntity<List<SubjectDTO>> getAllSubjects() {
+        return ResponseEntity.ok(subjectService.getAllSubjects());
     }
 
-    // API lấy chi tiết 1 môn: GET http://localhost:8081/api/subjects/{id}
+    // API lấy chi tiết theo ID (để Class-Service gọi)
     @GetMapping("/{id}")
-    public Subject getById(@PathVariable Long id) {
-        return service.getSubjectById(id);
+    public ResponseEntity<SubjectDTO> getSubjectById(@PathVariable Long id) {
+        return ResponseEntity.ok(subjectService.getSubjectById(id));
+    }
+    
+    // API Import Excel
+    // Test bằng Postman: Chọn Body -> form-data -> key="file" (type File) -> Chọn file Excel
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> importSubjects(@RequestParam("file") MultipartFile file) {
+        subjectService.importSubjects(file);
+        return ResponseEntity.ok("Import dữ liệu thành công!");
     }
 }
