@@ -29,10 +29,10 @@ public class SubjectController {
         return ResponseEntity.ok(subjectService.getAllSubjects());
     }
 
-    // API lấy chi tiết theo ID (để Class-Service gọi)
     @GetMapping("/{id}")
-    public ResponseEntity<SubjectDTO> getSubjectById(@PathVariable Long id) {
-        return ResponseEntity.ok(subjectService.getSubjectById(id));
+// Thêm ("id") vào sau @PathVariable để chỉ định rõ ràng tên biến
+    public ResponseEntity<SubjectDTO> getSubjectById(@PathVariable("id") Long id) {
+    return ResponseEntity.ok(subjectService.getSubjectById(id));
     }
     
     // API Import Excel
