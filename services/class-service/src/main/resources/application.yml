@@ -1,25 +1,29 @@
 spring:
   application:
-    name: SERVICE_NAME_PLACEHOLDER
+    name: class-service # 1. Đặt tên đúng cho service
   profiles:
     active: dev
 
   datasource:
-    url: jdbc:postgresql://${SPRING_DATASOURCE_URL:localhost:5432/collab_db}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
-    driver-class-name: org.postgresql.Driver
+    # 2. Cấu hình kết nối MySQL (Tự tạo db_class nếu chưa có)
+    url: jdbc:mysql://${SPRING_DATASOURCE_HOST:localhost}:3306/db_class?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    # 3. Điền mật khẩu MySQL của bạn
+    password: ${SPRING_DATASOURCE_PASSWORD:123456789}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
         use_sql_comments: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # 4. Dialect cho MySQL
+        dialect: org.hibernate.dialect.MySQL8Dialect
 
+  # RabbitMQ: Giữ lại config này (dù chưa dùng tới ngay)
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -29,13 +33,13 @@ spring:
     connection-timeout: 10000ms
 
 server:
-  port: 8081
-  servlet:
-    context-path: /api/v1
+  # 5. QUAN TRỌNG: Chạy port 8082 để không trùng Subject Service
+  port: 8082
+  # Bỏ context-path để URL gọn gàng: http://localhost:8082/api/classes
+  # servlet:
+  #   context-path: /api/v1 
 
 logging:
   level:
     root: INFO
-    "[com.collab]": DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+    com.collab: DEBUG
