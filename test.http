@@ -1,0 +1,14 @@
+POST http://localhost:8082/api/v1/classes/import
+Content-Type: multipart/form-data; boundary=MienNganCach
+
+--MienNganCach
+Content-Disposition: form-data; name="file"; filename="class_import_test.xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+< ./class_import_test.xlsx
+--MienNganCach--
+
+###
+# Kiểm tra danh sách lớp học (để xem dữ liệu vừa import có chưa)
+GET http://localhost:8082/api/v1/classes
+Accept: application/json
