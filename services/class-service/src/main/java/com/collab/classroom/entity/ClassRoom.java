@@ -1,27 +1,39 @@
 package com.collab.classroom.entity;
 
+import com.collab.shared.dto.SubjectDTO;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "classes")
-@Data
+@Table(name = "classes") // Tên bảng trong DB
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ClassRoom {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String code;     // Mã lớp (Ví dụ: JAVA_K17_01)
+    @Column(name = "class_code", unique = true, nullable = false)
+    private String classCode; // Mã lớp (VD: SE104.O21)
 
-    // Quan trọng: Chỉ lưu ID môn học, không map đối tượng Subject
-    @Column(nullable = false)
-    private Long subjectId;  
+    // QUAN TRỌNG: Chỉ lưu ID của Subject, không map quan hệ @ManyToOne trực tiếp
+    @Column(name = "subject_id", nullable = false)
+    private Long subjectId;
+
+    private String semester; // Học kỳ (VD: HK1_2024)
     
-    private String semester; // Học kỳ (Ví dụ: SPRING_2025)
-    
-    private String status;   // Trạng thái: PLANNED, OPEN, COMPLETED
+    private String room; // Phòng học
+
+    @Builder.Default
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
+    // Field này dùng để hứng dữ liệu từ Subject-Service đổ vào khi cần hiển thị
+    // @Transient nghĩa là không lưu xuống database của Class-Service
+    @Transient
+    private SubjectDTO subjectDetails;
 }

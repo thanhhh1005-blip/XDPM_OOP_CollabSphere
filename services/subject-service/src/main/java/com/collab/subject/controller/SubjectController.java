@@ -42,4 +42,11 @@ public class SubjectController {
         subjectService.importSubjects(file);
         return ResponseEntity.ok("Import dữ liệu thành công!");
     }
+    // Thêm vào SubjectController.java bên subject-service
+
+    // API tìm môn học theo Mã (Để Class-Service gọi khi Import Excel)
+    @GetMapping("/code/{code}")
+    public ResponseEntity<SubjectDTO> getSubjectByCode(@PathVariable String code) {
+        return ResponseEntity.ok(subjectService.getSubjectByCode(code));
+    }
 }
