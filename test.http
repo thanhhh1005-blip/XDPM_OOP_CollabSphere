@@ -1,14 +1,47 @@
-POST http://localhost:8082/api/v1/classes/import
-Content-Type: multipart/form-data; boundary=MienNganCach
+### ==================================================================
+### PHẦN 1: GỌI TRỰC TIẾP (DIRECT) - KIỂM TRA SERVICE GỐC
+### Mục đích: Đảm bảo Class-Service (8082) hoạt động bình thường
+### ==================================================================
 
---MienNganCach
+### 1. Import Class Trực tiếp (Port 8082)
+POST http://localhost:8082/api/v1/classes/import
+Content-Type: multipart/form-data; boundary=MienNganCachDirect
+
+--MienNganCachDirect
 Content-Disposition: form-data; name="file"; filename="class_import_test.xlsx"
 Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 
 < ./class_import_test.xlsx
---MienNganCach--
+--MienNganCachDirect--
 
-###
-# Kiểm tra danh sách lớp học (để xem dữ liệu vừa import có chưa)
+### 2. Get List Class Trực tiếp (Port 8082)
 GET http://localhost:8082/api/v1/classes
+Accept: application/json
+
+
+### ==================================================================
+### PHẦN 2: GỌI QUA API GATEWAY (QUAN TRỌNG)
+### Mục đích: Kiểm tra cấu hình Gateway đã thông tới các Service chưa
+### ==================================================================
+
+### 3. Import Class qua Gateway (Port 8080 -> Forward tới 8082)
+# Nếu thành công: Gateway đã cấu hình đúng method POST và đường dẫn
+POST http://localhost:8080/api/v1/classes/import
+Content-Type: multipart/form-data; boundary=MienNganCachGateway
+
+--MienNganCachGateway
+Content-Disposition: form-data; name="file"; filename="class_import_test.xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+< ./class_import_test.xlsx
+--MienNganCachGateway--
+
+### 4. Get List Class qua Gateway (Port 8080 -> Forward tới 8082)
+# Nếu trả về JSON giống request số 2 -> Gateway Class thành công
+GET http://localhost:8080/api/v1/classes
+Accept: application/json
+
+### 5. Get List Subject qua Gateway (Port 8080 -> Forward tới Subject Service)
+# Kiểm tra luôn Subject Service xem Gateway đã thông chưa
+GET http://localhost:8080/api/v1/subjects
 Accept: application/json
