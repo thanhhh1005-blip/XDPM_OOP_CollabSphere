@@ -1,11 +1,15 @@
 package com.collab.collaborationservice.service;
 
+import com.collab.collaborationservice.dto.response.ActivityResponse;
+
+import java.util.List;
+
 public interface CollaborationActivityService {
 
-    void log(
-            Long collaborationId,
-            String action,
-            String actor,
-            String description
-    );
+    void logActivity(Long collaborationId,
+                     String action,
+                     Long actorId,
+                     String description);
+
+    List<ActivityResponse> getActivityHistory(Long collaborationId);
 }
