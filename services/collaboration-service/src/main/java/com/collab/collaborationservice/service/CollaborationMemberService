@@ -1,21 +1,18 @@
 package com.collab.collaborationservice.service;
 
+import com.collab.collaborationservice.dto.request.AddMemberRequest;
+import com.collab.collaborationservice.dto.response.MemberResponse;
 import com.collab.collaborationservice.enums.CollaborationRole;
+
+import java.util.List;
 
 public interface CollaborationMemberService {
 
-    void addMember(
-            Long collaborationId,
-            String requesterId,
-            String userId,
-            CollaborationRole role
-    );
+    void addMember(Long collaborationId, AddMemberRequest request, Long requesterId);
 
-    void removeMember(
-            Long collaborationId,
-            String requesterId,
-            String userId
-    );
+    void removeMember(Long collaborationId, Long memberId, Long requesterId);
 
-    boolean isMember(Long collaborationId, String userId);
+    List<MemberResponse> listMembers(Long collaborationId);
+
+    void validateMemberRole(Long collaborationId, Long userId, CollaborationRole requiredRole);
 }

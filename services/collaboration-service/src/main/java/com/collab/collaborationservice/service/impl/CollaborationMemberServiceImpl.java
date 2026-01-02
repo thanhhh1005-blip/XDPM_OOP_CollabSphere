@@ -1,93 +1,110 @@
 package com.collab.collaborationservice.service.impl;
 
+import com.collab.collaborationservice.dto.request.AddMemberRequest;
+import com.collab.collaborationservice.dto.response.MemberResponse;
 import com.collab.collaborationservice.entity.Collaboration;
 import com.collab.collaborationservice.entity.CollaborationMember;
 import com.collab.collaborationservice.enums.CollaborationRole;
 import com.collab.collaborationservice.repository.CollaborationMemberRepository;
 import com.collab.collaborationservice.repository.CollaborationRepository;
-import com.collab.collaborationservice.service.CollaborationActivityService;
 import com.collab.collaborationservice.service.CollaborationMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class CollaborationMemberServiceImpl implements CollaborationMemberService {
 
     private final CollaborationRepository collaborationRepository;
     private final CollaborationMemberRepository memberRepository;
-    private final CollaborationActivityService activityService;
 
+    // ===================== ADD MEMBER =====================
     @Override
-    public void addMember(
-            Long collaborationId,
-            String requesterId,
-            String userId,
-            CollaborationRole role
-    ) {
-
-        validateOwner(collaborationId, requesterId);
+    public void addMember(Long collaborationId, AddMemberRequest request, Long requesterId) {
 
         Collaboration collaboration = collaborationRepository.findById(collaborationId)
                 .orElseThrow(() -> new RuntimeException("Collaboration not found"));
 
-        if (memberRepository.findByCollaborationIdAndUserId(collaborationId, userId).isPresent()) {
+        // Chỉ OWNER hoặc ADMIN mới được add
+        CollaborationMember requester = getMember(collaborationId, requesterId);
+
+        if (requester.getRole() != CollaborationRole.OWNER &&
+            requester.getRole() != CollaborationRole.ADMIN) {
+            throw new RuntimeException("No permission to add member");
+        }
+
+        // Không add trùng
+        if (memberRepository.existsByCollaborationIdAndUserId(
+                collaborationId, request.getUserId())) {
             throw new RuntimeException("User already in collaboration");
         }
 
-        memberRepository.save(
-                CollaborationMember.builder()
-                        .collaboration(collaboration)
-                        .userId(userId)
-                        .role(role)
-                        .build()
-        );
+        CollaborationMember member = CollaborationMember.builder()
+                .collaboration(collaboration)
+                .userId(request.getUserId())
+                .role(request.getRole())
+                .active(true)
+                .build();
 
-        activityService.log(
-                collaborationId,
-                "ADD_MEMBER",
-                requesterId,
-                "Added member " + userId
-        );
+        memberRepository.save(member);
     }
 
+    // ===================== REMOVE MEMBER =====================
     @Override
-    public void removeMember(
-            Long collaborationId,
-            String requesterId,
-            String userId
-    ) {
+    public void removeMember(Long collaborationId, Long memberId, Long requesterId) {
 
-        validateOwner(collaborationId, requesterId);
-
-        CollaborationMember member = memberRepository
-                .findByCollaborationIdAndUserId(collaborationId, userId)
-                .orElseThrow(() -> new RuntimeException("Member not found"));
-
-        memberRepository.delete(member);
-
-        activityService.log(
-                collaborationId,
-                "REMOVE_MEMBER",
-                requesterId,
-                "Removed member " + userId
-        );
-    }
-
-    @Override
-    public boolean isMember(Long collaborationId, String userId) {
-        return memberRepository
-                .findByCollaborationIdAndUserId(collaborationId, userId)
-                .isPresent();
-    }
-
-    private void validateOwner(Long collaborationId, String requesterId) {
-        CollaborationMember requester = memberRepository
-                .findByCollaborationIdAndUserId(collaborationId, requesterId)
-                .orElseThrow(() -> new RuntimeException("Access denied"));
+        CollaborationMember requester = getMember(collaborationId, requesterId);
 
         if (requester.getRole() != CollaborationRole.OWNER) {
-            throw new RuntimeException("Only OWNER can manage members");
+            throw new RuntimeException("Only OWNER can remove member");
         }
+
+        CollaborationMember member = getMember(collaborationId, memberId);
+
+        if (member.getRole() == CollaborationRole.OWNER) {
+            throw new RuntimeException("Cannot remove OWNER");
+        }
+
+        member.setActive(false);
+        memberRepository.save(member);
+    }
+
+    // ===================== LIST MEMBERS =====================
+    @Override
+    public List<MemberResponse> listMembers(Long collaborationId) {
+
+        return memberRepository.findByCollaborationId(collaborationId)
+                .stream()
+                .map(m -> MemberResponse.builder()
+                        .userId(m.getUserId())
+                        .role(m.getRole())
+                        .active(m.isActive())
+                        .build())
+                .toList();
+    }
+
+    // ===================== VALIDATE ROLE =====================
+    @Override
+    public void validateMemberRole(Long collaborationId,
+                                   Long userId,
+                                   CollaborationRole requiredRole) {
+
+        CollaborationMember member = getMember(collaborationId, userId);
+
+        if (member.getRole() != requiredRole) {
+            throw new RuntimeException(
+                    "Required role: " + requiredRole + ", but found: " + member.getRole()
+            );
+        }
+    }
+
+    // ===================== HELPER =====================
+    private CollaborationMember getMember(Long collaborationId, Long userId) {
+        return memberRepository.findByCollaborationIdAndUserId(collaborationId, userId)
+                .orElseThrow(() -> new RuntimeException("User is not a collaboration member"));
     }
 }

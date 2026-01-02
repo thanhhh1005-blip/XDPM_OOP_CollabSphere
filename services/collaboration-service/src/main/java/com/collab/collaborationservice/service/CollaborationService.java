@@ -1,18 +1,17 @@
 package com.collab.collaborationservice.service;
 
-import com.collab.collaborationservice.entity.Collaboration;
+import com.collab.collaborationservice.dto.request.CreateCollaborationRequest;
+import com.collab.collaborationservice.dto.response.CollaborationResponse;
 
 import java.util.List;
 
 public interface CollaborationService {
 
-    Collaboration createCollaboration(
-            String name,
-            String description,
-            String createdBy
-    );
+    CollaborationResponse create(CreateCollaborationRequest request);
 
-    List<Collaboration> getMyCollaborations(String userId);
+    CollaborationResponse getDetail(Long collaborationId);
 
-    Collaboration getById(Long collaborationId);
+    List<CollaborationResponse> getByUser(Long userId);
+
+    void close(Long collaborationId, Long requesterId);
 }
