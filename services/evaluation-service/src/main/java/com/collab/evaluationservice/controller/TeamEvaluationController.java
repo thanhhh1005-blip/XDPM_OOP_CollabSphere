@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/evaluations")
+@RequestMapping("/api/v1/evaluations")
 public class TeamEvaluationController {
 
     private final TeamEvaluationService service;
@@ -18,10 +18,21 @@ public class TeamEvaluationController {
     }
 
     @PostMapping
-    public ResponseEntity<TeamEvaluationResponseDTO> createEvaluation(
+    public ResponseEntity<TeamEvaluationResponseDTO> create(
             @RequestBody TeamEvaluationRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.createEvaluation(request));
+    }
 
-        TeamEvaluationResponseDTO response = service.createEvaluation(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    @GetMapping("/{teamId}")
+    public ResponseEntity<?> getByTeam(@PathVariable Long teamId) {
+        return ResponseEntity.ok(service.getEvaluationsByTeam(teamId));
+    }
+
+
+    // endpoint test nhanh
+    @GetMapping("/ping")
+    public String ping() {
+        return "evaluation-service OK";
     }
 }
