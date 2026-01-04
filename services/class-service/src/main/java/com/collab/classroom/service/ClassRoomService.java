@@ -1,8 +1,10 @@
 package com.collab.classroom.service;
 
 import com.collab.classroom.client.SubjectClient;
-import com.collab.classroom.entity.ClassRoom; // Import đúng Entity ClassRoom
-import com.collab.classroom.repository.ClassRoomRepository; // Import đúng Repo ClassRoomRepository
+import com.collab.classroom.entity.ClassEnrollment; // <--- Import Entity mới
+import com.collab.classroom.entity.ClassRoom;
+import com.collab.classroom.repository.ClassEnrollmentRepository; // <--- Import Repo mới
+import com.collab.classroom.repository.ClassRoomRepository;
 import com.collab.shared.dto.ClassroomDTO;
 import com.collab.shared.dto.SubjectDTO;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +24,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ClassRoomService { // Tên class đã đổi thành ClassRoomService
+public class ClassRoomService {
 
-    private final ClassRoomRepository classRoomRepository; // Inject đúng Repository
+    private final ClassRoomRepository classRoomRepository;
     private final SubjectClient subjectClient;
+    
+    // 1. CẬP NHẬT: Inject thêm Repository quản lý sinh viên
+    private final ClassEnrollmentRepository classEnrollmentRepository; 
 
     // --- 1. TẠO LỚP HỌC MỚI ---
     public ClassroomDTO createClass(ClassroomDTO dto) {
@@ -33,12 +38,14 @@ public class ClassRoomService { // Tên class đã đổi thành ClassRoomServic
             throw new RuntimeException("Mã lớp " + dto.getCode() + " đã tồn tại!");
         }
 
+        // Logic check Subject giữ nguyên
         SubjectDTO subject = subjectClient.getSubjectById(dto.getSubjectId());
         if (subject == null) {
             throw new RuntimeException("Không tìm thấy môn học ID: " + dto.getSubjectId());
         }
 
         ClassRoom classRoom = mapToEntity(dto);
+        // teacherId đã được map trong hàm mapToEntity bên dưới
         return mapToDTO(classRoomRepository.save(classRoom));
     }
 
@@ -64,7 +71,7 @@ public class ClassRoomService { // Tên class đã đổi thành ClassRoomServic
                 .collect(Collectors.toList());
     }
 
-    // --- 4. IMPORT EXCEL ---
+    // --- 4. IMPORT EXCEL (CẬP NHẬT ĐỂ ĐỌC TEACHER ID) ---
     @Transactional
     public void importClasses(MultipartFile file) {
         try (InputStream inputStream = file.getInputStream();
@@ -80,6 +87,9 @@ public class ClassRoomService { // Tên class đã đổi thành ClassRoomServic
                 String subjectCode = getCellValue(row.getCell(1));
                 String semester = getCellValue(row.getCell(2));
                 String room = getCellValue(row.getCell(3));
+                
+                // CẬP NHẬT: Đọc thêm cột thứ 4 là TeacherID (Mã giảng viên)
+                String teacherId = getCellValue(row.getCell(4)); 
 
                 if (classCode.isEmpty() || subjectCode.isEmpty()) continue;
                 if (classRoomRepository.existsByClassCode(classCode)) continue;
@@ -92,12 +102,13 @@ public class ClassRoomService { // Tên class đã đổi thành ClassRoomServic
                                 .subjectId(subject.getId())
                                 .semester(semester)
                                 .room(room)
+                                .teacherId(teacherId) // <--- CẬP NHẬT: Lưu teacherId vào DB
                                 .isActive(true)
                                 .build();
                         classesToSave.add(classRoom);
                     }
                 } catch (Exception e) {
-                    log.error("Bỏ qua môn học lỗi: " + subjectCode);
+                    log.error("Bỏ qua môn học lỗi hoặc không tìm thấy môn: " + subjectCode);
                 }
             }
 
@@ -110,7 +121,26 @@ public class ClassRoomService { // Tên class đã đổi thành ClassRoomServic
         }
     }
 
-    // Helpers
+    // --- 5. CẬP NHẬT MỚI: HÀM THÊM SINH VIÊN VÀO LỚP ---
+    public void addStudentToClass(Long classId, String studentId) {
+        // Kiểm tra lớp có tồn tại không
+        if (!classRoomRepository.existsById(classId)) {
+            throw new RuntimeException("Lớp học không tồn tại!");
+        }
+
+        // Kiểm tra xem sinh viên đã có trong lớp chưa để tránh trùng lặp
+        if (classEnrollmentRepository.existsByClassIdAndStudentId(classId, studentId)) {
+            throw new RuntimeException("Sinh viên " + studentId + " đã có trong lớp này rồi!");
+        }
+        // Lưu sinh viên vào lớp
+        ClassEnrollment enrollment = new ClassEnrollment();
+        enrollment.setClassId(classId);
+        enrollment.setStudentId(studentId);
+        
+        classEnrollmentRepository.save(enrollment);
+    }
+
+    // --- HELPERS ---
     private String getCellValue(Cell cell) {
         if (cell == null) return "";
         return cell.getCellType() == CellType.STRING ? cell.getStringCellValue() : String.valueOf(cell.getNumericCellValue());
@@ -123,6 +153,7 @@ public class ClassRoomService { // Tên class đã đổi thành ClassRoomServic
                 .subjectId(entity.getSubjectId())
                 .semester(entity.getSemester())
                 .room(entity.getRoom())
+                .teacherId(entity.getTeacherId()) // <--- CẬP NHẬT: Map teacherId ra DTO
                 .build();
     }
 
@@ -132,6 +163,7 @@ public class ClassRoomService { // Tên class đã đổi thành ClassRoomServic
                 .subjectId(dto.getSubjectId())
                 .semester(dto.getSemester())
                 .room(dto.getRoom())
+                .teacherId(dto.getTeacherId()) // <--- CẬP NHẬT: Map teacherId vào Entity
                 .isActive(true)
                 .build();
     }

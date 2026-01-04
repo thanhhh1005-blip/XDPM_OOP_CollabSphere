@@ -24,6 +24,9 @@ public class ClassRoom {
     @Column(name = "subject_id", nullable = false)
     private Long subjectId;
 
+    @Column(name = "teacher_id")
+    private String teacherId; // <--- MỚI THÊM: Để lưu ID giảng viên (Ví dụ: "GV001" hoặc "10")
+    
     private String semester; // Học kỳ (VD: HK1_2024)
     
     private String room; // Phòng học
