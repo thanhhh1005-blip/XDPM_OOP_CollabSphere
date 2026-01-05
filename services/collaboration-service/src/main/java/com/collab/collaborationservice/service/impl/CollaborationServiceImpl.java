@@ -40,7 +40,7 @@ public class CollaborationServiceImpl implements CollaborationService {
 
         Collaboration saved = collaborationRepository.save(collaboration);
 
-        // Người tạo -> OWNER
+        // Người tạo là OWNER
         CollaborationMember owner = CollaborationMember.builder()
                 .collaboration(saved)
                 .userId(request.getCreatedBy())
@@ -55,22 +55,23 @@ public class CollaborationServiceImpl implements CollaborationService {
 
     // ===================== DETAIL =====================
     @Override
+    @Transactional(readOnly = true)
     public CollaborationResponse getDetail(Long collaborationId) {
 
         Collaboration collaboration = collaborationRepository.findById(collaborationId)
-                .orElseThrow(() -> new RuntimeException("Collaboration not found"));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Collaboration not found: " + collaborationId));
 
         return mapToResponse(collaboration);
     }
 
     // ===================== LIST BY USER =====================
     @Override
+    @Transactional(readOnly = true)
     public List<CollaborationResponse> getByUser(Long userId) {
 
-        List<Collaboration> collaborations =
-                collaborationRepository.findByMemberUserId(userId);
-
-        return collaborations.stream()
+        return collaborationRepository.findByMemberUserId(userId)
+                .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -80,15 +81,16 @@ public class CollaborationServiceImpl implements CollaborationService {
     public void close(Long collaborationId, Long requesterId) {
 
         Collaboration collaboration = collaborationRepository.findById(collaborationId)
-                .orElseThrow(() -> new RuntimeException("Collaboration not found"));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Collaboration not found: " + collaborationId));
 
-        // Chỉ OWNER mới được đóng
         CollaborationMember member = memberRepository
                 .findByCollaborationIdAndUserId(collaborationId, requesterId)
-                .orElseThrow(() -> new RuntimeException("Not a collaboration member"));
+                .orElseThrow(() ->
+                        new IllegalStateException("User is not a collaboration member"));
 
         if (member.getRole() != CollaborationRole.OWNER) {
-            throw new RuntimeException("Only OWNER can close collaboration");
+            throw new IllegalStateException("Only OWNER can close collaboration");
         }
 
         collaboration.setStatus(CollaborationStatus.CLOSED);
@@ -98,15 +100,15 @@ public class CollaborationServiceImpl implements CollaborationService {
     // ===================== MAPPER =====================
     private CollaborationResponse mapToResponse(Collaboration collaboration) {
 
-        List<MemberResponse> members =
-                memberRepository.findByCollaborationId(collaboration.getId())
-                        .stream()
-                        .map(m -> MemberResponse.builder()
-                                .userId(m.getUserId())
-                                .role(m.getRole())
-                                .active(m.isActive())
-                                .build())
-                        .toList();
+        List<MemberResponse> members = memberRepository
+                .findByCollaborationId(collaboration.getId())
+                .stream()
+                .map(member -> MemberResponse.builder()
+                        .userId(member.getUserId())
+                        .role(member.getRole())
+                        .active(member.isActive())
+                        .build())
+                .toList();
 
         return CollaborationResponse.builder()
                 .id(collaboration.getId())

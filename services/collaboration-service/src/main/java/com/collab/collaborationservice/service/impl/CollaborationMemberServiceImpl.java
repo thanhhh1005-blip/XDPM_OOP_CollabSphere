@@ -24,14 +24,15 @@ public class CollaborationMemberServiceImpl implements CollaborationMemberServic
 
     // ===================== ADD MEMBER =====================
     @Override
-    public void addMember(Long collaborationId, AddMemberRequest request, Long requesterId) {
+    public void addMember(Long collaborationId,
+                          AddMemberRequest request,
+                          Long requesterId) {
 
-        Collaboration collaboration = collaborationRepository.findById(collaborationId)
-                .orElseThrow(() -> new RuntimeException("Collaboration not found"));
+        Collaboration collaboration = getCollaboration(collaborationId);
 
-        // Chỉ OWNER hoặc ADMIN mới được add
         CollaborationMember requester = getMember(collaborationId, requesterId);
 
+        // Chỉ OWNER hoặc ADMIN được thêm member
         if (requester.getRole() != CollaborationRole.OWNER &&
             requester.getRole() != CollaborationRole.ADMIN) {
             throw new RuntimeException("No permission to add member");
@@ -55,10 +56,13 @@ public class CollaborationMemberServiceImpl implements CollaborationMemberServic
 
     // ===================== REMOVE MEMBER =====================
     @Override
-    public void removeMember(Long collaborationId, Long memberId, Long requesterId) {
+    public void removeMember(Long collaborationId,
+                             Long memberId,
+                             Long requesterId) {
 
         CollaborationMember requester = getMember(collaborationId, requesterId);
 
+        // Chỉ OWNER được remove
         if (requester.getRole() != CollaborationRole.OWNER) {
             throw new RuntimeException("Only OWNER can remove member");
         }
@@ -79,10 +83,10 @@ public class CollaborationMemberServiceImpl implements CollaborationMemberServic
 
         return memberRepository.findByCollaborationId(collaborationId)
                 .stream()
-                .map(m -> MemberResponse.builder()
-                        .userId(m.getUserId())
-                        .role(m.getRole())
-                        .active(m.isActive())
+                .map(member -> MemberResponse.builder()
+                        .userId(member.getUserId())
+                        .role(member.getRole())
+                        .active(member.isActive())
                         .build())
                 .toList();
     }
@@ -97,14 +101,21 @@ public class CollaborationMemberServiceImpl implements CollaborationMemberServic
 
         if (member.getRole() != requiredRole) {
             throw new RuntimeException(
-                    "Required role: " + requiredRole + ", but found: " + member.getRole()
+                    "Required role: " + requiredRole +
+                    ", but found: " + member.getRole()
             );
         }
     }
 
-    // ===================== HELPER =====================
+    // ===================== HELPERS =====================
+    private Collaboration getCollaboration(Long collaborationId) {
+        return collaborationRepository.findById(collaborationId)
+                .orElseThrow(() -> new RuntimeException("Collaboration not found"));
+    }
+
     private CollaborationMember getMember(Long collaborationId, Long userId) {
-        return memberRepository.findByCollaborationIdAndUserId(collaborationId, userId)
+        return memberRepository
+                .findByCollaborationIdAndUserId(collaborationId, userId)
                 .orElseThrow(() -> new RuntimeException("User is not a collaboration member"));
     }
 }
