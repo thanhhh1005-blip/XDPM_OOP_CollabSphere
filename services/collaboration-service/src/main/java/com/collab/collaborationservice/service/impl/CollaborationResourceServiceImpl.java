@@ -31,11 +31,20 @@ public class CollaborationResourceServiceImpl implements CollaborationResourceSe
                               ShareResourceRequest request,
                               Long requesterId) {
 
-        validateSharePermission(collaborationId, requesterId);
-
+        // 1. Validate collaboration tồn tại
         Collaboration collaboration = collaborationRepository.findById(collaborationId)
                 .orElseThrow(() -> new RuntimeException("Collaboration not found"));
 
+        // 2. Validate quyền share
+        validateSharePermission(collaborationId, requesterId);
+
+        // 3. Không cho share trùng resource
+        if (resourceRepository.existsByCollaborationIdAndResourceId(
+                collaborationId, request.getResourceId())) {
+            throw new RuntimeException("Resource already shared in this collaboration");
+        }
+
+        // 4. Lưu resource
         CollaborationResource resource = CollaborationResource.builder()
                 .collaboration(collaboration)
                 .resourceId(request.getResourceId())
@@ -48,6 +57,11 @@ public class CollaborationResourceServiceImpl implements CollaborationResourceSe
     // ===================== LIST SHARED RESOURCES =====================
     @Override
     public List<ResourceResponse> listSharedResources(Long collaborationId) {
+
+        // Check collaboration tồn tại
+        if (!collaborationRepository.existsById(collaborationId)) {
+            throw new RuntimeException("Collaboration not found");
+        }
 
         return resourceRepository.findByCollaborationId(collaborationId)
                 .stream()
@@ -65,8 +79,9 @@ public class CollaborationResourceServiceImpl implements CollaborationResourceSe
 
         CollaborationMember member = memberRepository
                 .findByCollaborationIdAndUserId(collaborationId, userId)
-                .orElseThrow(() -> new RuntimeException("User not in collaboration"));
+                .orElseThrow(() -> new RuntimeException("User is not a collaboration member"));
 
+        // VIEWER không được share
         if (member.getRole() == CollaborationRole.VIEWER) {
             throw new RuntimeException("Viewer is not allowed to share resources");
         }

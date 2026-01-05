@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -35,6 +36,7 @@ public class CollaborationActivityServiceImpl implements CollaborationActivitySe
                 .action(action)
                 .actorId(actorId)
                 .description(description)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         activityRepository.save(activity);
@@ -44,13 +46,14 @@ public class CollaborationActivityServiceImpl implements CollaborationActivitySe
     @Override
     public List<ActivityResponse> getActivityHistory(Long collaborationId) {
 
-        return activityRepository.findByCollaborationIdOrderByCreatedAtDesc(collaborationId)
+        return activityRepository
+                .findByCollaborationIdOrderByCreatedAtDesc(collaborationId)
                 .stream()
-                .map(a -> ActivityResponse.builder()
-                        .action(a.getAction())
-                        .actorId(a.getActorId())
-                        .description(a.getDescription())
-                        .createdAt(a.getCreatedAt())
+                .map(activity -> ActivityResponse.builder()
+                        .action(activity.getAction())
+                        .actorId(activity.getActorId())
+                        .description(activity.getDescription())
+                        .createdAt(activity.getCreatedAt())
                         .build())
                 .toList();
     }
