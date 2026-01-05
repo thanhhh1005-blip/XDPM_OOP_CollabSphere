@@ -3,8 +3,10 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- ===== PARENT (MULTI-MODULE) ===== -->
     <parent>
         <groupId>com.collab</groupId>
         <artifactId>collab-sphere</artifactId>
@@ -16,57 +18,72 @@
     <name>Collaboration Service</name>
 
     <dependencies>
-        <!-- Shared Library -->
+
+        <!-- ===== SHARED MODULE ===== -->
         <dependency>
             <groupId>com.collab</groupId>
             <artifactId>shared</artifactId>
             <version>1.0.0</version>
         </dependency>
 
-        <!-- Spring Boot Starters -->
+        <!-- ===== WEB API ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- ===== JPA ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- RabbitMQ -->
+        <!-- ===== SECURITY (JWT + WS Security) ===== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- ===== WEBSOCKET (STOMP) ===== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
+        <!-- ===== RABBITMQ ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
-        <!-- Database -->
+        <!-- ===== DATABASE ===== -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- ===== LOMBOK ===== -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- Testing -->
+        <!-- ===== TEST ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- Spring Boot Configuration Processor - Để VSCode nhận Spring properties -->
+        <!-- ===== CONFIG METADATA (IDE SUPPORT) ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
+
     </dependencies>
 
     <build>
@@ -77,4 +94,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

@@ -1,11 +1,12 @@
 spring:
   application:
-    name: SERVICE_NAME_PLACEHOLDER
+    name: collaboration-service
+
   profiles:
     active: dev
 
   datasource:
-    url: jdbc:postgresql://${SPRING_DATASOURCE_URL:localhost:5432/collab_db}
+    url: jdbc:postgresql://${SPRING_DATASOURCE_HOST:localhost}:${SPRING_DATASOURCE_PORT:5432}/${SPRING_DATASOURCE_DB:collab_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
@@ -14,6 +15,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
@@ -26,7 +28,7 @@ spring:
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
     virtual-host: /
-    connection-timeout: 10000ms
+    connection-timeout: 10000
 
 server:
   port: 8081
@@ -36,6 +38,6 @@ server:
 logging:
   level:
     root: INFO
-    "[com.collab]": DEBUG
+    com.collab: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
