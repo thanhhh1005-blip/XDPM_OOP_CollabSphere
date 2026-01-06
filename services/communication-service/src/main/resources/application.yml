@@ -1,41 +1,15 @@
+server:
+  port: 8082 # Cổng này khác cổng 8081 của workspace nhé
+
 spring:
   application:
-    name: SERVICE_NAME_PLACEHOLDER
-  profiles:
-    active: dev
-
+    name: communication-service
   datasource:
-    url: jdbc:postgresql://${SPRING_DATASOURCE_URL:localhost:5432/collab_db}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
-    driver-class-name: org.postgresql.Driver
-
+    # Dùng chung database collab_db cho tiện, nó sẽ tự tạo bảng riêng
+    url: jdbc:mysql://localhost:3306/collab_db?createDatabaseIfNotExist=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
-        use_sql_comments: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: /
-    connection-timeout: 10000ms
-
-server:
-  port: 8081
-  servlet:
-    context-path: /api/v1
-
-logging:
-  level:
-    root: INFO
-    "[com.collab]": DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
