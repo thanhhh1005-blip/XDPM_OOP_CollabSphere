@@ -35,3 +35,18 @@ services:
       SPRING_PROFILES_ACTIVE: docker
 
 
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - evaluation-service
+
+  evaluation-service:
+    build: ./services/evaluation-service
+    container_name: evaluation-service
+    ports:
+      - "8083:8083"
+volumes:
+  mysql_data:
