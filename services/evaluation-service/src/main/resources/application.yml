@@ -1,5 +1,16 @@
 spring:
   application:
+<<<<<<< HEAD
+    name: SERVICE_NAME_PLACEHOLDER
+  profiles:
+    active: dev
+
+  datasource:
+    url: jdbc:postgresql://${SPRING_DATASOURCE_URL:localhost:5432/collab_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+=======
     name: evaluation-service
 
   profiles:
@@ -10,10 +21,30 @@ spring:
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
+>>>>>>> main
 
   jpa:
     hibernate:
       ddl-auto: update
+<<<<<<< HEAD
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+    connection-timeout: 10000ms
+
+server:
+  port: 8081
+=======
     show-sql: true
     properties:
       hibernate:
@@ -28,10 +59,17 @@ spring:
 
 server:
   port: 8082
+>>>>>>> main
   servlet:
     context-path: /api/v1
 
 logging:
   level:
     root: INFO
+<<<<<<< HEAD
+    "[com.collab]": DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+=======
     com.collab: DEBUG
+>>>>>>> main
