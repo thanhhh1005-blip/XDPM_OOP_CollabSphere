@@ -41,3 +41,13 @@ spring:
             - Path=/evaluation/**
           filters:
             - StripPrefix=1
+        - id: class-service
+          uri: http://localhost:8084 # Chuyển hướng về cổng 8082
+          predicates:
+            - Path=/api/v1/classes/** # Bắt tất cả request bắt đầu bằng /api/v1/classes
+
+        # 2. Cấu hình đường dẫn cho Subject Service (Dự kiến chạy cổng 8081)
+        - id: subject-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/v1/subjects/**
