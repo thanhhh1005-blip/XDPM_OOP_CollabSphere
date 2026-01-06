@@ -3,10 +3,15 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<<<<<<< HEAD
+    <modelVersion>4.0.0</modelVersion>
+
+=======
 
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Parent -->
+>>>>>>> main
     <parent>
         <groupId>com.collab</groupId>
         <artifactId>collab-sphere</artifactId>
@@ -18,21 +23,32 @@
     <name>Resource Service</name>
 
     <dependencies>
+<<<<<<< HEAD
+        <!-- Shared Library -->
+=======
 
         <!-- Shared module -->
+>>>>>>> main
         <dependency>
             <groupId>com.collab</groupId>
             <artifactId>shared</artifactId>
             <version>1.0.0</version>
         </dependency>
 
+<<<<<<< HEAD
+        <!-- Spring Boot Starters -->
+=======
         <!-- Spring Boot Web -->
+>>>>>>> main
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+<<<<<<< HEAD
+=======
         <!-- Spring Data JPA -->
+>>>>>>> main
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -44,6 +60,9 @@
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
+<<<<<<< HEAD
+        <!-- Database -->
+=======
         <!-- H2 Database (dev) -->
         <dependency>
             <groupId>com.h2database</groupId>
@@ -52,6 +71,7 @@
         </dependency>
 
         <!-- PostgreSQL (prod) -->
+>>>>>>> main
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -62,21 +82,46 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+<<<<<<< HEAD
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Testing -->
+=======
             <scope>provided</scope>
         </dependency>
 
 
         <!-- Test -->
+>>>>>>> main
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
+<<<<<<< HEAD
+        <!-- Spring Boot Configuration Processor - Để VSCode nhận Spring properties -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+=======
+>>>>>>> main
     </dependencies>
 
     <build>
         <plugins>
+<<<<<<< HEAD
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+=======
             <!-- Spring Boot Maven Plugin -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -87,3 +132,4 @@
     </build>
 
 </project>
+>>>>>>> main
