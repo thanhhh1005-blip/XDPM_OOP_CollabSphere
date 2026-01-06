@@ -1,7 +1,9 @@
 // Đường dẫn: frontend/src/services/aiService.js
 
+// Giữ nguyên Gateway URL cũ của bạn
 const API_URL = "http://localhost:8080/ai"; 
 
+// --- 1. Hàm tạo kế hoạch (GIỮ NGUYÊN LOGIC CŨ) ---
 export const generateMilestones = async (syllabusContent) => {
   try {
     const response = await fetch(`${API_URL}/generate-milestones`, {
@@ -25,6 +27,7 @@ export const generateMilestones = async (syllabusContent) => {
   }
 };
 
+// --- 2. Hàm lưu log (GIỮ NGUYÊN LOGIC CŨ) ---
 export const saveAiLog = async (syllabus, jsonResult) => {
   try {
     const response = await fetch(`${API_URL}/save-log`, {
@@ -47,4 +50,29 @@ export const saveAiLog = async (syllabus, jsonResult) => {
     console.error("Lỗi Save Service:", error);
     throw error;
   }
+};
+
+// --- 3. Hàm lấy lịch sử (CẬP NHẬT ĐỂ CHẠY QUA GATEWAY) ---
+export const getHistory = async () => {
+    try {
+        // Sử dụng fetch thay axios để đồng bộ
+        // Gọi vào: http://localhost:8080/ai/history
+        // (Khớp với Controller Java đã sửa là @RequestMapping("/ai/history"))
+        const response = await fetch(`${API_URL}/history`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("Không lấy được lịch sử từ Gateway");
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Lỗi lấy lịch sử:", error);
+        return []; // Trả về mảng rỗng để không crash giao diện
+    }
 };

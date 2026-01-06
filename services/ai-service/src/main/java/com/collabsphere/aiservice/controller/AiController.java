@@ -3,7 +3,7 @@ package com.collabsphere.aiservice.controller;
 import com.collabsphere.aiservice.dto.ProjectPlanResponse;
 import com.collabsphere.aiservice.dto.request.MilestoneRequest;
 import com.collabsphere.aiservice.entity.AiGenerationLog; // 👈 Import Entity mới
-import com.collabsphere.aiservice.repository.AiLogRepository; // 👈 Import Repo mới
+import com.collabsphere.aiservice.repository.AiGenerationLogRepository; // 👈 Import Repo mới
 import com.collabsphere.aiservice.service.GeminiService;
 import com.fasterxml.jackson.databind.ObjectMapper; // 👈 Dùng để xử lý JSON
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +17,11 @@ import java.util.Map;
 public class AiController {
 
     private final GeminiService geminiService;
-    private final AiLogRepository aiLogRepository; // 1. Khai báo Repository
+    private final AiGenerationLogRepository aiLogRepository; // 1. Khai báo Repository
     private final ObjectMapper objectMapper; // Dùng để chuyển Object -> JSON String
 
     @Autowired
-    public AiController(GeminiService geminiService, AiLogRepository aiLogRepository, ObjectMapper objectMapper) {
+    public AiController(GeminiService geminiService, AiGenerationLogRepository aiLogRepository, ObjectMapper objectMapper) {
         this.geminiService = geminiService;
         this.aiLogRepository = aiLogRepository; // 2. Inject Repository
         this.objectMapper = objectMapper;

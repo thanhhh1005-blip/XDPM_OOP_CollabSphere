@@ -1,13 +1,23 @@
-import { useState } from 'react';
-import { generateMilestones, saveAiLog } from './services/aiService';
+import { useState, useEffect } from 'react';
+import { generateMilestones, saveAiLog, getHistory } from './services/aiService';
 
-// Icon SVG đơn giản để trang trí
+// --- CÁC ICON ---
+
+// Icon đồng hồ cho nút lịch sử
+const HistoryIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+// Icon Save
 const SaveIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
   </svg>
 );
 
+// Icon Sparkles
 const SparklesIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 3.214L13 21l-2.286-6.857L5 12l5.714-3.214z" />
@@ -20,6 +30,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const [error, setError] = useState('');
+  const [showHistory, setShowHistory] = useState(false); // Để bật tắt bảng lịch sử
+  const [historyList, setHistoryList] = useState([]);    // Chứa danh sách tải về
 
   const handleGenerate = async () => {
     if (!syllabus.trim()) {
@@ -61,16 +73,43 @@ function App() {
     try {
       await saveAiLog(syllabus, JSON.stringify(plan));
       setSaveStatus("SUCCESS");
+      setTimeout(() => setSaveStatus(null), 3000); // Tự tắt thông báo sau 3s
     } catch (err) {
       setSaveStatus("ERROR");
     }
   };
 
+  // Hàm tải lịch sử
+  const handleLoadHistory = async () => {
+      const data = await getHistory();
+      if (data) {
+        // Sắp xếp ID giảm dần (mới nhất lên đầu)
+        const sorted = [...data].sort((a, b) => b.id - a.id);
+        setHistoryList(sorted);
+        setShowHistory(true); // Mở bảng lên
+      }
+  };
+
+  // Hàm chọn một lịch sử cũ để hiển thị lại
+  const handleSelectHistory = (item) => {
+      try {
+          // Parse lại JSON từ string đã lưu
+          const oldPlan = JSON.parse(item.answer);
+          setPlan(oldPlan); // Cập nhật vào màn hình chính
+          setSyllabus(item.question); // Điền lại đề bài cũ vào ô input
+          setShowHistory(false); // Đóng bảng
+          setSaveStatus(null); // Reset trạng thái lưu
+      } catch (e) {
+          alert("Dữ liệu lịch sử này bị lỗi format, không xem được!");
+      }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20 relative">
       
       {/* HEADER */}
-      <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white py-12 shadow-xl mb-10">
+      {/* Thêm class relative để nút Lịch sử có thể căn chỉnh tuyệt đối */}
+      <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white py-12 shadow-xl mb-10 relative">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h1 className="text-5xl font-extrabold tracking-tight mb-4 flex items-center justify-center">
             <SparklesIcon /> CollabSphere AI
@@ -78,6 +117,15 @@ function App() {
           <p className="text-blue-100 text-lg opacity-90 max-w-2xl mx-auto">
             Trợ lý lập kế hoạch dự án thông minh. Biến ý tưởng thô sơ thành lộ trình chi tiết chỉ trong vài giây.
           </p>
+
+          {/* 👇 NÚT LỊCH SỬ MỚI THÊM VÀO */}
+          <button 
+            onClick={handleLoadHistory}
+            className="absolute top-6 right-6 flex items-center bg-white/10 hover:bg-white/20 text-white border border-white/30 px-4 py-2 rounded-lg font-bold transition-all text-sm backdrop-blur-sm"
+          >
+            <HistoryIcon /> Lịch sử
+          </button>
+
         </div>
       </div>
 
@@ -225,6 +273,50 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* 👇 5. MODAL HIỂN THỊ LỊCH SỬ (Phần mới thêm vào) */}
+      {showHistory && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            
+            {/* Header Modal */}
+            <div className="p-5 bg-gradient-to-r from-blue-700 to-indigo-800 text-white flex justify-between items-center shrink-0">
+              <h3 className="text-xl font-bold flex items-center"><HistoryIcon /> Lịch sử đã lưu</h3>
+              <button onClick={() => setShowHistory(false)} className="text-white/80 hover:text-white text-2xl font-bold px-2">&times;</button>
+            </div>
+
+            {/* List Body (Có thanh cuộn) */}
+            <div className="p-4 overflow-y-auto bg-slate-50 flex-1 space-y-3">
+              {historyList.length === 0 ? (
+                <div className="text-center text-slate-400 py-10 flex flex-col items-center">
+                   <HistoryIcon />
+                   <p className="mt-2">Chưa có lịch sử nào được lưu.</p>
+                </div>
+              ) : (
+                historyList.map((item) => (
+                  <div key={item.id} onClick={() => handleSelectHistory(item)} 
+                       className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-500 cursor-pointer transition-all group">
+                    <div className="flex justify-between mb-1">
+                        <span className="font-bold text-xs text-white bg-blue-600 px-2 py-0.5 rounded-full">ID: {item.id}</span>
+                        <span className="text-xs text-slate-400">{item.timestamp ? new Date(item.timestamp).toLocaleString() : "Vừa xong"}</span>
+                    </div>
+                    {/* Cắt ngắn câu hỏi cho đỡ dài */}
+                    <p className="text-slate-700 text-sm font-medium group-hover:text-blue-700 line-clamp-2 mt-1">
+                        {item.question}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {/* Footer Modal */}
+            <div className="p-4 bg-white border-t border-slate-200 text-right shrink-0">
+                <button onClick={() => setShowHistory(false)} className="px-6 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-bold transition-colors">Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

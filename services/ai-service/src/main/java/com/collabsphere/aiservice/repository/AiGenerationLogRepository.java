@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface AiLogRepository extends JpaRepository<AiGenerationLog, Long> {
-    // Có thể thêm hàm tìm kiếm theo ngày sau này nếu muốn
+public interface AiGenerationLogRepository extends JpaRepository<AiGenerationLog, Long> {
+    // JpaRepository đã có sẵn hàm findAll(), không cần viết thêm
 }
