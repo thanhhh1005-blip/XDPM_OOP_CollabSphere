@@ -7,23 +7,31 @@
     <groupId>com.collab</groupId>
     <artifactId>collab-sphere</artifactId>
     <version>1.0.0</version>
-    <packaging>pom</packaging> 
+    <packaging>pom</packaging> <!-- QUAN TRỌNG: Đánh dấu đây là dự án cha -->
+    
+    <name>collab-sphere</name>
+    <description>CollabSphere Microservices Project</description>
 
     <modules>
+        <!-- Khai báo các module con em đang có -->
         <module>shared</module>
-        <module>api-gateway</module> <module>services</module>    </modules>
+        <module>api-gateway</module>
+        <!-- Các service nghiệp vụ -->
+        <module>services/workspace-service</module>
+        <module>services/communication-service</module>
+        <module>services/evaluation-service</module>
+        <!-- Sau này thêm service nào thì điền thêm vào đây -->
+    </modules>
 
     <properties>
         <java.version>21</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        
         <spring.boot.version>3.2.3</spring.boot.version>
-        <spring.cloud.version>2023.0.0</spring.cloud.version> 
+        <spring.cloud.version>2023.0.0</spring.cloud.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <!-- Spring Boot BOM -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -31,7 +39,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
+            <!-- Spring Cloud BOM -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -41,4 +49,13 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <dependencies>
+        <!-- Lombok dùng chung cho tất cả -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
 </project>

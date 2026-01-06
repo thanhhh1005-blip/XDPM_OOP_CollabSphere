@@ -1,10 +1,15 @@
 spring:
   application:
+<<<<<<< HEAD
     name: subject-service # 1. Đã sửa tên service
+=======
+    name: SERVICE_NAME_PLACEHOLDER
+>>>>>>> main
   profiles:
     active: dev
 
   datasource:
+<<<<<<< HEAD
     # 2. SỬA: Chuyển sang kết nối MySQL
     # Dùng biến môi trường, nếu không có thì mặc định là localhost (cho chạy local) hoặc mysqldb (cho docker)
     url: jdbc:mysql://${SPRING_DATASOURCE_HOST:localhost}:3306/db_subject?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
@@ -24,19 +29,52 @@ spring:
 
   # RabbitMQ: Tạm thời giữ cấu hình này cũng được, 
   # nhưng nếu pom.xml đã ẩn dependency thì phần này sẽ bị bỏ qua (không lỗi).
+=======
+    url: jdbc:postgresql://${SPRING_DATASOURCE_URL:localhost:5432/collab_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+>>>>>>> main
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
+<<<<<<< HEAD
 
 server:
   port: 8081
   # 4. SỬA: Bỏ context-path để URL ngắn gọn: http://localhost:8081/api/subjects
   # servlet:
   #   context-path: /api/v1 
+=======
+    virtual-host: /
+    connection-timeout: 10000ms
+
+server:
+  port: 8081
+  servlet:
+    context-path: /api/v1
+>>>>>>> main
 
 logging:
   level:
     root: INFO
+<<<<<<< HEAD
     com.collab: DEBUG
+=======
+    "[com.collab]": DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+>>>>>>> main

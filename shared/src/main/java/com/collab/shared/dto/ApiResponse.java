@@ -1,4 +1,3 @@
-
 package com.collab.shared.dto;
 
 import lombok.AllArgsConstructor;

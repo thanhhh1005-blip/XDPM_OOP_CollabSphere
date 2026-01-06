@@ -13,4 +13,10 @@ public class Task {
     private String title;
     private String description;
     private String status; // TODO, DONE
+    private Integer position;
+    private Long assigneeId;
+
+    @ManyToOne
+    @JoinColumn(name = "sprint_id")
+    private Sprint sprint;
 }
