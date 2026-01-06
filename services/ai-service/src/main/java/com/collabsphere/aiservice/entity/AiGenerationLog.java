@@ -4,37 +4,44 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ai_generation_logs")
+@Table(name = "ai_generation_logs") // 1. Trỏ vào bảng DB thật
 public class AiGenerationLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "TEXT")
-    private String requestContent; // Nội dung đề cương người dùng nhập
+    // 2. Map cột 'request_content' -> thành biến 'question' (Frontend cần tên này)
+    @Column(name = "request_content", columnDefinition = "TEXT")
+    private String question; 
 
-    @Column(columnDefinition = "LONGTEXT") // Dùng LONGTEXT vì kết quả JSON rất dài
-    private String jsonResponse;   // Kết quả AI trả về
+    // 3. Map cột 'json_response' -> thành biến 'answer' (Frontend cần tên này)
+    @Column(name = "json_response", columnDefinition = "LONGTEXT") 
+    private String answer;   
 
-    private LocalDateTime createdAt;
+    // 4. Map cột 'created_at' -> thành biến 'timestamp' (Frontend cần tên này)
+    @Column(name = "created_at")
+    private LocalDateTime timestamp;
 
-    // Constructor
+    // --- Constructor ---
     public AiGenerationLog() {}
 
-    public AiGenerationLog(String requestContent, String jsonResponse) {
-        this.requestContent = requestContent;
-        this.jsonResponse = jsonResponse;
-        this.createdAt = LocalDateTime.now();
+    public AiGenerationLog(String question, String answer) {
+        this.question = question;
+        this.answer = answer;
+        this.timestamp = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // --- Getters and Setters (Dùng tên mới để JSON trả về đúng ý Frontend) ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public String getRequestContent() { return requestContent; }
-    public void setRequestContent(String requestContent) { this.requestContent = requestContent; }
-    public String getJsonResponse() { return jsonResponse; }
-    public void setJsonResponse(String jsonResponse) { this.jsonResponse = jsonResponse; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getQuestion() { return question; }
+    public void setQuestion(String question) { this.question = question; }
+
+    public String getAnswer() { return answer; }
+    public void setAnswer(String answer) { this.answer = answer; }
+
+    public LocalDateTime getTimestamp() { return timestamp; }
+    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 }
