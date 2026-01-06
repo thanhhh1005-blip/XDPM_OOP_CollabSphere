@@ -14,9 +14,9 @@ POST {{identity_url}}/users
 Content-Type: application/json
 
 {
-  "username": "giangvien_a",
-  "password": "Password123!",
-  "email": "gv@collabsphere.com",
+  "username": "giangvien_a1111",
+  "password": "Password123!1",
+  "email": "gv@collabspher11e.com",
   "fullName": "Thay Giao A",
   "role": "LECTURER",
   "isActive": true
