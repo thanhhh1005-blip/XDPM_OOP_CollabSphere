@@ -36,6 +36,6 @@ services:
     build: ./services/evaluation-service
     container_name: evaluation-service
     ports:
-      - "8082:8082"
+      - "8083:8083"
 volumes:
   mysql_data:
