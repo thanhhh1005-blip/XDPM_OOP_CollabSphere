@@ -11,6 +11,4 @@ spring:
         - id: evaluation-service
           uri: http://evaluation-service:8082
           predicates:
-            - Path=/evaluation/**
-          filters:
-            - StripPrefix=1
+            - Path=/api/v1/evaluations/**

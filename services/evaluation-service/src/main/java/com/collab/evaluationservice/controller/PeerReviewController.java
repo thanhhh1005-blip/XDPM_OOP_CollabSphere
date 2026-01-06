@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 @RestController
-@RequestMapping("/api/v1/evaluations/peer")
+@RequestMapping("/evaluations/peer")
 public class PeerReviewController {
 
     private final PeerReviewService service;
