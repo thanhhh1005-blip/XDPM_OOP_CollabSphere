@@ -1,14 +1,12 @@
 server:
-  port: 8080
+  port: 8080 # Cổng chính
 
 spring:
   application:
     name: api-gateway
+
   cloud:
     gateway:
-      # ==========================================
-      # 1. CẤU HÌNH CORS (QUAN TRỌNG: ĐỂ REACT GỌI ĐƯỢC)
-      # ==========================================
       globalcors:
         cors-configurations:
           '[/**]': # Áp dụng cho tất cả các đường dẫn
@@ -21,26 +19,27 @@ spring:
               - OPTIONS
             allowedHeaders: "*" # Cho phép mọi header
             allowCredentials: true # Cho phép cookie/token
-
-      # ==========================================
-      # 2. CÁC ROUTES (ĐỊNH TUYẾN)
-      # ==========================================
       routes:
-        # Định tuyến cho Workspace Service
+        # Route cho Workspace (Task, Sprint...)
         - id: workspace-service
-          uri: http://localhost:8081
+          uri: http://localhost:8081 # Chuyển tiếp đến service Workspace
           predicates:
             - Path=/api/workspace/**
-
+            
         # Định tuyến cho Communication Service (WebSocket)
         - id: communication-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/chat/**
+
+        # Route cho Chat WebSocket (Quan trọng: Phải dùng ws://)
+        - id: chat-websocket
           uri: ws://localhost:8082
           predicates:
             - Path=/ws/**
-
         # Định tuyến sang Identity Service
         - id: identity-service
-          uri: http://localhost:8083
+          uri: http://localhost:8086
           predicates:
             - Path=/identity/**
           filters:
@@ -49,6 +48,6 @@ spring:
         # Định tuyến sang AI Service
         # (Lưu ý: Không dùng StripPrefix vì Controller của bạn đã có /ai)
         - id: ai-service
-          uri: http://localhost:8084 
+          uri: http://localhost:8087 
           predicates:
             - Path=/ai/**

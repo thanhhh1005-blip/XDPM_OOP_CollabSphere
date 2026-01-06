@@ -1,4 +1,4 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
   # 1. Database MySQL
@@ -13,16 +13,40 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
-  # 2. RabbitMQ (Cho tin nhắn)
+  # 2. RabbitMQ (message broker)
   rabbitmq:
     image: rabbitmq:3-management
     container_name: collab-rabbitmq
     ports:
-      - "5672:5672"   # Cổng app kết nối
-      - "15672:15672" # Cổng quản trị web
+      - "5672:5672"    # Port cho application kết nối
+      - "15672:15672"  # Port cho RabbitMQ Management UI
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+ 
+ # 3. Resource Service (Quản lý tài nguyên)
+  resource-service:
+    build:
+      context: ./services/resource-service
+    container_name: resource-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
 
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - evaluation-service
+
+  evaluation-service:
+    build: ./services/evaluation-service
+    container_name: evaluation-service
+    ports:
+      - "8083:8083"
 volumes:
   mysql_data:
