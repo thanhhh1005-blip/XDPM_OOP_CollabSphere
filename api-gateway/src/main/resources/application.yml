@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8080 # Cổng chính
 
 spring:
   application:
@@ -7,8 +7,37 @@ spring:
 
   cloud:
     gateway:
+      # 1. Cấu hình CORS (Cho phép Frontend gọi vào)
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:5173" # Địa chỉ Frontend của em
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+
+      # 2. Định tuyến (Chỉ đường)
       routes:
+        # Route cho Workspace (Task, Sprint...)
+        - id: workspace-service
+          uri: http://localhost:8081 # Chuyển tiếp đến service Workspace
+          predicates:
+            - Path=/api/workspace/**
+        
+        # Route cho Communication (REST API lấy lịch sử chat...)
+        - id: communication-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/chat/**
+
+        # Route cho Chat WebSocket (Quan trọng: Phải dùng ws://)
+        - id: chat-websocket
+          uri: ws://localhost:8082
+          predicates:
+            - Path=/ws/**
         - id: evaluation-service
-          uri: http://evaluation-service:8082
+          uri: http://evaluation-service:8083
           predicates:
             - Path=/api/v1/evaluations/**
+        
+
