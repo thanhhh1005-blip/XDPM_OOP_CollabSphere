@@ -6,15 +6,26 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      routes:
-        # Định tuyến cho Workspace Service
-        - id: workspace-service
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/workspace/**
+      # Lọc bỏ tiêu đề trùng lặp để tránh lỗi lặp tiêu đề CORS
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+      
+      globalcors:
+        add-to-gateway-lookup-config: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
             
-        # Định tuyến cho Communication Service (WebSocket)
-        - id: communication-service
-          uri: ws://localhost:8082
+      routes:
+        - id: project-service
+          uri: http://localhost:8083
           predicates:
-            - Path=/ws/**
+            - Path=/api/v1/projects/**
