@@ -5,6 +5,7 @@ import com.collabsphere.identity.entity.User;
 import com.collabsphere.identity.enums.Role;
 import com.collabsphere.identity.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder; // 👈 1. Import mới
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -36,17 +37,14 @@ public class UserService {
         // Mã hóa mật khẩu
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // Xử lý Role: Dùng đúng Enum của dự án (STUDENT, LECTURER,...)
+        // Xử lý Role
         if (request.getRole() != null) {
             try {
-                // Chuyển chuỗi input thành Enum (VD: "LECTURER" -> Role.LECTURER)
                 user.setRole(Role.valueOf(request.getRole().toUpperCase()));
             } catch (IllegalArgumentException e) {
-                // Nếu gửi role sai bét (VD: "ABC"), mặc định gán là STUDENT
                 user.setRole(Role.STUDENT);
             }
         } else {
-            // Nếu không gửi role, mặc định là STUDENT
             user.setRole(Role.STUDENT);
         }
 
@@ -55,5 +53,18 @@ public class UserService {
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    // 👇 2. HÀM MỚI: Lấy thông tin người đang đăng nhập
+    public User getMyInfo() {
+        // Lấy username từ context (do Security Filter đã xác thực và lưu vào đây)
+        var context = SecurityContextHolder.getContext();
+        String name = context.getAuthentication().getName();
+
+        // Tìm user trong DB theo tên đó
+        User user = userRepository.findByUsername(name)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return user;
     }
 }
