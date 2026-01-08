@@ -28,6 +28,9 @@
         <module>services/workspace-service</module>
         <module>services/communication-service</module>
         <module>services/evaluation-service</module>
+        <module>services/resource-service</module>
+        <module>services/class-service</module>
+        <module>services/subject-service</module>
         <!-- Sau này thêm service nào thì điền thêm vào đây -->
     </modules>
 

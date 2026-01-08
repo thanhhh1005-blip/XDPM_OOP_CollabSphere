@@ -10,6 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface ResourceRepository extends JpaRepository<Resource, Long> {
+    List<Resource> findByDeletedFalse();
 
     Optional<Resource> findByStoredFileName(String storedFileName);
 

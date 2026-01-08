@@ -1,77 +1,38 @@
 spring:
   application:
-<<<<<<< HEAD
     name: class-service # 1. Đặt tên đúng cho service
-=======
-    name: SERVICE_NAME_PLACEHOLDER
->>>>>>> main
   profiles:
     active: dev
 
   datasource:
-<<<<<<< HEAD
-    # 2. Cấu hình kết nối MySQL (Tự tạo db_class nếu chưa có)
-    url: jdbc:mysql://${SPRING_DATASOURCE_HOST:localhost}:3306/db_class?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
-    username: ${SPRING_DATASOURCE_USERNAME:root}
-    # 3. Điền mật khẩu MySQL của bạn
-    password: ${SPRING_DATASOURCE_PASSWORD:123456789}
+    url: jdbc:mysql://localhost:3306/Class_db?createDatabaseIfNotExist=true
+    username: root
+    password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
-=======
-    url: jdbc:postgresql://${SPRING_DATASOURCE_URL:localhost:5432/collab_db}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
-    driver-class-name: org.postgresql.Driver
->>>>>>> main
 
   jpa:
     hibernate:
       ddl-auto: update
-<<<<<<< HEAD
     show-sql: true
-=======
-    show-sql: false
->>>>>>> main
     properties:
       hibernate:
-        format_sql: true
-        use_sql_comments: true
-<<<<<<< HEAD
-        # 4. Dialect cho MySQL
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        dialect: org.hibernate.dialect.MySQLDialect
+
 
   # RabbitMQ: Giữ lại config này (dù chưa dùng tới ngay)
-=======
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+  # rabbitmq:
+  #   host: ${RABBITMQ_HOST:localhost}
+  #   port: ${RABBITMQ_PORT:5672}
+  #   username: ${RABBITMQ_USERNAME:guest}
+  #   password: ${RABBITMQ_PASSWORD:guest}
+  #   virtual-host: /
+  #   connection-timeout: 10000ms
 
->>>>>>> main
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: /
-    connection-timeout: 10000ms
 
 server:
-<<<<<<< HEAD
-  # 5. QUAN TRỌNG: Chạy port 8082 để không trùng Subject Service
-  port: 8082
-  # Bỏ context-path để URL gọn gàng: http://localhost:8082/api/classes
-  # servlet:
-  #   context-path: /api/v1 
-=======
-  port: 8081
-  servlet:
-    context-path: /api/v1
->>>>>>> main
+  port: 8084 # 
 
 logging:
   level:
     root: INFO
-<<<<<<< HEAD
     com.collab: DEBUG
-=======
-    "[com.collab]": DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
->>>>>>> main
