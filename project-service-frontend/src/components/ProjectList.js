@@ -1,103 +1,315 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
 
 const ProjectList = () => {
-    const [projects, setProjects] = useState([]);
-    const history = useHistory();
-    // Thay đổi port sang 8080 để đi qua API Gateway
-    const API_BASE_URL = 'http://localhost:8080/api/v1/projects';
+  const [projects, setProjects] = useState([]);
+  const history = useHistory();
 
-    const fetchProjects = () => {
-        axios.get(API_BASE_URL)
-            .then(response => setProjects(response.data))
-            .catch(error => console.error('Lỗi lấy dữ liệu:', error));
-    };
+  // đi qua API Gateway
+  const API_BASE_URL = 'http://localhost:8080/api/v1/projects';
 
-    useEffect(() => {
+  // modal state
+  const [openDesc, setOpenDesc] = useState(false);
+  const [descProject, setDescProject] = useState(null);
+
+  const fetchProjects = () => {
+    axios
+      .get(API_BASE_URL)
+      .then((response) => setProjects(response.data))
+      .catch((error) => console.error('Lỗi lấy dữ liệu:', error));
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const handleAction = (id, action) => {
+    axios
+      .post(`${API_BASE_URL}/${id}/${action}`)
+      .then(() => {
+        alert(`Thực hiện ${action} thành công!`);
         fetchProjects();
-    }, []);
+      })
+      .catch((error) => alert('Lỗi: ' + (error.response?.data?.message || error.message)));
+  };
 
-    const handleAction = (id, action) => {
-        axios.post(`${API_BASE_URL}/${id}/${action}`)
-            .then(() => {
-                alert(`Thực hiện ${action} thành công!`);
-                fetchProjects();
-            })
-            .catch(error => alert('Lỗi: ' + (error.response?.data?.message || error.message)));
-    };
+  const handleAssign = (id) => {
+    const classId = prompt('Vui lòng nhập mã lớp học để giao dự án:');
+    if (classId) {
+      axios
+        .post(`${API_BASE_URL}/${id}/assign/${classId}`)
+        .then(() => {
+          alert('Giao dự án cho lớp thành công!');
+          fetchProjects();
+        })
+        .catch((error) => alert('Lỗi giao lớp: ' + (error.response?.data?.message || error.message)));
+    }
+  };
 
-    // Bổ sung chức năng Giao cho lớp
-    const handleAssign = (id) => {
-        const classId = prompt("Vui lòng nhập mã lớp học để giao dự án:");
-        if (classId) {
-            axios.post(`${API_BASE_URL}/${id}/assign/${classId}`)
-                .then(() => {
-                    alert("Giao dự án cho lớp thành công!");
-                    fetchProjects();
-                })
-                .catch(error => alert('Lỗi giao lớp: ' + error.message));
-        }
-    };
+  const openDescriptionModal = (project) => {
+    setDescProject(project);
+    setOpenDesc(true);
+  };
 
-    return (
-        <div style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <h1>Danh sách Dự án CollabSphere</h1>
-                <button onClick={() => history.push('/create-project')} 
-                        style={{ padding: '10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                    + Tạo Dự án Mẫu
-                </button>
+  const closeDescriptionModal = () => {
+    setOpenDesc(false);
+    setDescProject(null);
+  };
+
+  const statusBadgeClass = useMemo(
+    () => (status) => {
+      if (status === 'APPROVED') return 'badge badge-approved';
+      if (status === 'PENDING') return 'badge badge-pending';
+      if (status === 'DENIED') return 'badge badge-denied';
+      return 'badge badge-draft';
+    },
+    []
+  );
+
+  const btnStyle = {
+    width: '100%',
+    padding: '6px 10px',
+    borderRadius: 6,
+    border: '1px solid #d1d5db',
+    background: '#f9fafb',
+    cursor: 'pointer',
+    fontWeight: 600,
+  };
+
+  return (
+    <div style={{ padding: '20px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 16,
+          gap: 12,
+        }}
+      >
+        <h1 style={{ margin: 0 }}>Danh sách Dự án CollabSphere</h1>
+
+        <button
+          onClick={() => history.push('/create-project')}
+          style={{
+            padding: '10px 14px',
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: 8,
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          + Tạo Dự án Mẫu
+        </button>
+      </div>
+
+      <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #e5e7eb', borderRadius: 10 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', background: '#fff' }}>
+          {/* khóa tỉ lệ cột: mô tả ngắn hơn, thao tác vừa mắt */}
+          <colgroup>
+  <col style={{ width: '18%' }} />  {/* Tiêu đề */}
+  <col style={{ width: '34%' }} />  {/* Mô tả */}
+  <col style={{ width: '16%' }} />  {/* Trạng thái */}
+  <col style={{ width: '10%' }} />  {/* Thao tác (NHỎ HƠN) */}
+</colgroup>
+
+
+          <thead>
+            <tr style={{ backgroundColor: '#f2f2f2' }}>
+              <th style={{ padding: 10, textAlign: 'left' }}>Tiêu đề</th>
+              <th style={{ padding: 10, textAlign: 'left' }}>Mô tả</th>
+              <th style={{ padding: 10, textAlign: 'center' }}>Trạng thái</th>
+              <th style={{ padding: 10, textAlign: 'center' }}>Thao tác</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {projects.map((project) => (
+              <tr key={project.id} style={{ borderTop: '1px solid #eee' }}>
+                <td
+                  style={{
+                    padding: 10,
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {project.title}
+                </td>
+
+                {/* MÔ TẢ: 1 dòng + ... , bấm xem full */}
+                <td style={{ padding: 10 }}>
+                  <div
+                    onClick={() => openDescriptionModal(project)}
+                    title="Bấm để xem đầy đủ mô tả"
+                    style={{
+                      cursor: 'pointer',
+                      lineHeight: 1.4,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 1,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      wordBreak: 'break-word',
+                      color: '#111827',
+                    }}
+                  >
+                    {project.description || '(Không có mô tả)'}
+                  </div>
+
+                  <button
+                    onClick={() => openDescriptionModal(project)}
+                    style={{
+                      marginTop: 4,
+                      padding: 0,
+                      border: 'none',
+                      background: 'transparent',
+                      color: '#2563eb',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: 12,
+                    }}
+                  >
+                    Xem đầy đủ
+                  </button>
+                </td>
+
+                <td style={{ padding: 10, textAlign: 'center' }}>
+                  <span className={statusBadgeClass(project.status)}>{project.status}</span>
+                </td>
+
+                {/* THAO TÁC: nút full width, gọn đều */}
+                <td style={{ padding: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {project.status === 'DRAFT' && (
+                      <button style={btnStyle} onClick={() => handleAction(project.id, 'submit')}>
+                        Nộp duyệt
+                      </button>
+                    )}
+
+                    {project.status === 'PENDING' && (
+                      <>
+                        <button style={{ ...btnStyle, color: 'green' }} onClick={() => handleAction(project.id, 'approve')}>
+                          Duyệt
+                        </button>
+                        <button style={{ ...btnStyle, color: 'red' }} onClick={() => handleAction(project.id, 'deny')}>
+                          Từ chối
+                        </button>
+                      </>
+                    )}
+
+                    {project.status === 'APPROVED' && (
+                      <button
+                        style={{ ...btnStyle, background: '#007bff', color: 'white', borderColor: '#007bff' }}
+                        onClick={() => handleAssign(project.id)}
+                      >
+                        Giao cho lớp
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* MODAL: xem full mô tả */}
+      {openDesc && (
+        <div
+          onClick={closeDescriptionModal}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 16,
+            zIndex: 9999,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: 'min(900px, 100%)',
+              background: '#fff',
+              borderRadius: 12,
+              boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                padding: 14,
+                borderBottom: '1px solid #eee',
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 16 }}>{descProject?.title || 'Chi tiết mô tả'}</div>
+                <div style={{ fontSize: 12, color: '#6b7280' }}>ID: {descProject?.id}</div>
+              </div>
+
+              <button
+                onClick={closeDescriptionModal}
+                style={{
+                  border: 'none',
+                  background: '#f3f4f6',
+                  borderRadius: 8,
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                }}
+              >
+                Đóng
+              </button>
             </div>
 
-            <table style={{ width: '100%', borderCollapse: 'collapse' }} border="1">
-                <thead>
-                    <tr style={{ backgroundColor: '#f2f2f2' }}>
-                        <th>Tiêu đề</th>
-                        <th>Mô tả</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {projects.map(project => (
-                        <tr key={project.id}>
-                            <td style={{ padding: '10px' }}>{project.title}</td>
-                            <td style={{ padding: '10px' }}>{project.description}</td>
-                            <td style={{ padding: '10px', textAlign: 'center' }}>
-                                <span style={{ 
-                                    padding: '4px 8px', borderRadius: '4px', 
-                                    backgroundColor: project.status === 'APPROVED' ? '#d4edda' : project.status === 'PENDING' ? '#fff3cd' : '#f8f9fa' 
-                                }}>
-                                    {project.status}
-                                </span>
-                            </td>
-                            <td style={{ padding: '10px' }}>
-                                {project.status === 'DRAFT' && (
-                                    <button onClick={() => handleAction(project.id, 'submit')}>Nộp duyệt</button>
-                                )}
-
-                                {project.status === 'PENDING' && (
-                                    <>
-                                        <button onClick={() => handleAction(project.id, 'approve')} style={{ color: 'green' }}>Duyệt</button>
-                                        <button onClick={() => handleAction(project.id, 'deny')} style={{ color: 'red' }}>Từ chối</button>
-                                    </>
-                                )}
-
-                                {project.status === 'APPROVED' && (
-                                    <button onClick={() => handleAssign(project.id)} style={{ backgroundColor: '#007bff', color: 'white' }}>
-                                        Giao cho lớp
-                                    </button>
-                                )}
-                                
-                                <button onClick={() => history.push(`/projects/${project.id}`)} style={{ marginLeft: '5px' }}>Chi tiết</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            <div style={{ padding: 16 }}>
+              <div style={{ fontWeight: 700, marginBottom: 8 }}>Mô tả / Đề cương</div>
+              <pre
+                style={{
+                  margin: 0,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  background: '#f9fafb',
+                  border: '1px solid #eee',
+                  borderRadius: 10,
+                  padding: 14,
+                  maxHeight: '60vh',
+                  overflow: 'auto',
+                  lineHeight: 1.4,
+                }}
+              >
+                {descProject?.description || '(Không có mô tả)'}
+              </pre>
+            </div>
+          </div>
         </div>
-    );
+      )}
+
+      {/* Badge CSS mini */}
+      <style>{`
+        .badge{
+          display:inline-block;
+          padding:4px 10px;
+          border-radius:999px;
+          font-size:12px;
+          font-weight:800;
+        }
+        .badge-approved{ background:#dcfce7; }
+        .badge-pending{ background:#fef3c7; }
+        .badge-denied{ background:#fee2e2; }
+        .badge-draft{ background:#f3f4f6; }
+      `}</style>
+    </div>
+  );
 };
 
 export default ProjectList;

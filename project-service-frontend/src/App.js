@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-d
 import ProjectList from './components/ProjectList'; 
 import ProjectForm from './components/ProjectForm'; 
 import ProjectDetail from './components/ProjectDetail';
+import TeamPage from "./components/TeamPage";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/projects/:id" component={ProjectDetail} />
           
           <Route path="/create-project" component={ProjectForm} />
+          <Route path="/teams" component={TeamPage} />
         </Switch>
       </div>
     </Router>

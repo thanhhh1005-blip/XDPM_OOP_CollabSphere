@@ -26,27 +26,30 @@ public class ProjectController {
   }
 
   @GetMapping("/{id}")
-  public Project getById(@PathVariable String id) {
+  public Project getById(@PathVariable("id") String id) {
     return service.getById(id);
   }
 
   @PostMapping("/{id}/submit")
-  public Project submit(@PathVariable String id) {
+  public Project submit(@PathVariable("id") String id) {
     return service.submit(id);
   }
 
   @PostMapping("/{id}/approve")
-  public Project approve(@PathVariable String id) {
+  public Project approve(@PathVariable("id") String id) {
     return service.approve(id);
   }
 
   @PostMapping("/{id}/deny")
-  public Project deny(@PathVariable String id) {
+  public Project deny(@PathVariable("id") String id) {
     return service.deny(id);
   }
 
   @PostMapping("/{id}/assign/{classId}")
-  public Project assignToClass(@PathVariable String id, @PathVariable String classId) {
+  public Project assignToClass(
+      @PathVariable("id") String id,
+      @PathVariable("classId") String classId
+  ) {
     return service.assignToClass(id, classId);
   }
 }
