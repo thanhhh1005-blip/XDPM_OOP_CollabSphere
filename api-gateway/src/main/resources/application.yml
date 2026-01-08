@@ -1,5 +1,5 @@
 server:
-  port: 8080 # Cổng chính
+  port: 8080
 
 spring:
   application:
@@ -9,62 +9,61 @@ spring:
     gateway:
       globalcors:
         cors-configurations:
-          '[/**]': # Áp dụng cho tất cả các đường dẫn
-            allowedOrigins: "http://localhost:5173" # Chỉ cho phép Frontend React này
-            allowedMethods: # Cho phép các phương thức này
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-            allowedHeaders: "*" # Cho phép mọi header
-            allowCredentials: true # Cho phép cookie/token
+          '[/**]':
+            allowedOrigins: "http://localhost:5173"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+            
       routes:
-        # Route cho Workspace (Task, Sprint...)
+        # 1. Workspace (8081)
         - id: workspace-service
-          uri: http://localhost:8081 # Chuyển tiếp đến service Workspace
+          uri: http://localhost:8081
           predicates:
             - Path=/api/workspace/**
             
-        # Định tuyến cho Communication Service (WebSocket)
+        # 2. Communication (8082)
         - id: communication-service
           uri: http://localhost:8082
           predicates:
             - Path=/api/chat/**
-
-        # Route cho Chat WebSocket (Quan trọng: Phải dùng ws://)
         - id: chat-websocket
           uri: ws://localhost:8082
           predicates:
             - Path=/ws/**
         
+        # 3. Evaluation (8083) - Sửa host thành localhost
         - id: evaluation-service
-          uri: http://evaluation-service:8083
+          uri: http://localhost:8083 
           predicates:
-            - Path=/evaluation/**
-          filters:
-            - StripPrefix=1
-        - id: class-service
-          uri: http://localhost:8084 # Chuyển hướng về cổng 8082
-          predicates:
-            - Path=/api/v1/classes/** # Bắt tất cả request bắt đầu bằng /api/v1/classes
+            - Path=/api/evaluations/** 
 
-        # 2. Cấu hình đường dẫn cho Subject Service (Dự kiến chạy cổng 8081)
+        # 4. Class (8084)
+        - id: class-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/classes/** 
+
+        # 5. Subject (8085)
         - id: subject-service
           uri: http://localhost:8085
           predicates:
-            - Path=/api/v1/subjects/**
-        # Định tuyến sang Identity Service
+            - Path=/api/subjects/**
+
+        # 6. Identity (8086)
         - id: identity-service
           uri: http://localhost:8086
           predicates:
-            - Path=/identity/**
-          filters:
-            - StripPrefix=1
+            - Path=/api/auth/**, /api/users/**
 
-        # Định tuyến sang AI Service
-        # (Lưu ý: Không dùng StripPrefix vì Controller của bạn đã có /ai)
+        # 7. AI Service (8087)
         - id: ai-service
           uri: http://localhost:8087 
           predicates:
-            - Path=/ai/**
+            - Path=/api/ai/**
+
+        # 8. Resource Service (8088) - THÊM MỚI CÁI NÀY
+        - id: resource-service
+          uri: http://localhost:8088
+          predicates:
+            - Path=/api/resources/**

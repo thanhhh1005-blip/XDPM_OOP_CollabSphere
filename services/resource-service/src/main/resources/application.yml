@@ -1,41 +1,34 @@
 spring:
   application:
-    name: SERVICE_NAME_PLACEHOLDER
-  profiles:
-    active: dev
+    name: resource-service # 1. Đặt lại tên chuẩn
 
   datasource:
-    url: jdbc:postgresql://${SPRING_DATASOURCE_URL:localhost:5432/collab_db}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
-    driver-class-name: org.postgresql.Driver
+    # 2. Đổi sang MySQL
+    url: jdbc:mysql://localhost:3306/Resource_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
-        format_sql: true
-        use_sql_comments: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.MySQLDialect # 3. Đổi Dialect
 
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: /
-    connection-timeout: 10000ms
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
 
 server:
-  port: 8081
+  port: 8088 # 4. Đổi sang 8084 (theo quy hoạch)
   servlet:
-    context-path: /api/v1
+    context-path: /api/resources
 
 logging:
   level:
     root: INFO
-    "[com.collab]": DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+    com.collab: DEBUG

@@ -5,7 +5,7 @@ spring:
   application:
     name: workspace-service
   datasource:
-    url: jdbc:mysql://localhost:3306/collab_db?createDatabaseIfNotExist=true
+    url: jdbc:mysql://localhost:3306/Workspace_db?createDatabaseIfNotExist=true
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
