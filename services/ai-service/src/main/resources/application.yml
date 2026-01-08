@@ -4,7 +4,7 @@ spring:
   application:
     name: ai-service
   datasource:
-    url: jdbc:mysql://localhost:3306/AI_db?createDatabaseIfNotExist=true
+    url: jdbc:mysql://localhost:3307/AI_db?createDatabaseIfNotExist=true
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -19,6 +19,6 @@ spring:
 
 # 👇 CẤU HÌNH GEMINI (Đã sửa lại chuẩn)
 gemini:
-  api-key: AIzaSyDW8-VSAJI53_lzl4lVwB1Esf6gb-NMPOI
+  api-key: AIzaSyDFpvJGUeILrbkM7o9md8cRrSJf8bxHaRA
   # URL chuẩn cho model 1.5 Flash (Nhanh và Rẻ hơn), bỏ đoạn ?key= đi để code tự xử lý
   url: https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=

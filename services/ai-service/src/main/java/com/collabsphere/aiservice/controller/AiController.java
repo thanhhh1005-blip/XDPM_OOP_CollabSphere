@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/ai")
+@RequestMapping("/api/ai")
 public class AiController {
 
     private final GeminiService geminiService;
