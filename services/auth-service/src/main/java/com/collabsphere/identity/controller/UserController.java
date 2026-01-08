@@ -1,15 +1,17 @@
 package com.collabsphere.identity.controller;
 
-import com.collabsphere.identity.dto.request.UserCreationRequest; // 1. Thêm dòng import này
+import com.collabsphere.identity.dto.request.UserCreationRequest;
 import com.collabsphere.identity.entity.User;
 import com.collabsphere.identity.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/users") // Lưu ý: Gateway cấu hình là /identity/**, nên endpoint thực tế sẽ là /identity/users
+@RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
@@ -20,14 +22,25 @@ public class UserController {
     }
 
     @PostMapping
-    // 2. Sửa tham số: Nhận UserCreationRequest thay vì User
     public User createUser(@RequestBody UserCreationRequest request) {
-        // 3. Gọi service với tham số mới
         return userService.createUser(request);
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')") 
     public List<User> getAllUsers() {
+        // Log debug
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("User đang gọi: " + authentication.getName());
+        System.out.println("Quyền hạn (Roles): " + authentication.getAuthorities());
+
         return userService.getAllUsers();
+    }
+
+    // 👇 3. API MỚI: Lấy thông tin chính mình
+    // Không cần @PreAuthorize vì ai đăng nhập rồi cũng được gọi
+    @GetMapping("/my-info")
+    public User getMyInfo() {
+        return userService.getMyInfo();
     }
 }
