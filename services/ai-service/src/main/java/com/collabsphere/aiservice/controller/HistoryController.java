@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/ai/history") // Giữ nguyên đường dẫn này để khớp với Gateway
+@RequestMapping("/api/ai/history") // Giữ nguyên đường dẫn này để khớp với Gateway"/api/ai"
 public class HistoryController {
 
     @Autowired

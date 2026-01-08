@@ -1,7 +1,7 @@
 // Đường dẫn: frontend/src/services/aiService.js
 
 // Giữ nguyên Gateway URL cũ của bạn
-const API_URL = "http://localhost:8080/ai"; 
+const API_URL = "http://localhost:8080/api/ai"; 
 
 // --- 1. Hàm tạo kế hoạch (GIỮ NGUYÊN LOGIC CŨ) ---
 export const generateMilestones = async (syllabusContent) => {
