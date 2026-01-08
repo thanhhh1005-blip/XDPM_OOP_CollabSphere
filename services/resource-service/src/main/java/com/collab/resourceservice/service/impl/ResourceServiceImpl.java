@@ -2,11 +2,11 @@ package com.collab.resourceservice.service.impl;
 
 import com.collab.resourceservice.entity.Resource;
 import com.collab.resourceservice.enums.ResourceType;
-import com.collab.resourceservice.enums.Role;
+import com.collab.resourceservice.enums.UserRole; // Đã sửa từ Role -> UserRole
 import com.collab.resourceservice.exception.BadRequestException;
 import com.collab.resourceservice.exception.FileStorageException;
 import com.collab.resourceservice.exception.ForbiddenException;
-import com.collab.resourceservice.exception.NotFoundException;
+import com.collab.resourceservice.exception.ResourceNotFoundException; // Đã sửa tên
 import com.collab.resourceservice.repository.ResourceRepository;
 import com.collab.resourceservice.service.ResourceService;
 import lombok.RequiredArgsConstructor;
@@ -23,14 +23,11 @@ import java.util.UUID;
 public class ResourceServiceImpl implements ResourceService {
 
     private final ResourceRepository resourceRepository;
-
     private static final String UPLOAD_DIR = "uploads";
 
-    // ===================== UPLOAD =====================
     @Override
     public Resource upload(MultipartFile file, String uploadedBy, String uploaderRole) {
-
-        Role role = parseRole(uploaderRole);
+        UserRole role = parseRole(uploaderRole);
         validateUploadPermission(role);
 
         if (file == null || file.isEmpty()) {
@@ -65,60 +62,53 @@ public class ResourceServiceImpl implements ResourceService {
         return resourceRepository.save(resource);
     }
 
-    // ===================== LIST =====================
     @Override
     public List<Resource> getAll() {
         return resourceRepository.findByDeletedFalse();
     }
+    
+    @Override
+    public Resource getById(Long id) {
+        return resourceRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Resource not found with id: " + id));
+    }
 
-    // ===================== DELETE =====================
     @Override
     public void delete(Long id, String requesterRole) {
-
-        Role role = parseRole(requesterRole);
+        UserRole role = parseRole(requesterRole);
         validateDeletePermission(role);
 
-        Resource resource = resourceRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Resource not found with id: " + id));
-
+        Resource resource = getById(id);
         resource.setDeleted(true);
         resourceRepository.save(resource);
     }
 
-    // ===================== ROLE VALIDATION =====================
-    private void validateUploadPermission(Role role) {
-        if (role == Role.USER) {
+    private void validateUploadPermission(UserRole role) {
+        if (role == UserRole.USER) { // Ví dụ logic, tùy em chỉnh
             throw new ForbiddenException("USER is not allowed to upload resource");
         }
     }
 
-    private void validateDeletePermission(Role role) {
-        if (role != Role.ADMIN && role != Role.HEAD_DEPARTMENT) {
+    private void validateDeletePermission(UserRole role) {
+        if (role != UserRole.ADMIN && role != UserRole.HEAD_DEPARTMENT) {
             throw new ForbiddenException("You do not have permission to delete resource");
         }
     }
 
-    private Role parseRole(String role) {
+    private UserRole parseRole(String role) {
         try {
-            return Role.valueOf(role.toUpperCase());
+            return UserRole.valueOf(role.toUpperCase());
         } catch (Exception e) {
             throw new BadRequestException("Invalid role: " + role);
         }
     }
 
-    // ===================== FILE TYPE =====================
     private ResourceType detectType(String fileName) {
-
-        if (fileName == null) {
-            return ResourceType.OTHER;
-        }
-
+        if (fileName == null) return ResourceType.OTHER;
         String name = fileName.toLowerCase();
-
         if (name.endsWith(".pdf")) return ResourceType.PDF;
         if (name.endsWith(".doc") || name.endsWith(".docx")) return ResourceType.DOCX;
         if (name.endsWith(".mp4")) return ResourceType.VIDEO;
-
         return ResourceType.OTHER;
     }
 }

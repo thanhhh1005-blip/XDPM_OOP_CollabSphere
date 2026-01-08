@@ -1,5 +1,6 @@
 package com.collab.resourceservice.entity;
 
+import com.collab.resourceservice.enums.ResourceType; 
 import jakarta.persistence.*;
 import lombok.*;
 

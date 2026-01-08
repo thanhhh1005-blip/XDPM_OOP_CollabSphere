@@ -1,64 +1,12 @@
 package com.collab.resourceservice.service;
-import com.collab.resourceservice.enums.ResourceType;
-import jakarta.persistence.*;
-import lombok.*;
 
-import java.time.LocalDateTime;
+import com.collab.resourceservice.entity.Resource;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 
-@Entity
-@Table(name = "resources")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Resource {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    // Tên file gốc
-    @Column(nullable = false)
-    private String fileName;
-
-    // Tên file lưu trên server (unique)
-    @Column(nullable = false, unique = true)
-    private String storedFileName;
-
-    // Đường dẫn file local
-    @Column(nullable = false)
-    private String filePath;
-
-    // Dung lượng file (bytes)
-    private Long fileSize;
-
-    // Loại file: PDF, DOCX, VIDEO,...
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ResourceType type;
-
-    // Ai upload (userId hoặc username)
-    @Column(nullable = false)
-    private String uploadedBy;
-
-    // Vai trò người upload: STAFF, LECTURER, STUDENT, ADMIN
-    @Column(nullable = false)
-    private String uploaderRole;
-
-    // Thời gian upload
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
-
-    // Trạng thái xóa mềm
-    @Column(nullable = false)
-    private Boolean deleted = false;
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        if (this.deleted == null) {
-            this.deleted = false;
-        }
-    }
+public interface ResourceService {
+    Resource upload(MultipartFile file, String uploadedBy, String uploaderRole);
+    List<Resource> getAll();
+    Resource getById(Long id);
+    void delete(Long id, String requesterRole);
 }
