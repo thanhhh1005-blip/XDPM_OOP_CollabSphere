@@ -14,9 +14,9 @@ POST {{identity_url}}/users
 Content-Type: application/json
 
 {
-  "username": "giangvien_a1111",
+  "username": "giangvien_sa1111",
   "password": "Password123!1",
-  "email": "gv@collabspher11e.com",
+  "email": "gv@collabspsher11e.com",
   "fullName": "Thay Giao A",
   "role": "LECTURER",
   "isActive": true
@@ -94,3 +94,44 @@ Content-Type: application/json
 {
   "syllabus": "Đồ án: Xây dựng ứng dụng quản lý chi tiêu cá nhân. Thời gian: 1 tháng. Công nghệ: Flutter & Firebase. Yêu cầu: Có chức năng nhập thu chi, vẽ biểu đồ báo cáo."
 }
+##############################################################
+
+### Cấu hình Base URL là cổng GATEWAY (8080) + Prefix (/identity)
+@baseUrl = http://localhost:8080/identity
+
+# ==========================================
+# 1. TEST ĐĂNG NHẬP (QUA GATEWAY)
+# ==========================================
+
+### 1.1 Đăng nhập ADMIN
+# POST tới 8080/identity/auth/token -> Gateway chuyển thành 8083/auth/token
+POST {{baseUrl}}/auth/token
+Content-Type: application/json
+
+{
+  "username": "admin01",
+  "password": "123"
+}
+
+# 👇 Script lưu token
+> {%
+    client.global.set("gatewayToken", response.body.result.token); 
+    // Lưu ý: Nếu bạn chưa làm ApiResponse thì dùng response.body.token
+    // Nếu đã làm ApiResponse thì dùng response.body.result.token
+    client.log("Gateway Token: " + client.global.get("gatewayToken"));
+%}
+
+# ==========================================
+# 2. TEST LẤY THÔNG TIN (QUA GATEWAY)
+# ==========================================
+
+### 2.1 Lấy thông tin chính mình
+# GET tới 8080/identity/users/my-info
+GET {{baseUrl}}/users/my-info
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJjb2xsYWJzcGhlcmUuY29tIiwic3ViIjoiYWRtaW4wMSIsImV4cCI6MTc2Nzc5ODg2MSwiaWF0IjoxNzY3Nzk1MjYxLCJ1c2VySWQiOjEyLCJzY29wZSI6IkFETUlOIn0.oAc2ccVVKrMt0-Wx4IIkWJ_d1mLPLMJc2CY_ZqdES4xOr7QQiLKnWF9Ry528RiSZ2abVqueJqYTPvWrJdaHRHA
+Content-Type: application/json
+
+### 2.2 Lấy danh sách Users (Chỉ Admin)
+GET {{baseUrl}}/users
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJjb2xsYWJzcGhlcmUuY29tIiwic3ViIjoiYWRtaW4wMSIsImV4cCI6MTc2Nzc5ODg2MSwiaWF0IjoxNzY3Nzk1MjYxLCJ1c2VySWQiOjEyLCJzY29wZSI6IkFETUlOIn0.oAc2ccVVKrMt0-Wx4IIkWJ_d1mLPLMJc2CY_ZqdES4xOr7QQiLKnWF9Ry528RiSZ2abVqueJqYTPvWrJdaHRHA
+Content-Type: application/json
