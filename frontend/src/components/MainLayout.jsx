@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Layout, Menu, Button, Drawer, Typography, Avatar } from 'antd';
-import { ProjectOutlined, BulbOutlined, MessageOutlined, UserOutlined } from '@ant-design/icons';
+import { ProjectOutlined, BulbOutlined, MessageOutlined, UserOutlined, ReadOutlined, BookOutlined  } from '@ant-design/icons';
 import ChatRoom from './ChatRoom'; // Import Chat
 import TaskBoard from '../pages/Workspace/TaskBoard'; // Import Bảng Task của em (lưu ý đường dẫn nếu em để trong pages)
 import AiPlanning from '../pages/AI/AiPlanning'; // Import trang AI mới tạo
+import ClassManager from '../pages/Education/ClassManager';
+import SubjectManager from '../pages/Education/SubjectManager';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -16,17 +18,21 @@ const MainLayout = () => {
   const items = [
     { key: '1', icon: <ProjectOutlined />, label: 'Quản lý Sprint' },
     { key: '2', icon: <BulbOutlined />, label: 'AI Lên Ý Tưởng' },
+    { key: '3', icon: <ReadOutlined />, label: 'Class Management' },
+    { key: '4', icon: <BookOutlined />, label: 'Subject Management' },
   ];
 
   const renderContent = () => {
     switch (selectedKey) {
         case '1': return <TaskBoard />; // Của em
         case '2': return <AiPlanning />; // Của bạn em
+        case '3': return <ClassManager />;
+        case '4': return <SubjectManager />;
         default: return <div>Chọn menu để bắt đầu</div>;
     }
   };
 
-  return (
+ return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider theme="light" width={250}>
         <div style={{ height: 50, margin: 16, background: '#001529', borderRadius: 6, display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:'18px' }}>

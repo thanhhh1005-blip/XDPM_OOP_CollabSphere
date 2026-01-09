@@ -42,13 +42,13 @@ spring:
         - id: class-service
           uri: http://localhost:8084
           predicates:
-            - Path=/api/classes/** 
+            - Path=/api/v1/classes/** 
 
         # 5. Subject (8085)
         - id: subject-service
           uri: http://localhost:8085
           predicates:
-            - Path=/api/subjects/**
+            - Path=/api/v1/subjects/**
 
         # 6. Identity (8086)
         - id: identity-service
