@@ -2,31 +2,35 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
 import Login from "./pages/Auth/Login";
-import AiPlanning from "./pages/AI/AiPlanning";
 import Register from "./pages/Auth/Register";
-// import TaskBoard from "./pages/Workspace/TaskBoard"; // Import các trang khác của bạn ở đây
+import UserManagement from './pages/User/UserManagement';
+import UserProfile from './pages/User/UserProfile';
+
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* 1. Mặc định vào trang chủ sẽ đá về trang Login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-
-        {/* 2. Route cho trang Login (Độc lập, không dính Layout chung) */}
+        {/* 1. Login/Register */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        {/* 3. Route cho các trang bên trong (Bọc bởi MainLayout) */}
+
+        {/* 2. Main Layout */}
         <Route path="/" element={<MainLayout />}>
-          {/* Khi login xong, vào /workspace sẽ hiện ra layout + nội dung bên trong */}
-          {/* <Route path="workspace" element={<TaskBoard />} /> */}
+          {/* - Khi vào "/" -> MainLayout load -> useEffect set Key='1' -> renderContent hiện TaskBoard (Logic cũ).
+             - Khi vào "/users" -> MainLayout load -> useEffect set Key='3' -> renderContent hiện Outlet -> Outlet hiện UserManagement (Logic mới).
+          */}
+          <Route path="users" element={<UserManagement />} />
+          <Route path="profile" element={<UserProfile />} />
           
-          {/* Ví dụ trang AI Planning */}
-          <Route path="ai-planning" element={<AiPlanning />} />
+          {/* Lưu ý: Route ai-planning vẫn để đây cho đúng chuẩn Router, 
+              dù MainLayout đang import cứng AiPlanning thì cũng không sao, 
+              nó sẽ ưu tiên logic trong renderContent của MainLayout */}
+          <Route path="ai-planning" element={<div></div>} /> 
         </Route>
 
-        {/* 4. Xử lý trang 404 (Nếu nhập linh tinh thì quay về login) */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        {/* 3. 404 */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
