@@ -31,16 +31,13 @@ const Login = () => {
     try {
       const data = await login(username, password);
       
-      // ⚠️ QUAN TRỌNG: Kiểm tra cả 2 trường hợp Token trả về
-      // Trường hợp 1: Backend trả về trực tiếp { token: "...", authenticated: true }
-      // Trường hợp 2: Backend trả về ApiResponse { code: 1000, result: { token: "..." } }
       const token = data.result ? data.result.token : data.token;
 
       if (token) {
         localStorage.setItem('token', token);
         
         // Chuyển hướng ngay lập tức vào trang chính
-        navigate('/ai-planning'); 
+        navigate('/workspace'); 
       } else {
         setError("Không nhận được token xác thực.");
       }
@@ -77,7 +74,7 @@ const Login = () => {
               CollabSphere
             </h1>
             <p className="text-white/80 text-sm md:text-lg mt-2 tracking-widest font-light">
-              CHÀO MỪNG BẠN TRỞ LẠI
+              NỀN TẢNG QUẢN LÝ KHÔNG GIAN LÀM VIỆC TIỆN LỢI
             </p>
           </div>
 

@@ -1,38 +1,42 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
+
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import UserManagement from './pages/User/UserManagement';
 import UserProfile from './pages/User/UserProfile';
 
+// Các trang khác (Để giữ cho Router không bị lỗi 404, dù MainLayout đã render cứng rồi thì khai báo ở đây cũng không thừa)
+import AiPlanning from './pages/AI/AiPlanning';
+import TaskBoard from './pages/Workspace/TaskBoard';
+import SubjectManager from './pages/Education/SubjectManager';
+import ClassManager from './pages/Education/ClassManager';
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        {/* 1. Login/Register */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* 2. Main Layout */}
-        <Route path="/" element={<MainLayout />}>
-          {/* - Khi vào "/" -> MainLayout load -> useEffect set Key='1' -> renderContent hiện TaskBoard (Logic cũ).
-             - Khi vào "/users" -> MainLayout load -> useEffect set Key='3' -> renderContent hiện Outlet -> Outlet hiện UserManagement (Logic mới).
-          */}
-          <Route path="users" element={<UserManagement />} />
-          <Route path="profile" element={<UserProfile />} />
-          
-          {/* Lưu ý: Route ai-planning vẫn để đây cho đúng chuẩn Router, 
-              dù MainLayout đang import cứng AiPlanning thì cũng không sao, 
-              nó sẽ ưu tiên logic trong renderContent của MainLayout */}
-          <Route path="ai-planning" element={<div></div>} /> 
+        {/* Layout Chính */}
+        <Route element={<MainLayout />}>
+            {/* 👇 Route(sẽ hiển thị qua Outlet) */}
+            <Route path="/users" element={<UserManagement />} />
+            <Route path="/profile" element={<UserProfile />} />
+            
+            {/* 👇 Route của người khác (Khai báo để URL đẹp, MainLayout sẽ tự render component cứng) */}
+            <Route path="/workspace" element={<TaskBoard />} />
+            <Route path="/ai-planning" element={<AiPlanning />} />
+            <Route path="/classes" element={<ClassManager />} />
+            <Route path="/subjects" element={<SubjectManager />} />
         </Route>
 
-        {/* 3. 404 */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
 

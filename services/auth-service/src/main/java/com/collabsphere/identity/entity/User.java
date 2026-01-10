@@ -28,12 +28,13 @@ public class User {
 
     private String avatarUrl;
 
+    // Mặc định là true khi tạo mới
     private boolean isActive = true; 
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    
+    // --- GETTERS & SETTERS ---
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -56,6 +57,7 @@ public class User {
     public String getAvatarUrl() { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 
+    // Getter cho boolean active (Quan trọng: Phải khớp với bên Service gọi user.isActive())
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
 

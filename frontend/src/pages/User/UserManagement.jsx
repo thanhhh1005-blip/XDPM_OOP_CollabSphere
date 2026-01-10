@@ -28,15 +28,18 @@ const UserManagement = () => {
     useEffect(() => { fetchUsers(); }, []);
 
     const handleToggleStatus = async (user) => {
-        const newStatus = !user.isActive;
-        const updatedList = users.map(u => u.id === user.id ? { ...u, isActive: newStatus } : u);
+        // 👇 CẬP NHẬT: Dùng .active thay vì .isActive
+        const newStatus = !user.active;
+        
+        // Optimistic Update: Cập nhật UI ngay lập tức
+        const updatedList = users.map(u => u.id === user.id ? { ...u, active: newStatus } : u);
         setUsers(updatedList);
 
         try {
             await toggleUserStatus(user.id, newStatus);
         } catch (error) {
             alert("Lỗi cập nhật trạng thái");
-            fetchUsers(); 
+            fetchUsers(); // Revert nếu lỗi
         }
     };
 
@@ -63,7 +66,6 @@ const UserManagement = () => {
             {/* --- HEADER --- */}
             <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4 animate-fade-in-down">
                 <div>
-                    {/* 👇 MÀU TIÊU ĐỀ THEO YÊU CẦU: #1677ff */}
                     <h1 className="text-3xl font-extrabold text-[#1677ff]">
                         Quản Lý Người Dùng
                     </h1>
@@ -124,7 +126,6 @@ const UserManagement = () => {
                                     <tr key={user.id} className="hover:bg-blue-50/50 transition-colors duration-150 group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-4">
-                                                {/* Avatar nền xanh nhạt */}
                                                 <div className="w-10 h-10 rounded-full bg-[#1677ff]/10 flex items-center justify-center font-bold text-[#1677ff] shadow-sm">
                                                     {user.username.charAt(0).toUpperCase()}
                                                 </div>
@@ -145,9 +146,10 @@ const UserManagement = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
-                                                <span className={`h-2.5 w-2.5 rounded-full ${user.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                                                <span className={`text-xs font-semibold ${user.isActive ? 'text-green-700' : 'text-gray-500'}`}>
-                                                    {user.isActive ? 'Active' : 'Disabled'}
+                                                {/* 👇 CẬP NHẬT: Dùng .active */}
+                                                <span className={`h-2.5 w-2.5 rounded-full ${user.active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                                                <span className={`text-xs font-semibold ${user.active ? 'text-green-700' : 'text-gray-500'}`}>
+                                                    {user.active ? 'Active' : 'Disabled'}
                                                 </span>
                                             </div>
                                         </td>
@@ -155,12 +157,13 @@ const UserManagement = () => {
                                             <button 
                                                 onClick={() => handleToggleStatus(user)}
                                                 className={`text-xs font-bold px-4 py-2 rounded-lg border transition-all duration-200 ${
-                                                    user.isActive 
+                                                    user.active 
                                                     ? 'border-red-200 text-red-600 hover:bg-red-50' 
                                                     : 'border-green-200 text-green-600 hover:bg-green-50'
                                                 }`}
                                             >
-                                                {user.isActive ? 'Block' : 'Unblock'}
+                                                {/* 👇 CẬP NHẬT: Dùng .active */}
+                                                {user.active ? 'Block' : 'Unblock'}
                                             </button>
                                         </td>
                                     </tr>
@@ -171,7 +174,7 @@ const UserManagement = () => {
                 </div>
             </div>
 
-            {/* --- IMPORT MODAL (White) --- */}
+            {/* --- IMPORT MODAL --- */}
             {isImportModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="bg-white w-full max-w-lg p-8 rounded-3xl shadow-2xl transform transition-all scale-100">

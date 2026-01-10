@@ -2,10 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { register } from '../../services/authService';
 
-// Icon SVG Component để code gọn hơn
+// --- Icon Components ---
 const UserIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  </svg>
+);
+// 👇 Icon mới cho Họ tên
+const IdIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.5 2-2 2h4c-1.5 0-2-1.116-2-2z" />
   </svg>
 );
 const EmailIcon = () => (
@@ -23,6 +29,7 @@ const Register = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
+    fullName: '', // 👈 Thêm state fullName
     email: '',
     password: '',
     confirmPassword: ''
@@ -46,7 +53,8 @@ const Register = () => {
     }
 
     try {
-      await register(formData.username, formData.password, formData.email);
+      // 👇 Gửi thêm fullName vào hàm register
+      await register(formData.username, formData.password, formData.email, formData.fullName);
       alert("Đăng ký thành công! Vui lòng đăng nhập.");
       navigate('/login');
     } catch (err) {
@@ -80,7 +88,7 @@ const Register = () => {
           {/* Form Card */}
           <div className="w-[340px] md:w-[400px] p-6 bg-white/10 border border-white/20 rounded-2xl backdrop-blur-xl shadow-2xl mx-4">
             
-            <form onSubmit={handleRegister} className="flex flex-col gap-3"> {/* gap-3: Khoảng cách đều giữa các input */}
+            <form onSubmit={handleRegister} className="flex flex-col gap-3">
               <h2 className="text-xl text-white font-bold uppercase text-center mb-1">Tạo Tài Khoản</h2>
 
               {error && (
@@ -103,7 +111,21 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* --- Input 2: Email --- */}
+              {/* --- Input 2: Full Name (MỚI THÊM) --- */}
+              <div className="flex flex-col items-start">
+                <label className="text-white/80 text-xs font-bold uppercase ml-1 mb-1">Họ và tên</label>
+                <div className="relative w-full flex items-center bg-white/5 border border-white/20 rounded-lg focus-within:border-white/60 focus-within:bg-white/10 transition-all duration-300">
+                  <span className="absolute left-3"><IdIcon /></span>
+                  <input 
+                    type="text" id="fullName" required 
+                    value={formData.fullName} onChange={handleChange}
+                    className="w-full bg-transparent text-white text-sm px-10 py-2.5 outline-none placeholder-white/30"
+                    placeholder="Nhập họ tên đầy đủ" autoComplete="off"
+                  />
+                </div>
+              </div>
+
+              {/* --- Input 3: Email --- */}
               <div className="flex flex-col items-start">
                 <label className="text-white/80 text-xs font-bold uppercase ml-1 mb-1">Email</label>
                 <div className="relative w-full flex items-center bg-white/5 border border-white/20 rounded-lg focus-within:border-white/60 focus-within:bg-white/10 transition-all duration-300">
@@ -117,7 +139,7 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* --- Input 3: Password --- */}
+              {/* --- Input 4: Password --- */}
               <div className="flex flex-col items-start">
                 <label className="text-white/80 text-xs font-bold uppercase ml-1 mb-1">Mật khẩu</label>
                 <div className="relative w-full flex items-center bg-white/5 border border-white/20 rounded-lg focus-within:border-white/60 focus-within:bg-white/10 transition-all duration-300">
@@ -131,7 +153,7 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* --- Input 4: Confirm Password --- */}
+              {/* --- Input 5: Confirm Password --- */}
               <div className="flex flex-col items-start">
                 <label className="text-white/80 text-xs font-bold uppercase ml-1 mb-1">Nhập lại mật khẩu</label>
                 <div className="relative w-full flex items-center bg-white/5 border border-white/20 rounded-lg focus-within:border-white/60 focus-within:bg-white/10 transition-all duration-300">

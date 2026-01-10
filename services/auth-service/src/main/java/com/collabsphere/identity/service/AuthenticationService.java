@@ -28,8 +28,6 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // 👇 ĐÃ CẬP NHẬT: Dùng @Value để lấy key từ file cấu hình (application.yml)
-    // Thay vì gán cứng trong code (Hardcode)
     @Value("${jwt.signerKey}")
     protected String SIGNER_KEY;
 
@@ -41,13 +39,21 @@ public class AuthenticationService {
 
     // 1. Hàm Đăng Nhập (Login)
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        // Tìm user theo username
         var user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // Kiểm tra mật khẩu
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
         if (!authenticated)
             throw new RuntimeException("Unauthenticated");
+
+        // 👇👇👇 QUAN TRỌNG: Kiểm tra tài khoản có bị khóa không 👇👇👇
+        if (!user.isActive()) {
+            throw new RuntimeException("Tài khoản của bạn đã bị vô hiệu hóa! Vui lòng liên hệ Admin.");
+        }
+        // 👆👆👆 HẾT PHẦN KIỂM TRA 👆👆👆
 
         var token = generateToken(user);
 
@@ -56,26 +62,23 @@ public class AuthenticationService {
 
     // 2. Hàm Tạo Token
     private String generateToken(User user) {
-        // Tạo header với thuật toán HS512
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
-        // Tạo payload (nội dung token)
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
                 .issuer("collabsphere.com")
                 .issueTime(new Date())
                 .expirationTime(new Date(
-                        Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli() // Hết hạn sau 1 giờ
+                        Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()
                 ))
                 .claim("userId", user.getId())
-                .claim("scope", buildScope(user)) // Gọi hàm xử lý scope riêng cho gọn
+                .claim("scope", buildScope(user))
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSObject jwsObject = new JWSObject(header, payload);
 
         try {
-            // Sử dụng StandardCharsets.UTF_8 để đồng bộ encoding
             jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes(StandardCharsets.UTF_8)));
             return jwsObject.serialize();
         } catch (JOSEException e) {
@@ -89,14 +92,12 @@ public class AuthenticationService {
         boolean isValid = true;
 
         try {
-            // Sử dụng StandardCharsets.UTF_8 để đồng bộ encoding
             JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes(StandardCharsets.UTF_8));
             SignedJWT signedJWT = SignedJWT.parse(token);
 
             Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
             var verified = signedJWT.verify(verifier);
 
-            // Token chỉ hợp lệ khi: Chữ ký đúng VÀ Chưa hết hạn
             isValid = verified && expiryTime.after(new Date());
 
         } catch (JOSEException | ParseException e) {
@@ -106,7 +107,6 @@ public class AuthenticationService {
         return new IntrospectResponse(isValid);
     }
 
-    // Hàm phụ để lấy Role convert sang String (tránh lỗi NullPointerException)
     private String buildScope(User user) {
         if (user.getRole() != null) {
             return user.getRole().name();
