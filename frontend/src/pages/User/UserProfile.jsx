@@ -14,7 +14,7 @@ const UserProfile = () => {
         email: '',
         fullName: '',
         avatar: 'https://i.pravatar.cc/150?u=default',
-        role: ''
+        role: '' // Role sẽ được hiển thị trên thẻ
     });
 
     const [passData, setPassData] = useState({ old: '', new: '', confirm: '' });
@@ -24,14 +24,16 @@ const UserProfile = () => {
         const fetchMyProfile = async () => {
             try {
                 const res = await getMyInfo();
+                // Backend trả về: { code: 1000, result: { ... } }
                 const userData = res.result || res; 
                 
                 setUser({
                     id: userData.id,
                     username: userData.username,
-                    email: userData.email || 'Chưa cập nhật',
-                    fullName: userData.firstName ? `${userData.firstName} ${userData.lastName}` : userData.username,
-                    role: userData.roles ? userData.roles[0]?.name : 'USER',
+                    email: userData.email || '',
+                    fullName: userData.fullName || userData.firstName + ' ' + userData.lastName, // Fallback nếu backend trả về fullName
+                    // 👇 CẬP NHẬT: Lấy trực tiếp role (Vì backend trả về enum Role đơn giản)
+                    role: userData.role || 'USER', 
                     avatar: 'https://i.pravatar.cc/150?u=' + userData.username
                 });
             } catch (error) {
@@ -46,8 +48,8 @@ const UserProfile = () => {
         setLoading(true);
         try {
             await updateProfile(user.id, { 
-                firstName: user.fullName.split(' ')[0], 
-                lastName: user.fullName.split(' ').slice(1).join(' '),
+                // Không gửi username lên nữa
+                fullName: user.fullName, 
                 email: user.email 
             });
             alert("Cập nhật thành công!");
@@ -73,7 +75,6 @@ const UserProfile = () => {
         <div className="p-4 md:p-8 min-h-screen font-sans bg-[#f5f5f5] text-gray-800">
             {/* Header Title */}
             <div className="mb-8 animate-fade-in-down">
-                {/* 👇 MÀU TIÊU ĐỀ THEO YÊU CẦU */}
                 <h1 className="text-3xl font-extrabold text-[#1677ff]">
                     Cài Đặt Tài Khoản
                 </h1>
@@ -85,7 +86,7 @@ const UserProfile = () => {
                 {/* --- LEFT COLUMN: PROFILE CARD --- */}
                 <div className="lg:col-span-4 space-y-6">
                     <div className="relative bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-lg">
-                        {/* Fake Cover Image (Màu xanh nhẹ cho hợp theme) */}
+                        {/* Cover Image */}
                         <div className="h-32 bg-gradient-to-r from-blue-400 to-indigo-500 opacity-90"></div>
                         
                         <div className="px-6 pb-8 text-center relative">
@@ -101,8 +102,13 @@ const UserProfile = () => {
                             <h2 className="text-2xl font-bold text-gray-800 tracking-wide">{user.fullName}</h2>
                             <p className="text-[#1677ff] font-medium text-sm mt-1">@{user.username}</p>
                             
+                            {/* 👇 HIỂN THỊ ROLE TẠI ĐÂY */}
                             <div className="mt-4 flex justify-center gap-2">
-                                <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                                <span className={`px-4 py-1.5 rounded-full text-xs font-bold border ${
+                                    user.role === 'ADMIN' ? 'bg-red-50 text-red-600 border-red-100' :
+                                    user.role === 'TEACHER' ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                                    'bg-blue-50 text-blue-600 border-blue-100'
+                                }`}>
                                     {user.role}
                                 </span>
                                 <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-green-50 text-green-600 border border-green-100">
@@ -127,6 +133,7 @@ const UserProfile = () => {
 
                         <form onSubmit={handleUpdateInfo} className="space-y-5">
                             <div className="grid md:grid-cols-2 gap-5">
+                                {/* Họ và tên */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Họ và tên</label>
                                     <div className="relative group">
@@ -140,6 +147,8 @@ const UserProfile = () => {
                                         />
                                     </div>
                                 </div>
+
+                                {/* Email */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Email</label>
                                     <div className="relative group">

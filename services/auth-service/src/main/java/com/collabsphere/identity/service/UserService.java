@@ -1,11 +1,13 @@
 package com.collabsphere.identity.service;
 
+import com.collabsphere.identity.dto.request.PasswordChangeRequest;
 import com.collabsphere.identity.dto.request.UserCreationRequest;
+import com.collabsphere.identity.dto.request.UserUpdateRequest;
 import com.collabsphere.identity.entity.User;
 import com.collabsphere.identity.enums.Role;
 import com.collabsphere.identity.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder; // 👈 1. Import mới
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -32,12 +34,9 @@ public class UserService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setFullName(request.getFullName());
-        user.setActive(true); 
-
-        // Mã hóa mật khẩu
+        user.setActive(true);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // Xử lý Role
         if (request.getRole() != null) {
             try {
                 user.setRole(Role.valueOf(request.getRole().toUpperCase()));
@@ -55,16 +54,46 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    // 👇 2. HÀM MỚI: Lấy thông tin người đang đăng nhập
     public User getMyInfo() {
-        // Lấy username từ context (do Security Filter đã xác thực và lưu vào đây)
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
-
-        // Tìm user trong DB theo tên đó
-        User user = userRepository.findByUsername(name)
+        return userRepository.findByUsername(name)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    // 👇 LOGIC MỚI: Cập nhật thông tin
+    public User updateUser(Long userId, UserUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        if (request.getFullName() != null) user.setFullName(request.getFullName());
+        if (request.getEmail() != null) user.setEmail(request.getEmail());
+        // Có thể thêm ngày sinh hoặc các trường khác nếu cần
+
+        return userRepository.save(user);
+    }
+
+    // 👇 LOGIC MỚI: Đổi mật khẩu
+    public void changePassword(Long userId, PasswordChangeRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        // Kiểm tra mật khẩu cũ
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new RuntimeException("Mật khẩu cũ không chính xác");
+        }
+
+        // Lưu mật khẩu mới
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
+
+    // 👇 LOGIC MỚI: Khóa/Mở khóa tài khoản
+    public User toggleUserStatus(Long userId, boolean isActive) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         
-        return user;
+        user.setActive(isActive);
+        return userRepository.save(user);
     }
 }

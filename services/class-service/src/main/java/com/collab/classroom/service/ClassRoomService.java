@@ -1,9 +1,9 @@
 package com.collab.classroom.service;
 
 import com.collab.classroom.client.SubjectClient;
-import com.collab.classroom.entity.ClassEnrollment; // <--- Import Entity mới
+import com.collab.classroom.entity.ClassEnrollment;
 import com.collab.classroom.entity.ClassRoom;
-import com.collab.classroom.repository.ClassEnrollmentRepository; // <--- Import Repo mới
+import com.collab.classroom.repository.ClassEnrollmentRepository;
 import com.collab.classroom.repository.ClassRoomRepository;
 import com.collab.shared.dto.ClassroomDTO;
 import com.collab.shared.dto.SubjectDTO;
@@ -28,9 +28,7 @@ public class ClassRoomService {
 
     private final ClassRoomRepository classRoomRepository;
     private final SubjectClient subjectClient;
-    
-    // 1. CẬP NHẬT: Inject thêm Repository quản lý sinh viên
-    private final ClassEnrollmentRepository classEnrollmentRepository; 
+    private final ClassEnrollmentRepository classEnrollmentRepository;
 
     // --- 1. TẠO LỚP HỌC MỚI ---
     public ClassroomDTO createClass(ClassroomDTO dto) {
@@ -38,14 +36,12 @@ public class ClassRoomService {
             throw new RuntimeException("Mã lớp " + dto.getCode() + " đã tồn tại!");
         }
 
-        // Logic check Subject giữ nguyên
         SubjectDTO subject = subjectClient.getSubjectById(dto.getSubjectId());
         if (subject == null) {
             throw new RuntimeException("Không tìm thấy môn học ID: " + dto.getSubjectId());
         }
 
         ClassRoom classRoom = mapToEntity(dto);
-        // teacherId đã được map trong hàm mapToEntity bên dưới
         return mapToDTO(classRoomRepository.save(classRoom));
     }
 
@@ -71,7 +67,7 @@ public class ClassRoomService {
                 .collect(Collectors.toList());
     }
 
-    // --- 4. IMPORT EXCEL (CẬP NHẬT ĐỂ ĐỌC TEACHER ID) ---
+    // --- 4. IMPORT EXCEL ---
     @Transactional
     public void importClasses(MultipartFile file) {
         try (InputStream inputStream = file.getInputStream();
@@ -87,9 +83,7 @@ public class ClassRoomService {
                 String subjectCode = getCellValue(row.getCell(1));
                 String semester = getCellValue(row.getCell(2));
                 String room = getCellValue(row.getCell(3));
-                
-                // CẬP NHẬT: Đọc thêm cột thứ 4 là TeacherID (Mã giảng viên)
-                String teacherId = getCellValue(row.getCell(4)); 
+                String teacherId = getCellValue(row.getCell(4));
 
                 if (classCode.isEmpty() || subjectCode.isEmpty()) continue;
                 if (classRoomRepository.existsByClassCode(classCode)) continue;
@@ -102,7 +96,7 @@ public class ClassRoomService {
                                 .subjectId(subject.getId())
                                 .semester(semester)
                                 .room(room)
-                                .teacherId(teacherId) // <--- CẬP NHẬT: Lưu teacherId vào DB
+                                .teacherId(teacherId)
                                 .isActive(true)
                                 .build();
                         classesToSave.add(classRoom);
@@ -121,24 +115,70 @@ public class ClassRoomService {
         }
     }
 
-    // --- 5. CẬP NHẬT MỚI: HÀM THÊM SINH VIÊN VÀO LỚP ---
+    // --- 5. THÊM SINH VIÊN VÀO LỚP ---
     public void addStudentToClass(Long classId, String studentId) {
-        // Kiểm tra lớp có tồn tại không
         if (!classRoomRepository.existsById(classId)) {
             throw new RuntimeException("Lớp học không tồn tại!");
         }
 
-        // Kiểm tra xem sinh viên đã có trong lớp chưa để tránh trùng lặp
         if (classEnrollmentRepository.existsByClassIdAndStudentId(classId, studentId)) {
             throw new RuntimeException("Sinh viên " + studentId + " đã có trong lớp này rồi!");
         }
-        // Lưu sinh viên vào lớp
+        
         ClassEnrollment enrollment = new ClassEnrollment();
         enrollment.setClassId(classId);
         enrollment.setStudentId(studentId);
         
         classEnrollmentRepository.save(enrollment);
     }
+
+    public List<ClassEnrollment> getStudentsByClass(Long classId) {
+        return classEnrollmentRepository.findByClassId(classId);
+    }
+
+    // =========================================================
+    // PHẦN BỔ SUNG MỚI (UPDATE & DELETE)
+    // =========================================================
+
+    // --- 6. CẬP NHẬT LỚP HỌC (MỚI) ---
+    public ClassroomDTO updateClass(Long id, ClassroomDTO dto) {
+        // 1. Tìm lớp học cũ
+        ClassRoom existingClass = classRoomRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học ID: " + id));
+
+        // 2. Kiểm tra môn học (nếu có thay đổi subjectId)
+        if (dto.getSubjectId() != null && !dto.getSubjectId().equals(existingClass.getSubjectId())) {
+             SubjectDTO subject = subjectClient.getSubjectById(dto.getSubjectId());
+             if (subject == null) {
+                 throw new RuntimeException("Môn học mới không tồn tại!");
+             }
+             existingClass.setSubjectId(dto.getSubjectId());
+        }
+
+        // 3. Cập nhật các thông tin khác
+        // Lưu ý: Thường không cho sửa Mã Lớp (ClassCode) tùy nghiệp vụ, ở đây mình cho phép sửa Room, Semester, Teacher
+        if (dto.getRoom() != null) existingClass.setRoom(dto.getRoom());
+        if (dto.getSemester() != null) existingClass.setSemester(dto.getSemester());
+        if (dto.getTeacherId() != null) existingClass.setTeacherId(dto.getTeacherId());
+        // Nếu muốn cho sửa classCode thì mở comment dòng dưới:
+        // if (dto.getCode() != null) existingClass.setClassCode(dto.getCode());
+
+        // 4. Lưu lại
+        return mapToDTO(classRoomRepository.save(existingClass));
+    }
+
+    // --- 7. XÓA LỚP HỌC (MỚI) ---
+    public void deleteClass(Long id) {
+        if (!classRoomRepository.existsById(id)) {
+            throw new RuntimeException("Không tìm thấy lớp học để xóa!");
+        }
+        // Lưu ý: Nếu lớp đã có sinh viên (bảng ClassEnrollment), việc xóa cứng (deleteById) có thể gây lỗi khóa ngoại
+        // Bạn có thể cần xóa Enrollments trước hoặc dùng Soft Delete (isActive = false).
+        // Hiện tại mình để xóa cứng theo yêu cầu cơ bản:
+        classRoomRepository.deleteById(id);
+    }
+
+    // =========================================================
 
     // --- HELPERS ---
     private String getCellValue(Cell cell) {
@@ -153,7 +193,7 @@ public class ClassRoomService {
                 .subjectId(entity.getSubjectId())
                 .semester(entity.getSemester())
                 .room(entity.getRoom())
-                .teacherId(entity.getTeacherId()) // <--- CẬP NHẬT: Map teacherId ra DTO
+                .teacherId(entity.getTeacherId())
                 .build();
     }
 
@@ -163,7 +203,7 @@ public class ClassRoomService {
                 .subjectId(dto.getSubjectId())
                 .semester(dto.getSemester())
                 .room(dto.getRoom())
-                .teacherId(dto.getTeacherId()) // <--- CẬP NHẬT: Map teacherId vào Entity
+                .teacherId(dto.getTeacherId())
                 .isActive(true)
                 .build();
     }

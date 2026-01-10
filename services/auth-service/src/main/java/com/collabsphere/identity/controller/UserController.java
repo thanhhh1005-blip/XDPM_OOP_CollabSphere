@@ -1,11 +1,11 @@
 package com.collabsphere.identity.controller;
 
-import com.collabsphere.identity.dto.request.UserCreationRequest;
+import com.collabsphere.identity.dto.request.*;
+import com.collabsphere.identity.dto.response.ApiResponse;
 import com.collabsphere.identity.entity.User;
 import com.collabsphere.identity.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,26 +21,54 @@ public class UserController {
         this.userService = userService;
     }
 
+    // 1. Tạo User (POST /users)
     @PostMapping
-    public User createUser(@RequestBody UserCreationRequest request) {
-        return userService.createUser(request);
+    public ApiResponse<User> createUser(@RequestBody UserCreationRequest request) {
+        return ApiResponse.<User>builder()
+                .result(userService.createUser(request))
+                .build();
     }
 
+    // 2. Lấy danh sách Users (GET /users)
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')") 
-    public List<User> getAllUsers() {
-        // Log debug
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("User đang gọi: " + authentication.getName());
-        System.out.println("Quyền hạn (Roles): " + authentication.getAuthorities());
-
-        return userService.getAllUsers();
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<User>> getAllUsers() {
+        return ApiResponse.<List<User>>builder()
+                .result(userService.getAllUsers())
+                .build();
     }
 
-    // 👇 3. API MỚI: Lấy thông tin chính mình
-    // Không cần @PreAuthorize vì ai đăng nhập rồi cũng được gọi
+    // 3. Lấy thông tin chính mình (GET /users/my-info)
     @GetMapping("/my-info")
-    public User getMyInfo() {
-        return userService.getMyInfo();
+    public ApiResponse<User> getMyInfo() {
+        return ApiResponse.<User>builder()
+                .result(userService.getMyInfo())
+                .build();
+    }
+
+    // 👇 4. API MỚI: Cập nhật thông tin (PUT /users/{userId})
+    @PutMapping("/{userId}")
+    public ApiResponse<User> updateUser(@PathVariable Long userId, @RequestBody UserUpdateRequest request) {
+        return ApiResponse.<User>builder()
+                .result(userService.updateUser(userId, request))
+                .build();
+    }
+
+    // 👇 5. API MỚI: Đổi mật khẩu (POST /users/{userId}/change-password)
+    @PostMapping("/{userId}/change-password")
+    public ApiResponse<String> changePassword(@PathVariable Long userId, @RequestBody PasswordChangeRequest request) {
+        userService.changePassword(userId, request);
+        return ApiResponse.<String>builder()
+                .result("Đổi mật khẩu thành công")
+                .build();
+    }
+
+    // 👇 6. API MỚI: Vô hiệu hóa/Kích hoạt tài khoản (PATCH /users/{userId}/status)
+    @PatchMapping("/{userId}/status")
+    @PreAuthorize("hasRole('ADMIN')") // Chỉ Admin được khóa
+    public ApiResponse<User> toggleUserStatus(@PathVariable Long userId, @RequestBody UserStatusRequest request) {
+        return ApiResponse.<User>builder()
+                .result(userService.toggleUserStatus(userId, request.isActive()))
+                .build();
     }
 }
