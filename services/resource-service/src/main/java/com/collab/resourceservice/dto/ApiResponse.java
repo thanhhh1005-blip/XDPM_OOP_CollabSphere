@@ -21,7 +21,11 @@ public class ApiResponse<T> {
         return new ApiResponse<>(true, message, data);
     }
 
+<<<<<<< HEAD
     public static ApiResponse<?> error(String message) {
+=======
+    public static <T> ApiResponse<T> error(String message) {
+>>>>>>> origin/main
         return new ApiResponse<>(false, message, null);
     }
 }

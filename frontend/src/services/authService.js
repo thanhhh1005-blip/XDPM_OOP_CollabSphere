@@ -61,4 +61,32 @@ export const register = async (username, password, email, fullName) => {
     } catch (error) {
         throw error;
     }
+<<<<<<< HEAD
+=======
+};
+
+// 👇👇👇 HÀM MỚI: Đăng nhập bằng Google (Gửi token xuống Backend) 👇👇👇
+export const loginWithGoogle = async (firebaseToken) => {
+    try {
+        // Backend API: /auth/outbound/authentication?token=...
+        const response = await fetch(`${API_URL}/auth/outbound/authentication?token=${firebaseToken}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        });
+
+        let data;
+        try {
+            data = await response.json();
+        } catch (error) {
+            throw new Error("Lỗi kết nối Server hoặc dữ liệu không hợp lệ.");
+        }
+
+        if (!response.ok || (data.code && data.code !== 1000)) {
+            throw new Error(data.message || "Đăng nhập Google thất bại");
+        }
+        return data;
+    } catch (error) {
+        throw error;
+    }
+>>>>>>> origin/main
 };
