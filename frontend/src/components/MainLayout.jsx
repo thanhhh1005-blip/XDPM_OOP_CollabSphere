@@ -8,17 +8,27 @@ import {
   ReadOutlined,
   BookOutlined,
   TeamOutlined,
-} from "@ant-design/icons";
-// 👇 Import các công cụ điều hướng của Router
-import { Outlet, useNavigate, useLocation } from "react-router-dom"; 
+  FolderOutlined   //  Resource
+} from '@ant-design/icons';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Select } from 'antd';
-import ChatRoom from "./ChatRoom";
+import ChatRoom from './ChatRoom';
+
+/* ===== COMPONENT CŨ CỦA NGƯỜI KHÁC (GIỮ NGUYÊN) ===== */
+import TaskBoard from '../pages/Workspace/TaskBoard';
+import AiPlanning from '../pages/AI/AiPlanning';
+import ClassManager from '../pages/Education/ClassManager';
+import SubjectManager from '../pages/Education/SubjectManager';
+import ProjectList from '../pages/Projects/ProjectList';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
 const MainLayout = () => { 
   const [openChat, setOpenChat] = useState(false);
+
+  const [selectedKey, setSelectedKey] = useState('1');
+
   const navigate = useNavigate();
   const location = useLocation();
   const savedUser = JSON.parse(localStorage.getItem('user') || '{}'); // Vai trò người dùng hiện tại
@@ -40,7 +50,21 @@ const MainLayout = () => {
     <Layout style={{ minHeight: "100vh" }}>
       {/* SIDEBAR BÊN TRÁI */}
       <Sider theme="light" width={250}>
-        <div style={{ height: 50, margin: 16, background: "#001529", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: "18px" }}>
+
+        <div
+          style={{
+            height: 50,
+            margin: 16,
+            background: '#001529',
+            borderRadius: 6,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: '18px'
+          }}
+        >
           CollabSphere
         </div>
         <Menu

@@ -2,8 +2,15 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
 
+
+/* ===================== AUTH (CHUNG) ===================== */
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
+/* ===================== RESOURCE ===================== */
+import ResourcePage from './pages/Resource';
+import CollaborationPage from './pages/Collaboration';
+
+/* ===================== USER MANAGEMENT ===================== */
 import UserManagement from './pages/User/UserManagement';
 import UserProfile from './pages/User/UserProfile';
 
@@ -13,12 +20,22 @@ import TaskBoard from './pages/Workspace/TaskBoard';
 import MilestonePage from './pages/Workspace/MilestonePage';
 import SubjectManager from './pages/Education/SubjectManager';
 import ClassManager from './pages/Education/ClassManager';
+import ProjectList from './pages/Projects/ProjectList'; 
+import ProjectForm from './pages/Projects/ProjectForm';
+
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+
         <Route path="/" element={<Navigate to="/login" replace />} />
+
+        {/* ===== Redirect mặc định ===== */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
+        {/* ===== AUTH ===== */}
+
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
@@ -34,7 +51,13 @@ function App() {
             <Route path="/ai-planning" element={<AiPlanning />} />
             <Route path="/classes" element={<ClassManager />} />
             <Route path="/subjects" element={<SubjectManager />} />
+
+            <Route path="/resources/*" element={<ResourcePage />} />
+            <Route path="/collaborations/*" element={<CollaborationPage />} />
+            <Route path="/projects" element={<ProjectList />} />   {/* ✅ ADD */}
+            <Route path="/projects/new" element={<ProjectForm />} /> {/* ✅ ADD */}
         </Route>
+{/* ===== Fallback ===== */}
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

@@ -22,6 +22,14 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
+
+// 👇 IMPORTS MỚI CHO GOOGLE LOGIN
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
+import com.collabsphere.identity.enums.Role;
+import java.util.UUID;
+
+
 @Service
 public class AuthenticationService {
 
@@ -37,7 +45,11 @@ public class AuthenticationService {
         this.passwordEncoder = passwordEncoder;
     }
 
+
     // 1. Hàm Đăng Nhập (Login)
+
+    // 1. Hàm Đăng Nhập (Login) - GIỮ NGUYÊN
+
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         // Tìm user theo username
         var user = userRepository.findByUsername(request.getUsername())
@@ -69,7 +81,11 @@ public class AuthenticationService {
             .build();
     }
 
+
     // 2. Hàm Tạo Token
+
+    // 2. Hàm Tạo Token - GIỮ NGUYÊN
+
     private String generateToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
@@ -95,7 +111,11 @@ public class AuthenticationService {
         }
     }
 
+
     // 3. Hàm Kiểm Tra Token (Introspect)
+
+    // 3. Hàm Kiểm Tra Token (Introspect) - GIỮ NGUYÊN
+
     public IntrospectResponse introspect(IntrospectRequest request) {
         var token = request.getToken();
         boolean isValid = true;
@@ -122,5 +142,46 @@ public class AuthenticationService {
         }
         return "";
     }
-    
+
+
+    // 👇👇👇 4. HÀM MỚI: Xử lý Đăng nhập Google (Outbound Auth) 👇👇👇
+    public AuthenticationResponse outboundAuthenticate(String token) {
+        try {
+            // Xác thực Token với Firebase
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+
+            // Lấy thông tin user
+            String email = decodedToken.getEmail();
+            String name = decodedToken.getName();
+            String picture = decodedToken.getPicture();
+
+            // Tìm user trong DB hoặc Tạo mới
+            User user = userRepository.findByUsername(email).orElseGet(() -> {
+                User newUser = new User();
+                newUser.setUsername(email);
+                newUser.setEmail(email);
+                newUser.setFullName(name);
+                newUser.setAvatarUrl(picture);
+                newUser.setRole(Role.STUDENT);
+                newUser.setActive(true);
+                // Tạo password ngẫu nhiên
+                newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+                
+                return userRepository.save(newUser);
+            });
+            
+            // Kiểm tra khóa tài khoản (cho user cũ đăng nhập lại bằng Google)
+            if (!user.isActive()) {
+                throw new RuntimeException("Tài khoản Google này đã bị khóa trong hệ thống!");
+            }
+
+            // Tạo Token hệ thống (HS512)
+            var internalToken = generateToken(user);
+            return new AuthenticationResponse(internalToken, true);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi xác thực Google: " + e.getMessage());
+        }
+    }
+
 }
