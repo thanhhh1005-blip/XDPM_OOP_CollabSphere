@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-<<<<<<< HEAD
-import { login } from '../../services/authService';
-=======
+
 import { login, loginWithGoogle } from '../../services/authService'; // 👈 Import thêm loginWithGoogle
 
 // 👇 IMPORT FIREBASE & PROVIDER
 import { auth } from '../../configs/firebase';
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
->>>>>>> origin/main
+
 
 // --- ICONS SVG ---
 const UserIcon = () => (
@@ -23,11 +21,7 @@ const LockIcon = () => (
   </svg>
 );
 
-<<<<<<< HEAD
-const Login = () => {
-  const navigate = useNavigate();
-  
-=======
+
 // 👇 Icon Google Mới
 const GoogleIcon = () => (
   <svg className="w-5 h-5 mr-2" viewBox="0 0 48 48">
@@ -41,16 +35,15 @@ const GoogleIcon = () => (
 const Login = () => {
   const navigate = useNavigate();
    
->>>>>>> origin/main
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-<<<<<<< HEAD
-=======
+
   // --- Logic Login Cũ ---
->>>>>>> origin/main
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -63,11 +56,8 @@ const Login = () => {
 
       if (token) {
         localStorage.setItem('token', token);
-<<<<<<< HEAD
-        
-        // Chuyển hướng ngay lập tức vào trang chính
-=======
->>>>>>> origin/main
+
+
         navigate('/workspace'); 
       } else {
         setError("Không nhận được token xác thực.");
@@ -85,8 +75,7 @@ const Login = () => {
     }
   };
 
-<<<<<<< HEAD
-=======
+
   // 👇👇👇 LOGIC MỚI: Xử lý Login Google 👇👇👇
   const handleGoogleLogin = async () => {
     try {
@@ -122,7 +111,7 @@ const Login = () => {
     }
   };
 
->>>>>>> origin/main
+
   return (
     <div className="relative h-screen w-screen flex flex-col items-center justify-center overflow-hidden font-sans bg-gray-900">
       
@@ -147,11 +136,9 @@ const Login = () => {
             </p>
           </div>
 
-<<<<<<< HEAD
-          {/* GLASS FORM (Style mới: Minimalist with Icons) */}
-=======
+
           {/* GLASS FORM */}
->>>>>>> origin/main
+
           <div className="w-[340px] md:w-[380px] p-8 bg-white/10 border border-white/20 rounded-2xl backdrop-blur-xl shadow-2xl mx-4">
             
             <form onSubmit={handleLogin} className="flex flex-col gap-4">
@@ -217,8 +204,7 @@ const Login = () => {
                 {loading ? 'Đang xác thực...' : 'ĐĂNG NHẬP'}
               </button>
 
-<<<<<<< HEAD
-=======
+
               {/* 👇👇👇 PHẦN NÚT GOOGLE MỚI 👇👇👇 */}
               <div className="flex items-center my-2">
                  <div className="flex-1 border-t border-white/20"></div>
@@ -241,7 +227,7 @@ const Login = () => {
               </button>
               {/* 👆👆👆 KẾT THÚC PHẦN NÚT GOOGLE 👆👆👆 */}
 
->>>>>>> origin/main
+
               {/* Register Link */}
               <div className="text-center text-white/80 text-xs mt-2">
                 <span>Chưa có tài khoản? </span>

@@ -61,8 +61,7 @@ export const register = async (username, password, email, fullName) => {
     } catch (error) {
         throw error;
     }
-<<<<<<< HEAD
-=======
+
 };
 
 // 👇👇👇 HÀM MỚI: Đăng nhập bằng Google (Gửi token xuống Backend) 👇👇👇
@@ -88,5 +87,5 @@ export const loginWithGoogle = async (firebaseToken) => {
     } catch (error) {
         throw error;
     }
->>>>>>> origin/main
+
 };
