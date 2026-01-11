@@ -2,8 +2,14 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
 
+/* ===================== AUTH (CHUNG) ===================== */
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
+/* ===================== RESOURCE ===================== */
+import ResourcePage from './pages/Resource';
+import CollaborationPage from './pages/Collaboration';
+
+/* ===================== USER MANAGEMENT ===================== */
 import UserManagement from './pages/User/UserManagement';
 import UserProfile from './pages/User/UserProfile';
 
@@ -17,7 +23,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* ===== Redirect mặc định ===== */}
         <Route path="/" element={<Navigate to="/login" replace />} />
+
+        {/* ===== AUTH ===== */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
@@ -32,8 +41,10 @@ function App() {
             <Route path="/ai-planning" element={<AiPlanning />} />
             <Route path="/classes" element={<ClassManager />} />
             <Route path="/subjects" element={<SubjectManager />} />
+            <Route path="/resources/*" element={<ResourcePage />} />
+            <Route path="/collaborations/*" element={<CollaborationPage />} />
         </Route>
-
+{/* ===== Fallback ===== */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
