@@ -11,15 +11,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-<<<<<<< HEAD
-=======
+
 // 👇 IMPORTS MỚI CHO EXCEL
 import org.springframework.web.multipart.MultipartFile;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.IOException;
 import java.util.ArrayList;
->>>>>>> origin/main
+
 import java.util.List;
 
 @Service
@@ -34,11 +33,10 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-<<<<<<< HEAD
-=======
+
     // --- CÁC HÀM CŨ (GIỮ NGUYÊN) ---
 
->>>>>>> origin/main
+
     public User createUser(UserCreationRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username đã tồn tại!");
@@ -75,52 +73,46 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-<<<<<<< HEAD
+
     // 👇 LOGIC MỚI: Cập nhật thông tin
-=======
->>>>>>> origin/main
+
     public User updateUser(Long userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
         if (request.getFullName() != null) user.setFullName(request.getFullName());
         if (request.getEmail() != null) user.setEmail(request.getEmail());
-<<<<<<< HEAD
+
         // Có thể thêm ngày sinh hoặc các trường khác nếu cần
-=======
->>>>>>> origin/main
+
 
         return userRepository.save(user);
     }
 
-<<<<<<< HEAD
+
     // 👇 LOGIC MỚI: Đổi mật khẩu
-=======
->>>>>>> origin/main
+
     public void changePassword(Long userId, PasswordChangeRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-<<<<<<< HEAD
+
         // Kiểm tra mật khẩu cũ
-=======
->>>>>>> origin/main
+
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new RuntimeException("Mật khẩu cũ không chính xác");
         }
 
-<<<<<<< HEAD
+
         // Lưu mật khẩu mới
-=======
->>>>>>> origin/main
+
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }
 
-<<<<<<< HEAD
+
     // 👇 LOGIC MỚI: Khóa/Mở khóa tài khoản
-=======
->>>>>>> origin/main
+
     public User toggleUserStatus(Long userId, boolean isActive) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
@@ -128,8 +120,8 @@ public class UserService {
         user.setActive(isActive);
         return userRepository.save(user);
     }
-<<<<<<< HEAD
-=======
+
+
 
     // --- 👇 TÍNH NĂNG MỚI: IMPORT EXCEL 👇 ---
 
@@ -197,5 +189,5 @@ public class UserService {
             default: return "";
         }
     }
->>>>>>> origin/main
+
 }

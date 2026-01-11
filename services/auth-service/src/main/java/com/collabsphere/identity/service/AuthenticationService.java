@@ -22,15 +22,14 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
-<<<<<<< HEAD
-=======
+
 // 👇 IMPORTS MỚI CHO GOOGLE LOGIN
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import com.collabsphere.identity.enums.Role;
 import java.util.UUID;
 
->>>>>>> origin/main
+
 @Service
 public class AuthenticationService {
 
@@ -46,11 +45,11 @@ public class AuthenticationService {
         this.passwordEncoder = passwordEncoder;
     }
 
-<<<<<<< HEAD
+
     // 1. Hàm Đăng Nhập (Login)
-=======
+
     // 1. Hàm Đăng Nhập (Login) - GIỮ NGUYÊN
->>>>>>> origin/main
+
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         // Tìm user theo username
         var user = userRepository.findByUsername(request.getUsername())
@@ -73,11 +72,11 @@ public class AuthenticationService {
         return new AuthenticationResponse(token, true);
     }
 
-<<<<<<< HEAD
+
     // 2. Hàm Tạo Token
-=======
+
     // 2. Hàm Tạo Token - GIỮ NGUYÊN
->>>>>>> origin/main
+
     private String generateToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
@@ -103,11 +102,11 @@ public class AuthenticationService {
         }
     }
 
-<<<<<<< HEAD
+
     // 3. Hàm Kiểm Tra Token (Introspect)
-=======
+
     // 3. Hàm Kiểm Tra Token (Introspect) - GIỮ NGUYÊN
->>>>>>> origin/main
+
     public IntrospectResponse introspect(IntrospectRequest request) {
         var token = request.getToken();
         boolean isValid = true;
@@ -134,8 +133,7 @@ public class AuthenticationService {
         }
         return "";
     }
-<<<<<<< HEAD
-=======
+
 
     // 👇👇👇 4. HÀM MỚI: Xử lý Đăng nhập Google (Outbound Auth) 👇👇👇
     public AuthenticationResponse outboundAuthenticate(String token) {
@@ -176,5 +174,5 @@ public class AuthenticationService {
             throw new RuntimeException("Lỗi xác thực Google: " + e.getMessage());
         }
     }
->>>>>>> origin/main
+
 }
