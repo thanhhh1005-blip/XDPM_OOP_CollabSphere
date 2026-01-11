@@ -75,7 +75,6 @@ spring:
           predicates:
             - Path=/api/v1/projects/**
 
-            - Path=/api/v1/projects/**
         # 10. Collaboration Service (8090) 
         - id: collaboration-service
           uri: http://localhost:8090
