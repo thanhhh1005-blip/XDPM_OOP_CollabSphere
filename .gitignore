@@ -1,10 +1,20 @@
+# ================== SECURITY ==================
+firebase-service-account.json
+services/auth-service/src/main/resources/firebase-service-account.json
+*.key
+*.pem
+*.env
+
+# ================== GENERAL ==================
 HELP.md
+
+# ================== MAVEN ==================
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
+# ================== STS ==================
 .apt_generated
 .classpath
 .factorypath
@@ -13,13 +23,13 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
+# ================== IntelliJ IDEA ==================
 .idea
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
+# ================== NetBeans ==================
 /nbproject/private/
 /nbbuild/
 /dist/
@@ -29,5 +39,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+# ================== VS Code ==================
 .vscode/
+
+# ================== OS ==================
+.DS_Store
+Thumbs.db
