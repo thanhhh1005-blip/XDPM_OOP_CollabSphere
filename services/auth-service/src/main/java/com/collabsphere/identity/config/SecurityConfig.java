@@ -24,12 +24,7 @@ import java.nio.charset.StandardCharsets;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-<<<<<<< HEAD
-    private final String[] PUBLIC_ENDPOINTS = {
-            "/users", "/auth/token", "/auth/introspect",
-            "/api/identity/users", "/api/identity/auth/token", "/api/identity/auth/introspect",
-            "/error" // Giữ nguyên để hiển thị lỗi rõ ràng nếu có
-=======
+
     // 👇 CẬP NHẬT DANH SÁCH NÀY 👇
     private final String[] PUBLIC_ENDPOINTS = {
             "/users", 
@@ -42,7 +37,7 @@ public class SecurityConfig {
             "/api/identity/auth/token", 
             "/api/identity/auth/introspect",
             "/error" 
->>>>>>> origin/main
+
     };
 
     @Value("${jwt.signerKey}")
@@ -52,13 +47,10 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request ->
                 request
-<<<<<<< HEAD
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .anyRequest().authenticated());
-=======
+
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll() // Cho phép tất cả link trong mảng trên
                         .anyRequest().authenticated()); // Còn lại bắt buộc đăng nhập
->>>>>>> origin/main
+
 
         httpSecurity.oauth2ResourceServer(oauth2 ->
             oauth2.jwt(jwtConfigurer ->
@@ -66,20 +58,17 @@ public class SecurityConfig {
                              .jwtAuthenticationConverter(jwtAuthenticationConverter()))
         );
 
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
 
         return httpSecurity.build();
     }
 
-<<<<<<< HEAD
 
-=======
+
+    
     // --- CÁC BEAN KHÁC GIỮ NGUYÊN ---
->>>>>>> origin/main
+
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {

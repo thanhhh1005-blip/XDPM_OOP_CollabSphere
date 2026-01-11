@@ -73,13 +73,12 @@ spring:
         - id: project-service
           uri: http://localhost:8089
           predicates:
-<<<<<<< HEAD
             - Path=/api/v1/projects/**
-=======
+
             - Path=/api/v1/projects/**
         # 10. Collaboration Service (8090) 
         - id: collaboration-service
           uri: http://localhost:8090
           predicates:
             - Path=/api/collaborations/**
->>>>>>> origin/main
+
