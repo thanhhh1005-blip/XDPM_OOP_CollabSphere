@@ -4,28 +4,73 @@ server:
 spring:
   application:
     name: api-gateway
+
   cloud:
     gateway:
-      # Lọc bỏ tiêu đề trùng lặp để tránh lỗi lặp tiêu đề CORS
-      default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
-      
       globalcors:
-        add-to-gateway-lookup-config: true
         cors-configurations:
           '[/**]':
-            allowedOrigins: "http://localhost:3000"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
+            allowedOrigins: "http://localhost:5173"
+            allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true
             
       routes:
+        # 1. Workspace (8081)
+        - id: workspace-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/workspace/**
+            
+        # 2. Communication (8082)
+        - id: communication-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/chat/**
+        - id: chat-websocket
+          uri: ws://localhost:8082
+          predicates:
+            - Path=/ws/**
+        
+        # 3. Evaluation (8083) - Sửa host thành localhost
+        - id: evaluation-service
+          uri: http://localhost:8083 
+          predicates:
+            - Path=/api/evaluations/** 
+
+        # 4. Class (8084)
+        - id: class-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/classes/** 
+
+        # 5. Subject (8085)
+        - id: subject-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/subjects/**
+
+        # 6. Identity (8086)
+        - id: identity-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/identity/**,/api/users/**
+          filters:
+            - StripPrefix=2  # 👈 
+
+        # 7. AI Service (8087)
+        - id: ai-service
+          uri: http://localhost:8087 
+          predicates:
+            - Path=/api/ai/**
+
+        # 8. Resource Service (8088) - THÊM MỚI CÁI NÀY
+        - id: resource-service
+          uri: http://localhost:8088
+          predicates:
+            - Path=/api/resources/**
+        # 9. Project Service (8089)
         - id: project-service
-          uri: http://localhost:8083
+          uri: http://localhost:8089
           predicates:
             - Path=/api/v1/projects/**
