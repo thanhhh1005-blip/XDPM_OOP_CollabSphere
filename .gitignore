@@ -1,20 +1,39 @@
-# ================== SECURITY ==================
-firebase-service-account.json
-services/auth-service/src/main/resources/firebase-service-account.json
-*.key
+# ================== SECURITY (QUAN TRỌNG NHẤT) ==================
+# Chặn file này ở BẤT KỲ THƯ MỤC NÀO (dùng dấu **/ để tìm trong mọi ngóc ngách)
+**/firebase-service-account.json
+*.json.key
+*.p12
 *.pem
 *.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# ================== GENERAL ==================
-HELP.md
+# ================== LOGS ==================
+# Chặn các file log sinh ra khi chạy ứng dụng
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# ================== MAVEN ==================
+# ================== MAVEN / JAVA ==================
 target/
-.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+*.class
 
-# ================== STS ==================
+# ================== FRONTEND (NODEJS) ==================
+# Bạn có thư mục frontend, nên cần chặn cái này để không up hàng ngàn file thư viện lên
+**/node_modules/
+**/dist/
+**/build/
+.eslintcache
+
+# ================== IDEs (Giữ nguyên của bạn) ==================
+# STS / Eclipse
 .apt_generated
 .classpath
 .factorypath
@@ -22,24 +41,22 @@ target/
 .settings
 .springBeans
 .sts4-cache
+bin/
 
-# ================== IntelliJ IDEA ==================
+# IntelliJ IDEA
 .idea
 *.iws
 *.iml
 *.ipr
 
-# ================== NetBeans ==================
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-# ================== VS Code ==================
+# VS Code
 .vscode/
 
 # ================== OS ==================
