@@ -57,7 +57,16 @@ public class AuthenticationService {
 
         var token = generateToken(user);
 
-        return new AuthenticationResponse(token, true);
+        return AuthenticationResponse.builder()
+            .token(token)
+            .authenticated(true)
+            .user(new com.collab.shared.dto.UserDTO(
+                user.getId(), 
+                user.getFullName(), 
+                user.getAvatarUrl(), 
+                user.getRole().name()
+            ))
+            .build();
     }
 
     // 2. Hàm Tạo Token
@@ -113,4 +122,5 @@ public class AuthenticationService {
         }
         return "";
     }
+    
 }

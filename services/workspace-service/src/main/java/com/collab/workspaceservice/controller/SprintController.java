@@ -1,8 +1,10 @@
 package com.collab.workspaceservice.controller;
 
 import com.collab.shared.dto.ApiResponse;
+import com.collab.workspaceservice.entity.Milestone;
 import com.collab.workspaceservice.entity.Sprint;
 import com.collab.workspaceservice.entity.Task;
+import com.collab.workspaceservice.repository.MilestoneRepository;
 import com.collab.workspaceservice.repository.SprintRepository;
 import com.collab.workspaceservice.repository.TaskRepository;
 
@@ -19,9 +21,20 @@ public class SprintController {
     private SprintRepository sprintRepository;
     @Autowired
     private TaskRepository taskRepository;
+    @Autowired
+    private MilestoneRepository milestoneRepository;
 
     @PostMapping
-    public ApiResponse<Sprint> createSprint(@RequestBody Sprint sprint) {
+    public ApiResponse<Sprint> createSprint(
+            @RequestBody Sprint sprint,
+            @RequestParam(name = "milestoneId", required = false) Long milestoneId // Thêm tham số
+    ) {
+        if (milestoneId != null) {
+            // Tìm Milestone và gán vào
+            // (Em cần @Autowired MilestoneRepository vào SprintController nhé)
+            Milestone ms = milestoneRepository.findById(milestoneId).orElse(null);
+            sprint.setMilestone(ms);
+        }
         return new ApiResponse<>(true, "Created sprint", sprintRepository.save(sprint));
     }
 
@@ -33,7 +46,11 @@ public class SprintController {
     public ApiResponse<Iterable<Sprint>> getAllSprints() {
         return new ApiResponse<>(true, "List sprints", sprintRepository.findAll());
     }
-
+    @GetMapping("/milestone/{msId}")
+    public ApiResponse<Iterable<Sprint>> getSprintsByMilestone(@PathVariable("msId") Long msId) {
+        // Em cần thêm hàm findByMilestoneId vào SprintRepository
+        return new ApiResponse<>(true, "Sprints in Milestone", sprintRepository.findByMilestoneId(msId));
+    }
     // API Xóa Sprint
     @DeleteMapping("/{id}")
     @Transactional

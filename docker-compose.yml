@@ -23,7 +23,8 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
- 
+volumes:
+  mysql_data:
  # 3. Resource Service (Quản lý tài nguyên)
   # resource-service:
   #   build:
@@ -48,5 +49,4 @@ services:
   #   container_name: evaluation-service
   #   ports:
   #     - "8083:8083"
-volumes:
-  mysql_data:
+

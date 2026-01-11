@@ -10,6 +10,7 @@ import UserProfile from './pages/User/UserProfile';
 // Các trang khác (Để giữ cho Router không bị lỗi 404, dù MainLayout đã render cứng rồi thì khai báo ở đây cũng không thừa)
 import AiPlanning from './pages/AI/AiPlanning';
 import TaskBoard from './pages/Workspace/TaskBoard';
+import MilestonePage from './pages/Workspace/MilestonePage';
 import SubjectManager from './pages/Education/SubjectManager';
 import ClassManager from './pages/Education/ClassManager';
 
@@ -29,6 +30,7 @@ function App() {
             
             {/* 👇 Route của người khác (Khai báo để URL đẹp, MainLayout sẽ tự render component cứng) */}
             <Route path="/workspace" element={<TaskBoard />} />
+            <Route path="/milestones" element={<MilestonePage />} />
             <Route path="/ai-planning" element={<AiPlanning />} />
             <Route path="/classes" element={<ClassManager />} />
             <Route path="/subjects" element={<SubjectManager />} />

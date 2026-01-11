@@ -1,5 +1,8 @@
 package com.collab.workspaceservice.entity;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -15,8 +18,22 @@ public class Task {
     private String status; // TODO, DONE
     private Integer position;
     private Long assigneeId;
+    private String submissionUrl; // Link bài nộp của sinh viên
+    private LocalDateTime submittedAt; // Thời gian nộp
+
+    @Column(columnDefinition = "boolean default false")
+    private Boolean isSubmissionRequired = false; // Giảng viên tick vào đây thì mới bắt nộp
 
     @ManyToOne
     @JoinColumn(name = "sprint_id")
     private Sprint sprint;
+
+    // THÊM: Task thuộc về 1 Milestone nào đó
+    @ManyToOne
+    @JoinColumn(name = "milestone_id")
+    private Milestone milestone;
+
+    // THÊM: 1 Task có nhiều Subtask nhỏ bên trong
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
+    private List<Subtask> subtasks;
 }

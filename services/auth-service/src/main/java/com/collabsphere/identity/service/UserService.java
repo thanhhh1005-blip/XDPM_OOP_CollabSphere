@@ -6,10 +6,14 @@ import com.collabsphere.identity.dto.request.UserUpdateRequest;
 import com.collabsphere.identity.entity.User;
 import com.collabsphere.identity.enums.Role;
 import com.collabsphere.identity.repository.UserRepository;
+import com.collab.shared.dto.UserDTO;
+
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 
 import java.util.List;
 
@@ -18,6 +22,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    
 
     @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
@@ -48,6 +53,26 @@ public class UserService {
         }
 
         return userRepository.save(user);
+    }
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    public void syncUserToOtherServices(User user) {
+    // Tạo data cần gửi
+    UserDTO event = new UserDTO(
+        user.getId(), 
+        user.getFullName(), 
+        user.getAvatarUrl(), 
+        user.getRole().name()
+    );
+
+    // Bắn tin nhắn đi
+    rabbitTemplate.convertAndSend(
+        "user_exchange", 
+        "user_updated", 
+        event
+    );
+    System.out.println("--- Đã gửi tin nhắn đồng bộ User qua RabbitMQ ---");
     }
 
     public List<User> getAllUsers() {
