@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+// 👇 IMPORTS MỚI CHO UPLOAD FILE
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
@@ -21,7 +23,8 @@ public class UserController {
         this.userService = userService;
     }
 
-    // 1. Tạo User (POST /users)
+    // --- CÁC API CŨ (GIỮ NGUYÊN) ---
+
     @PostMapping
     public ApiResponse<User> createUser(@RequestBody UserCreationRequest request) {
         return ApiResponse.<User>builder()
@@ -29,7 +32,6 @@ public class UserController {
                 .build();
     }
 
-    // 2. Lấy danh sách Users (GET /users)
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<List<User>> getAllUsers() {
@@ -38,7 +40,6 @@ public class UserController {
                 .build();
     }
 
-    // 3. Lấy thông tin chính mình (GET /users/my-info)
     @GetMapping("/my-info")
     public ApiResponse<User> getMyInfo() {
         return ApiResponse.<User>builder()
@@ -46,7 +47,6 @@ public class UserController {
                 .build();
     }
 
-    // 👇 4. API MỚI: Cập nhật thông tin (PUT /users/{userId})
     @PutMapping("/{userId}")
     public ApiResponse<User> updateUser(@PathVariable Long userId, @RequestBody UserUpdateRequest request) {
         return ApiResponse.<User>builder()
@@ -54,7 +54,6 @@ public class UserController {
                 .build();
     }
 
-    // 👇 5. API MỚI: Đổi mật khẩu (POST /users/{userId}/change-password)
     @PostMapping("/{userId}/change-password")
     public ApiResponse<String> changePassword(@PathVariable Long userId, @RequestBody PasswordChangeRequest request) {
         userService.changePassword(userId, request);
@@ -63,12 +62,21 @@ public class UserController {
                 .build();
     }
 
-    // 👇 6. API MỚI: Vô hiệu hóa/Kích hoạt tài khoản (PATCH /users/{userId}/status)
     @PatchMapping("/{userId}/status")
-    @PreAuthorize("hasRole('ADMIN')") // Chỉ Admin được khóa
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<User> toggleUserStatus(@PathVariable Long userId, @RequestBody UserStatusRequest request) {
         return ApiResponse.<User>builder()
                 .result(userService.toggleUserStatus(userId, request.isActive()))
+                .build();
+    }
+
+    // --- 👇 API MỚI: IMPORT EXCEL 👇 ---
+    
+    @PostMapping("/import")
+    @PreAuthorize("hasRole('ADMIN')") // Chỉ Admin được import
+    public ApiResponse<List<User>> importUsers(@RequestParam("file") MultipartFile file) {
+        return ApiResponse.<List<User>>builder()
+                .result(userService.importUsers(file))
                 .build();
     }
 }
