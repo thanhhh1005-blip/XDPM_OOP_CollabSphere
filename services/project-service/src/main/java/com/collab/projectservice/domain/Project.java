@@ -18,8 +18,10 @@ public class Project {
   @Column(nullable = false)
   private String title;
 
-  @Column(length = 2000)
-  private String description;
+ @Lob
+@Column(columnDefinition = "LONGTEXT")
+private String description;
+
 
   // Bổ sung: ID của đề cương môn học dùng để tạo dự án mẫu
   private String syllabusId; 

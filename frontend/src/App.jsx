@@ -12,6 +12,9 @@ import AiPlanning from './pages/AI/AiPlanning';
 import TaskBoard from './pages/Workspace/TaskBoard';
 import SubjectManager from './pages/Education/SubjectManager';
 import ClassManager from './pages/Education/ClassManager';
+import ProjectList from './pages/Projects/ProjectList'; 
+import ProjectForm from './pages/Projects/ProjectForm';
+
 
 function App() {
   return (
@@ -32,6 +35,8 @@ function App() {
             <Route path="/ai-planning" element={<AiPlanning />} />
             <Route path="/classes" element={<ClassManager />} />
             <Route path="/subjects" element={<SubjectManager />} />
+            <Route path="/projects" element={<ProjectList />} />   {/* ✅ ADD */}
+            <Route path="/projects/new" element={<ProjectForm />} /> {/* ✅ ADD */}
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

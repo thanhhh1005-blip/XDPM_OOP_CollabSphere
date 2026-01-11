@@ -9,7 +9,7 @@ import TaskBoard from '../pages/Workspace/TaskBoard';
 import AiPlanning from '../pages/AI/AiPlanning'; 
 import ClassManager from '../pages/Education/ClassManager';
 import SubjectManager from '../pages/Education/SubjectManager';
-
+import ProjectList from '../pages/Projects/ProjectList';
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
@@ -27,6 +27,7 @@ const MainLayout = () => {
     else if (path.includes('/classes')) setSelectedKey('3');
     else if (path.includes('/subjects')) setSelectedKey('4');
     else if (path.includes('/users')) setSelectedKey('5');   // Key của bạn
+    else if (path.startsWith('/projects')) setSelectedKey('projects');
     else if (path.includes('/profile')) setSelectedKey('6'); // Key của bạn
     else setSelectedKey('1'); // Mặc định là Workspace
   }, [location]);
@@ -39,7 +40,9 @@ const MainLayout = () => {
     { key: '4', icon: <BookOutlined />, label: 'Subject Management' },
     // 👇 Phần của bạn
     { key: '5', icon: <TeamOutlined />, label: 'Quản lý User' },
+    { key: 'projects', icon: <ProjectOutlined />, label: 'Project Management' },
     { key: '6', icon: <UserOutlined />, label: 'Hồ sơ cá nhân' },
+    
   ];
 
   // 3. Xử lý chuyển trang
@@ -52,6 +55,7 @@ const MainLayout = () => {
           case '4': navigate('/subjects'); break;
           // 👇 Phần của bạn
           case '5': navigate('/users'); break;
+          case 'projects': navigate('/projects'); break;
           case '6': navigate('/profile'); break;
           default: navigate('/workspace');
       }
@@ -69,6 +73,7 @@ const MainLayout = () => {
         // --- LOGIC MỚI (Dùng Outlet cho User & Profile) ---
         case '5': 
         case '6': 
+        case 'projects':
             return <Outlet />; // 👈 React Router sẽ điền UserManagement hoặc UserProfile vào đây
         
         default: return <TaskBoard />;
