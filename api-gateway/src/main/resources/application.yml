@@ -81,3 +81,9 @@ spring:
           predicates:
             - Path=/api/collaborations/**
 
+        # 11. Team Service (8091)
+        - id: team-service
+          uri: http://localhost:8091
+          predicates:
+            - Path=/api/v1/teams/**
+
