@@ -5,13 +5,36 @@ import axios from "axios";
 export default function ProjectForm() {
   const navigate = useNavigate();
 
-  // ✅ FIX: gọi thẳng Gateway (đừng gọi /api/... vì 5173 sẽ 404 nếu chưa proxy)
+  // ✅ gọi thẳng Gateway
   const API_BASE_URL = "http://localhost:8080/api/v1/projects";
 
   const [title, setTitle] = useState("");
   const [syllabusId, setSyllabusId] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // ✅ Lấy user/token theo chuẩn hiện tại (localStorage.user đang có id, role)
+  const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+  // token có thể lưu nhiều key khác nhau (tùy dự án)
+  const token =
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("access_token") ||
+    localStorage.getItem("token") ||
+    savedUser?.accessToken ||
+    savedUser?.token;
+
+  // role/userId: ưu tiên từ localStorage.user
+  const role =
+    savedUser?.role ||
+    localStorage.getItem("user_role") ||
+    localStorage.getItem("role");
+
+  const userId =
+    savedUser?.id ||
+    savedUser?.userId ||
+    localStorage.getItem("user_id") ||
+    localStorage.getItem("userId");
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -24,11 +47,6 @@ export default function ProjectForm() {
     try {
       setSubmitting(true);
 
-      // ✅ (khuyến nghị) gửi header role/userId để BE chặn đúng quyền
-      const role = localStorage.getItem("user_role");
-      const userId = localStorage.getItem("user_id");
-      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-
       await axios.post(
         API_BASE_URL,
         {
@@ -40,7 +58,7 @@ export default function ProjectForm() {
           headers: {
             "Content-Type": "application/json",
             ...(role ? { "X-ROLE": role } : {}),
-            ...(userId ? { "X-USER-ID": userId } : {}),
+            ...(userId ? { "X-USER-ID": String(userId) } : {}),
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         }

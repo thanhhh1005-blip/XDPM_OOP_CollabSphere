@@ -45,6 +45,7 @@ const MainLayout = () => {
 
   // 2. Menu Items
   const items = [
+<<<<<<< HEAD
     { key: '1', icon: <ProjectOutlined />, label: 'Quản lý Sprint' },
     { key: '2', icon: <BulbOutlined />, label: 'AI Lên Ý Tưởng' },
     { key: '3', icon: <ReadOutlined />, label: 'Class Management' },
@@ -52,6 +53,16 @@ const MainLayout = () => {
     { key: '5', icon: <TeamOutlined />, label: 'Quản lý User' },
     { key: '6', icon: <UserOutlined />, label: 'Hồ sơ cá nhân' },
     { key: '7', icon: <ShareAltOutlined />, label: 'Collaboration' },
+=======
+    { key: '/workspace', icon: <ProjectOutlined />, label: 'Quản lý Sprint', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
+    { key: '/projects', icon: <FolderOutlined />, label: 'Dự án', roles: ['LECTURER', 'HEAD_DEPARTMENT'] },
+    { key: '/teams', icon: <TeamOutlined />, label: 'Team & Workspace', roles: ['LECTURER', 'STUDENT'] },
+    { key: '/milestones', icon: <ReadOutlined />, label: 'Lộ trình & Cột mốc', roles: ['STUDENT', 'LECTURER'] },
+    { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['LECTURER', 'ADMIN'] },
+    { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN'] },
+    { key: '/users', icon: <UserOutlined />, label: 'Quản lý Người dùng', roles: ['ADMIN'] },
+    { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
+>>>>>>> b294156964415ad0a96561c2e05497842e89f6b7
   ];
 
   // 3. Xử lý chuyển trang
