@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Layout, Menu, Button, Drawer, Typography, Avatar, Badge, Tag } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Layout, Menu, Button, Drawer, Typography, Avatar } from 'antd';
 import {
   ProjectOutlined,
   BulbOutlined,
@@ -8,49 +8,89 @@ import {
   ReadOutlined,
   BookOutlined,
   TeamOutlined,
-  FolderOutlined   //  Resource
+  ShareAltOutlined
 } from '@ant-design/icons';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Select } from 'antd';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'; // 👈 Import Outlet
+
 import ChatRoom from './ChatRoom';
 
-/* ===== COMPONENT CŨ CỦA NGƯỜI KHÁC (GIỮ NGUYÊN) ===== */
+// --- Các Component cũ của người khác (GIỮ NGUYÊN) ---
 import TaskBoard from '../pages/Workspace/TaskBoard';
 import AiPlanning from '../pages/AI/AiPlanning';
 import ClassManager from '../pages/Education/ClassManager';
 import SubjectManager from '../pages/Education/SubjectManager';
-import ProjectList from '../pages/Projects/ProjectList';
+import CollaborationPage from '../pages/Collaboration';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
-const MainLayout = () => { 
+const MainLayout = () => {
   const [openChat, setOpenChat] = useState(false);
-
   const [selectedKey, setSelectedKey] = useState('1');
 
   const navigate = useNavigate();
   const location = useLocation();
-  const savedUser = JSON.parse(localStorage.getItem('user') || '{}'); // Vai trò người dùng hiện tại
-  const userRole = savedUser.role; 
-  console.log("User Role in MainLayout:", savedUser);
 
-  // 1. Khai báo danh sách Menu
-  // QUAN TRỌNG: 'key' phải trùng khớp với 'path' em đã đặt trong App.jsx
+  // 1. Logic đồng bộ URL với Menu
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes('/ai-planning')) setSelectedKey('2');
+    else if (path.includes('/classes')) setSelectedKey('3');
+    else if (path.includes('/subjects')) setSelectedKey('4');
+    else if (path.includes('/users')) setSelectedKey('5');
+    else if (path.includes('/profile')) setSelectedKey('6');
+    else if (path.includes('/collaborations')) setSelectedKey('7');
+    else setSelectedKey('1'); // Mặc định là Workspace
+  }, [location]);
+
+  // 2. Menu Items
   const items = [
-    { key: '/workspace', icon: <ProjectOutlined />, label: 'Quản lý Sprint', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
-    { key: '/milestones', icon: <ReadOutlined />, label: 'Lộ trình & Cột mốc', roles: ['STUDENT', 'LECTURER'] },
-    { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['LECTURER', 'ADMIN'] },
-    { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN'] },
-    { key: '/users', icon: <UserOutlined />, label: 'Quản lý Người dùng', roles: ['ADMIN'] },
-    { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
+    { key: '1', icon: <ProjectOutlined />, label: 'Quản lý Sprint' },
+    { key: '2', icon: <BulbOutlined />, label: 'AI Lên Ý Tưởng' },
+    { key: '3', icon: <ReadOutlined />, label: 'Class Management' },
+    { key: '4', icon: <BookOutlined />, label: 'Subject Management' },
+    { key: '5', icon: <TeamOutlined />, label: 'Quản lý User' },
+    { key: '6', icon: <UserOutlined />, label: 'Hồ sơ cá nhân' },
+    { key: '7', icon: <ShareAltOutlined />, label: 'Collaboration' },
   ];
-  const filteredItems = items.filter(item => item.roles.includes(userRole));
-  return (
-    <Layout style={{ minHeight: "100vh" }}>
-      {/* SIDEBAR BÊN TRÁI */}
-      <Sider theme="light" width={250}>
 
+  // 3. Xử lý chuyển trang
+  const handleMenuClick = (e) => {
+    setSelectedKey(e.key);
+    switch (e.key) {
+      case '1': navigate('/workspace'); break;
+      case '2': navigate('/ai-planning'); break;
+      case '3': navigate('/classes'); break;
+      case '4': navigate('/subjects'); break;
+      case '5': navigate('/users'); break;
+      case '6': navigate('/profile'); break;
+      case '7': navigate('/collaborations'); break;
+
+      default: navigate('/workspace');
+    }
+  };
+
+  // 4. Logic Render (HYBRID: Cũ dùng Component, Mới dùng Outlet)
+  const renderContent = () => {
+    switch (selectedKey) {
+      
+      case '1': return <TaskBoard />;
+      case '2': return <AiPlanning />;
+      case '3': return <ClassManager />;
+      case '4': return <SubjectManager />;
+      case '5':
+      case '6':
+      case '7': 
+        return <Outlet />;
+
+      default:
+        return <TaskBoard />;
+    }
+  };
+
+  return (
+    <Layout style={{ minHeight: '100vh' }}>
+      <Sider theme="light" width={250}>
         <div
           style={{
             height: 50,
@@ -67,33 +107,36 @@ const MainLayout = () => {
         >
           CollabSphere
         </div>
+
         <Menu
           theme="light"
-          // Tự động sáng menu dựa trên URL hiện tại (Ví dụ đang ở /workspace thì menu 1 sáng)
-          selectedKeys={[location.pathname]} 
+          selectedKeys={[selectedKey]}
           mode="inline"
-          items={filteredItems}
-          // Khi bấm vào menu, nó nhảy thẳng tới URL đó
-          onClick={(e) => navigate(e.key)} 
+          items={items}
+          onClick={handleMenuClick}
         />
       </Sider>
 
       <Layout>
-        {/* HEADER Ở TRÊN */}
-        <Header style={{ padding: "0 20px", background: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 1px 4px rgba(0,21,41,0.08)" }}>
-          <div>
-            <Title level={4} style={{ margin: 0 }}>Dashboard</Title>
-          </div>
-          
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <div style={{ lineHeight: '1.2' }}>
-                <div style={{ fontWeight: 'bold' }}>{savedUser.fullName}</div>
-                <Tag color="blue">{userRole}</Tag> 
-            </div>
+        <Header
+          style={{
+            padding: '0 20px',
+            background: '#fff',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 1px 4px rgba(0,21,41,0.08)'
+          }}
+        >
+          <Title level={4} style={{ margin: 0 }}>
+            Dashboard
+          </Title>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <Avatar
               icon={<UserOutlined />}
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/profile")} // Bấm avatar nhảy về trang cá nhân
+              style={{ cursor: 'pointer' }}
+              onClick={() => navigate('/profile')}
             />
             <Button
               type="primary"
@@ -106,18 +149,26 @@ const MainLayout = () => {
           </div>
         </Header>
 
-        {/* NỘI DUNG CHÍNH Ở GIỮA */}
-        <Content style={{ margin: "16px", padding: 24, background: "#fff", borderRadius: 8, overflowY: "auto" }}>
-            
-            {/* 👇 ĐÂY LÀ CHỖ THAY THẾ CHO renderContent() 👇 */}
-            {/* React Router sẽ tự động lấy TaskBoard, AiPlanning... đặt vào đây dựa trên URL */}
-            <Outlet context={[userRole]}/> 
-
+        <Content
+          style={{
+            margin: '16px',
+            padding: 24,
+            background: '#fff',
+            borderRadius: 8,
+            overflowY: 'auto'
+          }}
+        >
+          {renderContent()}
         </Content>
       </Layout>
 
-      {/* CỬA SỔ CHAT TRƯỢT (DRAWER) */}
-      <Drawer title="💬 Phòng Chat" placement="right" onClose={() => setOpenChat(false)} open={openChat} width={450}>
+      <Drawer
+        title="💬 Phòng Chat"
+        placement="right"
+        onClose={() => setOpenChat(false)}
+        open={openChat}
+        width={450}
+      >
         <ChatRoom />
       </Drawer>
     </Layout>
