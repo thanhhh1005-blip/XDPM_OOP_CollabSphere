@@ -37,4 +37,5 @@ public class CollaborationActivity {
     void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+    private Long actorId;
 }

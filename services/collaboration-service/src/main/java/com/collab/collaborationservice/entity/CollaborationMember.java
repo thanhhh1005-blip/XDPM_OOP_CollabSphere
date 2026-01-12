@@ -19,7 +19,7 @@ public class CollaborationMember {
 
     // userId từ auth-service
     @Column(nullable = false)
-    private String userId;
+    private Long userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -28,4 +28,8 @@ public class CollaborationMember {
     @ManyToOne
     @JoinColumn(name = "collaboration_id", nullable = false)
     private Collaboration collaboration;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean active = true;
 }

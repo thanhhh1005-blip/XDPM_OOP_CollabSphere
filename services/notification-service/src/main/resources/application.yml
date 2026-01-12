@@ -54,7 +54,7 @@ spring:
 # SERVER
 # ======================
 server:
-  port: 8089
+  port: 8092
   servlet:
     context-path: /api/notifications
 

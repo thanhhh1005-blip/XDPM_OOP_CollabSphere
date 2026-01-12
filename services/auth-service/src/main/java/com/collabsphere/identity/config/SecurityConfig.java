@@ -1,9 +1,8 @@
 package com.collabsphere.identity.config;
 
-import org.springframework.beans.factory.annotation.Value; // 👈 Nhớ import cái này
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -22,22 +21,36 @@ import java.nio.charset.StandardCharsets;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // 👈 Quan trọng: Bật tính năng kiểm tra @PreAuthorize
+@EnableMethodSecurity
 public class SecurityConfig {
 
+
+    // 👇 CẬP NHẬT DANH SÁCH NÀY 👇
     private final String[] PUBLIC_ENDPOINTS = {
-            "/users", "/auth/token", "/auth/introspect"
+            "/users", 
+            "/auth/token", 
+            "/auth/introspect",
+            "/auth/outbound/authentication", // 👈 QUAN TRỌNG: Phải thêm dòng này để Login Google không bị chặn 401
+            
+            // Các đường dẫn cũ của bạn (Giữ nguyên)
+            "/api/identity/users", 
+            "/api/identity/auth/token", 
+            "/api/identity/auth/introspect",
+            "/error" 
+
     };
 
-    // 👇 QUAY VỀ DÙNG @VALUE CHO CHUYÊN NGHIỆP (Đã test thành công ở bước trước)
     @Value("${jwt.signerKey}")
     private String signerKey;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request ->
-                request.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                        .anyRequest().authenticated());
+                request
+
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll() // Cho phép tất cả link trong mảng trên
+                        .anyRequest().authenticated()); // Còn lại bắt buộc đăng nhập
+
 
         httpSecurity.oauth2ResourceServer(oauth2 ->
             oauth2.jwt(jwtConfigurer ->
@@ -45,15 +58,22 @@ public class SecurityConfig {
                              .jwtAuthenticationConverter(jwtAuthenticationConverter()))
         );
 
+
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
+
         return httpSecurity.build();
     }
+
+
+
+    
+    // --- CÁC BEAN KHÁC GIỮ NGUYÊN ---
+
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_"); // Map scope "ADMIN" -> "ROLE_ADMIN"
-
+        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
         return jwtAuthenticationConverter;
@@ -62,7 +82,7 @@ public class SecurityConfig {
     @Bean
     JwtDecoder jwtDecoder() {
         SecretKeySpec secretKeySpec = new SecretKeySpec(
-                signerKey.getBytes(StandardCharsets.UTF_8), 
+                signerKey.getBytes(StandardCharsets.UTF_8),
                 "HmacSHA512"
         );
         return NimbusJwtDecoder

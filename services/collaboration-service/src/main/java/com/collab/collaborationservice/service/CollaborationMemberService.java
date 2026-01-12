@@ -15,4 +15,6 @@ public interface CollaborationMemberService {
     List<MemberResponse> listMembers(Long collaborationId);
 
     void validateMemberRole(Long collaborationId, Long userId, CollaborationRole requiredRole);
+
+    void addMember(Long collaborationId, String userId, String role, AddMemberRequest request);
 }

@@ -1,18 +1,11 @@
-package com.collab.collaborationservice.service;
+package com.collab.collaborationservice;
 
-import com.collab.collaborationservice.entity.Collaboration;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import java.util.List;
-
-public interface CollaborationService {
-
-    Collaboration createCollaboration(
-            String name,
-            String description,
-            String createdBy
-    );
-
-    List<Collaboration> getMyCollaborations(String userId);
-
-    Collaboration getById(Long collaborationId);
+@SpringBootApplication
+public class CollaborationServiceApplication {
+  public static void main(String[] args) {
+    SpringApplication.run(CollaborationServiceApplication.class, args);
+  }
 }

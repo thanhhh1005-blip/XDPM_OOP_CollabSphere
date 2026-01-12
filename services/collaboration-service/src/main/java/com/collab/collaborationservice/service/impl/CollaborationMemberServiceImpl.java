@@ -118,4 +118,10 @@ public class CollaborationMemberServiceImpl implements CollaborationMemberServic
                 .findByCollaborationIdAndUserId(collaborationId, userId)
                 .orElseThrow(() -> new RuntimeException("User is not a collaboration member"));
     }
+
+    @Override
+    public void addMember(Long collaborationId, String userId, String role, AddMemberRequest request) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'addMember'");
+    }
 }

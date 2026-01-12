@@ -42,19 +42,21 @@ spring:
         - id: class-service
           uri: http://localhost:8084
           predicates:
-            - Path=/api/classes/** 
+            - Path=/api/v1/classes/** 
 
         # 5. Subject (8085)
         - id: subject-service
           uri: http://localhost:8085
           predicates:
-            - Path=/api/subjects/**
+            - Path=/api/v1/subjects/**
 
         # 6. Identity (8086)
         - id: identity-service
           uri: http://localhost:8086
           predicates:
-            - Path=/api/identity/**, /api/users/**
+            - Path=/api/identity/**,/api/users/**
+          filters:
+            - StripPrefix=2  # 👈 
 
         # 7. AI Service (8087)
         - id: ai-service
@@ -67,12 +69,30 @@ spring:
           uri: http://localhost:8088
           predicates:
             - Path=/api/resources/**
-        # 9. Notification Service (8089)
+        # 9. Notification Service (8092)
         - id: notification-service
-          uri: http://localhost:8089
+          uri: http://localhost:8092
           predicates:
             - Path=/api/notifications/**
         - id: notification-websocket
-          uri: ws://localhost:8089
+          uri: ws://localhost:8092
           predicates:
             - Path=/ws/notifications/**
+        # 9. Project Service (8089)
+        - id: project-service
+          uri: http://localhost:8089
+          predicates:
+            - Path=/api/v1/projects/**
+
+        # 10. Collaboration Service (8090) 
+        - id: collaboration-service
+          uri: http://localhost:8090
+          predicates:
+            - Path=/api/collaborations/**
+
+        # 11. Team Service (8091)
+        - id: team-service
+          uri: http://localhost:8091
+          predicates:
+            - Path=/api/v1/teams/**
+

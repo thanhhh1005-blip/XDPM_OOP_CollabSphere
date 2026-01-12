@@ -3,5 +3,8 @@ package com.collab.collaborationservice.enums;
 public enum CollaborationRole {
     OWNER,
     EDITOR,
-    VIEWER
+    VIEWER,
+    ADMIN,
+    LEADER,
+    LECTURER
 }

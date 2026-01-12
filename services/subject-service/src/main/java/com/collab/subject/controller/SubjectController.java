@@ -29,24 +29,38 @@ public class SubjectController {
         return ResponseEntity.ok(subjectService.getAllSubjects());
     }
 
+    // API lấy chi tiết theo ID
     @GetMapping("/{id}")
-// Thêm ("id") vào sau @PathVariable để chỉ định rõ ràng tên biến
-    public ResponseEntity<SubjectDTO> getSubjectById(@PathVariable("id") Long id) {
-    return ResponseEntity.ok(subjectService.getSubjectById(id));
+    public ResponseEntity<SubjectDTO> getSubjectById(@PathVariable("id") Long id) { // Đã thêm ("id")
+        return ResponseEntity.ok(subjectService.getSubjectById(id));
     }
-    
+
+    // --- BỔ SUNG: API CẬP NHẬT ---
+    @PutMapping("/{id}")
+    public ResponseEntity<SubjectDTO> updateSubject(
+            @PathVariable("id") Long id, // Quan trọng: phải có ("id")
+            @RequestBody SubjectDTO dto
+    ) {
+        return ResponseEntity.ok(subjectService.updateSubject(id, dto));
+    }
+
+    // --- BỔ SUNG: API XÓA ---
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteSubject(@PathVariable("id") Long id) { // Quan trọng: phải có ("id")
+        subjectService.deleteSubject(id);
+        return ResponseEntity.ok("Đã xóa môn học ID: " + id);
+    }
+
     // API Import Excel
-    // Test bằng Postman: Chọn Body -> form-data -> key="file" (type File) -> Chọn file Excel
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> importSubjects(@RequestParam("file") MultipartFile file) {
         subjectService.importSubjects(file);
         return ResponseEntity.ok("Import dữ liệu thành công!");
     }
-    // Thêm vào SubjectController.java bên subject-service
 
-    // API tìm môn học theo Mã (Để Class-Service gọi khi Import Excel)
+    // API tìm môn học theo Mã (Để Class-Service gọi)
     @GetMapping("/code/{code}")
-    public ResponseEntity<SubjectDTO> getSubjectByCode(@PathVariable String code) {
+    public ResponseEntity<SubjectDTO> getSubjectByCode(@PathVariable("code") String code) { // Nên thêm ("code") cho an toàn
         return ResponseEntity.ok(subjectService.getSubjectByCode(code));
     }
 }

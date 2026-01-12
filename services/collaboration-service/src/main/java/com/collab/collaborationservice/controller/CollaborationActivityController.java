@@ -1,8 +1,8 @@
 package com.collab.collaborationservice.controller;
 
-import com.collab.collaborationservice.dto.response.ApiResponse;
 import com.collab.collaborationservice.dto.response.ActivityResponse;
 import com.collab.collaborationservice.service.CollaborationActivityService;
+import com.collab.shared.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,11 +16,7 @@ public class CollaborationActivityController {
     private final CollaborationActivityService activityService;
 
     @GetMapping
-    public ApiResponse<List<ActivityResponse>> getActivities(
-            @PathVariable Long collaborationId
-    ) {
-        return ApiResponse.success(
-                activityService.getActivityHistory(collaborationId)
-        );
+    public ApiResponse<List<ActivityResponse>> getActivityHistory(@PathVariable Long collaborationId) {
+        return new ApiResponse<>(true, "Success", activityService.getActivityHistory(collaborationId));
     }
 }

@@ -35,4 +35,8 @@ public class CollaborationResource {
     void onCreate() {
         this.addedAt = LocalDateTime.now();
     }
+
+    private Long sharedBy; // <--- THÊM DÒNG NÀY (Để fix lỗi .sharedBy và .getSharedBy)
+
+    private LocalDateTime createdAt; // <--- THÊM DÒNG NÀY (Để fix lỗi .getCreatedAt)
 }

@@ -2,7 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 👇 LOGIC CŨ CỦA BẠN (GIỮ NGUYÊN) */
+/* --- 👇 PHẦN MỚI THÊM: ĐỂ FIX LỖI CUỘN TRANG (Không ảnh hưởng logic khác) --- */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  
+}
+/* --- 👆 HẾT PHẦN MỚI --- */
+
+
+/* 👇 LOGIC CŨ CỦA BẠN (GIỮ NGUYÊN 100%) */
 @keyframes fadeInUp {
   from {
     opacity: 0;

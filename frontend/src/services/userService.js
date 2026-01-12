@@ -1,0 +1,54 @@
+import axios from 'axios';
+
+const API_BASE = "http://localhost:8080/api/identity/users";
+
+// Helper lấy header (Token)
+const getConfig = () => {
+    const token = localStorage.getItem('token');
+    return {
+        headers: { Authorization: `Bearer ${token}` }
+    };
+};
+
+// --- ADMIN FEATURES ---
+
+export const getAllUsers = async () => {
+    const res = await axios.get(`${API_BASE}`, getConfig());
+    return res.data; 
+};
+
+export const importUsers = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await axios.post(`${API_BASE}/import`, formData, getConfig());
+    return res.data;
+};
+
+// 👇 CẬP NHẬT QUAN TRỌNG: Gửi key "active" thay vì "isActive"
+export const toggleUserStatus = async (userId, status) => {
+    // Backend (UserStatusRequest) đợi biến "active", nên ta phải gửi { active: status }
+    const res = await axios.patch(`${API_BASE}/${userId}/status`, { active: status }, getConfig());
+    return res.data;
+};
+
+export const createUser = async (userData) => {
+    const res = await axios.post(`${API_BASE}`, userData, getConfig());
+    return res.data;
+};
+
+// --- PERSONAL FEATURES ---
+
+export const updateProfile = async (userId, data) => {
+    const res = await axios.put(`${API_BASE}/${userId}`, data, getConfig());
+    return res.data;
+};
+
+export const changePassword = async (userId, oldPassword, newPassword) => {
+    const res = await axios.post(`${API_BASE}/${userId}/change-password`, { oldPassword, newPassword }, getConfig());
+    return res.data;
+};
+
+export const getMyInfo = async () => {
+    const res = await axios.get(`${API_BASE}/my-info`, getConfig());
+    return res.data; 
+};

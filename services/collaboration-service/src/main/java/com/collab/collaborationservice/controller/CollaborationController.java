@@ -2,8 +2,8 @@ package com.collab.collaborationservice.controller;
 
 import com.collab.collaborationservice.dto.request.CreateCollaborationRequest;
 import com.collab.collaborationservice.dto.response.CollaborationResponse;
-import com.collab.collaborationservice.dto.response.ApiResponse;
 import com.collab.collaborationservice.service.CollaborationService;
+import com.collab.shared.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,47 +16,46 @@ public class CollaborationController {
 
     private final CollaborationService collaborationService;
 
-    // Tạo collaboration
+    // 1. Tạo Collaboration
     @PostMapping
     public ApiResponse<CollaborationResponse> create(
-            @RequestHeader("X-USER-ID") String userId,
-            @RequestHeader("X-USER-ROLE") String role,
+            @RequestHeader("X-USER-ID") String userId, // Header luôn là String
             @RequestBody CreateCollaborationRequest request
     ) {
-        return ApiResponse.success(
-                collaborationService.createCollaboration(userId, role, request)
-        );
+        // Chuyển String sang Long và gán vào request
+        request.setCreatedBy(Long.parseLong(userId));
+        
+        // Gọi hàm create bên Service (Chỉ nhận request)
+        CollaborationResponse response = collaborationService.create(request);
+        
+        // Trả về ApiResponse đúng cú pháp (new ApiResponse...)
+        return new ApiResponse<>(true, "Create success", response);
     }
 
-    // Lấy chi tiết collaboration
+    // 2. Lấy chi tiết
     @GetMapping("/{id}")
-    public ApiResponse<CollaborationResponse> getDetail(
-            @RequestHeader("X-USER-ID") String userId,
-            @PathVariable Long id
-    ) {
-        return ApiResponse.success(
-                collaborationService.getCollaborationDetail(id, userId)
-        );
+    public ApiResponse<CollaborationResponse> getDetail(@PathVariable Long id) {
+        // Gọi hàm getDetail bên Service
+        return new ApiResponse<>(true, "Success", collaborationService.getDetail(id));
     }
 
-    // Danh sách collaboration của user
+    // 3. Lấy danh sách theo User
     @GetMapping
     public ApiResponse<List<CollaborationResponse>> getByUser(
             @RequestHeader("X-USER-ID") String userId
     ) {
-        return ApiResponse.success(
-                collaborationService.getCollaborationsByUser(userId)
-        );
+        // Chuyển String userId sang Long
+        return new ApiResponse<>(true, "Success", collaborationService.getByUser(Long.parseLong(userId)));
     }
 
-    // Đóng collaboration
+    // 4. Đóng Collaboration
     @PutMapping("/{id}/close")
     public ApiResponse<Void> close(
             @RequestHeader("X-USER-ID") String userId,
-            @RequestHeader("X-USER-ROLE") String role,
             @PathVariable Long id
     ) {
-        collaborationService.closeCollaboration(id, userId, role);
-        return ApiResponse.success();
+        // Gọi hàm close bên Service (tham số: id, requesterId)
+        collaborationService.close(id, Long.parseLong(userId));
+        return new ApiResponse<>(true, "Collaboration closed", null);
     }
 }

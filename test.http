@@ -17,7 +17,7 @@ Content-Type: application/json
 
 {
   "code": "SE104.O21_TEST_FINAL_1",
-  "subjectId": 2,
+  "subjectId": 1,
   "semester": "HK1_2025",
   "room": "B6-101",
   "teacherId": "GV001"
@@ -27,7 +27,7 @@ Content-Type: application/json
 ### BƯỚC 3: THÊM SINH VIÊN VÀO LỚP (FEATURE 2)
 ### Kiểm tra: API mới thêm sinh viên có chạy không
 ### ==================================================================
-POST http://localhost:8080/api/v1/classes/2/students?studentId=SV2021001
+POST http://localhost:8080/api/v1/classes/1/students?studentId=SV2021001
 Content-Type: application/json
 
 # Kết quả mong đợi: "Đã thêm sinh viên SV2021001 vào lớp thành công!"
@@ -36,7 +36,10 @@ Content-Type: application/json
 ### BƯỚC 4: KIỂM TRA LẠI DỮ LIỆU
 ### Xem thử API lấy chi tiết có trả về teacherId không
 ### ==================================================================
-GET http://localhost:8080/api/v1/classes/2
+GET http://localhost:8080/api/v1/classes/1/students
 Accept: application/json
 
 # Kết quả mong đợi: JSON trả về phải có dòng "teacherId": "GV00123"
+
+ GET http://localhost:8080/api/v1/classes/1/students
+ Accept: application/json

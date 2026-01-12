@@ -1,9 +1,9 @@
 package com.collab.collaborationservice.controller;
 
 import com.collab.collaborationservice.dto.request.AddMemberRequest;
-import com.collab.collaborationservice.dto.response.ApiResponse;
 import com.collab.collaborationservice.dto.response.MemberResponse;
 import com.collab.collaborationservice.service.CollaborationMemberService;
+import com.collab.shared.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +16,7 @@ public class CollaborationMemberController {
 
     private final CollaborationMemberService memberService;
 
+    // Thêm thành viên
     @PostMapping
     public ApiResponse<Void> addMember(
             @RequestHeader("X-USER-ID") String userId,
@@ -23,26 +24,25 @@ public class CollaborationMemberController {
             @PathVariable Long collaborationId,
             @RequestBody AddMemberRequest request
     ) {
-        memberService.addMember(collaborationId, userId, role, request);
-        return ApiResponse.success();
+        // Chuyển String userId sang Long
+        memberService.addMember(collaborationId, request, Long.parseLong(userId));
+        return new ApiResponse<>(true, "Member added successfully", null);
     }
 
+    // Xóa thành viên
     @DeleteMapping("/{memberId}")
     public ApiResponse<Void> removeMember(
             @RequestHeader("X-USER-ID") String userId,
             @PathVariable Long collaborationId,
-            @PathVariable String memberId
+            @PathVariable Long memberId
     ) {
-        memberService.removeMember(collaborationId, userId, memberId);
-        return ApiResponse.success();
+        memberService.removeMember(collaborationId, memberId, Long.parseLong(userId));
+        return new ApiResponse<>(true, "Member removed successfully", null);
     }
 
+    // Danh sách thành viên
     @GetMapping
-    public ApiResponse<List<MemberResponse>> listMembers(
-            @PathVariable Long collaborationId
-    ) {
-        return ApiResponse.success(
-                memberService.listMembers(collaborationId)
-        );
+    public ApiResponse<List<MemberResponse>> listMembers(@PathVariable Long collaborationId) {
+        return new ApiResponse<>(true, "Success", memberService.listMembers(collaborationId));
     }
 }

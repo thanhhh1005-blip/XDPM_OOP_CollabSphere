@@ -19,6 +19,7 @@ public class Collaboration {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Long teamId;
 
     // Tên nhóm / workspace
     @Column(nullable = false)
@@ -29,7 +30,7 @@ public class Collaboration {
 
     // Người tạo (userId)
     @Column(nullable = false)
-    private String createdBy;
+    private Long createdBy;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

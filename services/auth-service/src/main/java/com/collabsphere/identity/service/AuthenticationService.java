@@ -22,14 +22,20 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
+
+// 👇 IMPORTS MỚI CHO GOOGLE LOGIN
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
+import com.collabsphere.identity.enums.Role;
+import java.util.UUID;
+
+
 @Service
 public class AuthenticationService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // 👇 ĐÃ CẬP NHẬT: Dùng @Value để lấy key từ file cấu hình (application.yml)
-    // Thay vì gán cứng trong code (Hardcode)
     @Value("${jwt.signerKey}")
     protected String SIGNER_KEY;
 
@@ -39,43 +45,65 @@ public class AuthenticationService {
         this.passwordEncoder = passwordEncoder;
     }
 
+
     // 1. Hàm Đăng Nhập (Login)
+
+    // 1. Hàm Đăng Nhập (Login) - GIỮ NGUYÊN
+
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        // Tìm user theo username
         var user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // Kiểm tra mật khẩu
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
         if (!authenticated)
             throw new RuntimeException("Unauthenticated");
 
+        // 👇👇👇 QUAN TRỌNG: Kiểm tra tài khoản có bị khóa không 👇👇👇
+        if (!user.isActive()) {
+            throw new RuntimeException("Tài khoản của bạn đã bị vô hiệu hóa! Vui lòng liên hệ Admin.");
+        }
+        // 👆👆👆 HẾT PHẦN KIỂM TRA 👆👆👆
+
         var token = generateToken(user);
 
-        return new AuthenticationResponse(token, true);
+        return AuthenticationResponse.builder()
+            .token(token)
+            .authenticated(true)
+            .user(new com.collab.shared.dto.UserDTO(
+                user.getId(), 
+                user.getFullName(), 
+                user.getAvatarUrl(), 
+                user.getRole().name()
+            ))
+            .build();
     }
 
+
     // 2. Hàm Tạo Token
+
+    // 2. Hàm Tạo Token - GIỮ NGUYÊN
+
     private String generateToken(User user) {
-        // Tạo header với thuật toán HS512
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
-        // Tạo payload (nội dung token)
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
                 .issuer("collabsphere.com")
                 .issueTime(new Date())
                 .expirationTime(new Date(
-                        Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli() // Hết hạn sau 1 giờ
+                        Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()
                 ))
                 .claim("userId", user.getId())
-                .claim("scope", buildScope(user)) // Gọi hàm xử lý scope riêng cho gọn
+                .claim("scope", buildScope(user))
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSObject jwsObject = new JWSObject(header, payload);
 
         try {
-            // Sử dụng StandardCharsets.UTF_8 để đồng bộ encoding
             jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes(StandardCharsets.UTF_8)));
             return jwsObject.serialize();
         } catch (JOSEException e) {
@@ -83,20 +111,22 @@ public class AuthenticationService {
         }
     }
 
+
     // 3. Hàm Kiểm Tra Token (Introspect)
+
+    // 3. Hàm Kiểm Tra Token (Introspect) - GIỮ NGUYÊN
+
     public IntrospectResponse introspect(IntrospectRequest request) {
         var token = request.getToken();
         boolean isValid = true;
 
         try {
-            // Sử dụng StandardCharsets.UTF_8 để đồng bộ encoding
             JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes(StandardCharsets.UTF_8));
             SignedJWT signedJWT = SignedJWT.parse(token);
 
             Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
             var verified = signedJWT.verify(verifier);
 
-            // Token chỉ hợp lệ khi: Chữ ký đúng VÀ Chưa hết hạn
             isValid = verified && expiryTime.after(new Date());
 
         } catch (JOSEException | ParseException e) {
@@ -106,11 +136,52 @@ public class AuthenticationService {
         return new IntrospectResponse(isValid);
     }
 
-    // Hàm phụ để lấy Role convert sang String (tránh lỗi NullPointerException)
     private String buildScope(User user) {
         if (user.getRole() != null) {
             return user.getRole().name();
         }
         return "";
     }
+
+
+    // 👇👇👇 4. HÀM MỚI: Xử lý Đăng nhập Google (Outbound Auth) 👇👇👇
+    public AuthenticationResponse outboundAuthenticate(String token) {
+        try {
+            // Xác thực Token với Firebase
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+
+            // Lấy thông tin user
+            String email = decodedToken.getEmail();
+            String name = decodedToken.getName();
+            String picture = decodedToken.getPicture();
+
+            // Tìm user trong DB hoặc Tạo mới
+            User user = userRepository.findByUsername(email).orElseGet(() -> {
+                User newUser = new User();
+                newUser.setUsername(email);
+                newUser.setEmail(email);
+                newUser.setFullName(name);
+                newUser.setAvatarUrl(picture);
+                newUser.setRole(Role.STUDENT);
+                newUser.setActive(true);
+                // Tạo password ngẫu nhiên
+                newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+                
+                return userRepository.save(newUser);
+            });
+            
+            // Kiểm tra khóa tài khoản (cho user cũ đăng nhập lại bằng Google)
+            if (!user.isActive()) {
+                throw new RuntimeException("Tài khoản Google này đã bị khóa trong hệ thống!");
+            }
+
+            // Tạo Token hệ thống (HS512)
+            var internalToken = generateToken(user);
+            return new AuthenticationResponse(internalToken, true);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi xác thực Google: " + e.getMessage());
+        }
+    }
+
 }
