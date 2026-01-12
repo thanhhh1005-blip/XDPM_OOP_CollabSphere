@@ -31,6 +31,7 @@
         <module>services/resource-service</module>
         <module>services/class-service</module>
         <module>services/subject-service</module>
+        <module>services/notification-service</module>
         <!-- Sau này thêm service nào thì điền thêm vào đây -->
     </modules>
 

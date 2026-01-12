@@ -4,6 +4,9 @@ import { ProjectOutlined, BulbOutlined, MessageOutlined, UserOutlined } from '@a
 import ChatRoom from './ChatRoom'; // Import Chat
 import TaskBoard from '../pages/Workspace/TaskBoard'; // Import Bảng Task của em (lưu ý đường dẫn nếu em để trong pages)
 import AiPlanning from '../pages/AI/AiPlanning'; // Import trang AI mới tạo
+import EvaluationPage from '../pages/Evaluation/EvaluationPage';
+import NotificationPage from "../pages/Notification/NotificationPage";
+import NotificationBell from "./NotificationBell";
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -16,12 +19,16 @@ const MainLayout = () => {
   const items = [
     { key: '1', icon: <ProjectOutlined />, label: 'Quản lý Sprint' },
     { key: '2', icon: <BulbOutlined />, label: 'AI Lên Ý Tưởng' },
+    { key: '3', icon: <UserOutlined />, label: 'Evaluation' },
+    { key: '4', icon: <div style={{ fontSize: 18 }}>🔔</div>, label: 'Thông báo' },
   ];
 
   const renderContent = () => {
     switch (selectedKey) {
         case '1': return <TaskBoard />; // Của em
         case '2': return <AiPlanning />; // Của bạn em
+        case '3': return <EvaluationPage />;
+        case '4': return <NotificationPage userId={currentUserId} />;
         default: return <div>Chọn menu để bắt đầu</div>;
     }
   };

@@ -1,41 +1,69 @@
 spring:
   application:
-    name: SERVICE_NAME_PLACEHOLDER
-  profiles:
-    active: dev
+    name: notification-service
 
+  # ======================
+  # DATABASE (H2 IN-MEMORY)
+  # ======================
   datasource:
-    url: jdbc:postgresql://${SPRING_DATASOURCE_URL:localhost:5432/collab_db}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:notification-db
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
 
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true
+    open-in-view: false
+    database-platform: org.hibernate.dialect.H2Dialect
     properties:
       hibernate:
         format_sql: true
-        use_sql_comments: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # ======================
+  # RABBITMQ
+  # ======================
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: /
-    connection-timeout: 10000ms
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /#
 
+  # ======================
+  # MAIL (GIỮ NGUYÊN)
+  # ======================
+  mail:
+    host: sandbox.smtp.mailtrap.io    # <-- Host của Mailtrap
+    port: 2525                        # <-- Port của Mailtrap
+    username: ff5d78373b7490           # <-- Copy Username từ Mailtrap dán vào đây
+    password: 9d398343111aab          # <-- Copy Password từ Mailtrap dán vào đây
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+# ======================
+# SERVER
+# ======================
 server:
-  port: 8081
+  port: 8089
   servlet:
-    context-path: /api/v1
+    context-path: /api/notifications
 
+# ======================
+# LOGGING
+# ======================
 logging:
   level:
     root: INFO
-    "[com.collab]": DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+    com.collab.notificationservice: DEBUG
+    org.springframework.amqp: INFO
+    org.hibernate.SQL: DEBUG
