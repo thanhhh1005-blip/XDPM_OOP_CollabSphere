@@ -1,3 +1,7 @@
+package com.collab.collaborationservice.event;
+
+import lombok.*;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

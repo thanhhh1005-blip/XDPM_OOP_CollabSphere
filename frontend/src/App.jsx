@@ -8,7 +8,7 @@ import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 /* ===================== RESOURCE ===================== */
 import ResourcePage from './pages/Resource';
-import CollaborationPage from './pages/Collaboration';
+// import CollaborationPage from './pages/Collaboration';
 
 /* ===================== USER MANAGEMENT ===================== */
 import UserManagement from './pages/User/UserManagement';
@@ -53,7 +53,7 @@ function App() {
             <Route path="/subjects" element={<SubjectManager />} />
 
             <Route path="/resources/*" element={<ResourcePage />} />
-            <Route path="/collaborations/*" element={<CollaborationPage />} />
+            {/* <Route path="/collaborations/*" element={<CollaborationPage />} /> */}
             <Route path="/projects" element={<ProjectList />} />   {/* ✅ ADD */}
             <Route path="/projects/new" element={<ProjectForm />} /> {/* ✅ ADD */}
         </Route>

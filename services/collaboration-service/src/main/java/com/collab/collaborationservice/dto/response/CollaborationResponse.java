@@ -15,7 +15,6 @@ public class CollaborationResponse {
     private String name;
     private String description;
     private CollaborationStatus status;
-
     private Long teamId;
     private Long createdBy;
 

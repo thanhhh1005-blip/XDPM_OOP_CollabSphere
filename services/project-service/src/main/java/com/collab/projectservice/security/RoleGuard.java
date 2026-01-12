@@ -1,3 +1,6 @@
+package com.collab.projectservice.security;
+
+
 public class RoleGuard {
   public static void require(String role, String... allow) {
     if (role == null) {

@@ -11,17 +11,21 @@ public interface CollaborationMemberRepository
         extends JpaRepository<CollaborationMember, Long> {
 
     // Lấy danh sách thành viên của collaboration
-    List<CollaborationMember> findByCollaborationId(Long collaborationId);
+        List<CollaborationMember> findByCollaborationId(Long collaborationId);
 
     // Kiểm tra user có thuộc collaboration không
-    Optional<CollaborationMember> findByCollaborationIdAndUserId(
-            Long collaborationId,
-            String userId
-    );
+        Optional<CollaborationMember> findByCollaborationIdAndUserId(
+        Long collaborationId,
+        String userId
+        );
 
     // Lấy user theo role
-    List<CollaborationMember> findByCollaborationIdAndRole(
-            Long collaborationId,
-            CollaborationRole role
-    );
+        List<CollaborationMember> findByCollaborationIdAndRole(
+                Long collaborationId,
+                CollaborationRole role
+        );
+
+        boolean existsByCollaborationIdAndUserId(Long collaborationId, Long userId);
+
+        Optional<CollaborationMember> findByCollaborationIdAndUserId(Long collaborationId, Long userId);
 }

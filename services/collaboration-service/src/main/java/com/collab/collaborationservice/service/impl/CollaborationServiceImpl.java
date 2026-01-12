@@ -28,28 +28,28 @@ public class CollaborationServiceImpl implements CollaborationService {
     // ===================== CREATE =====================
     @Override
     public CollaborationResponse create(CreateCollaborationRequest request) {
-
+        // BƯỚC 1: Tạo đối tượng Collaboration từ Request trước
         Collaboration collaboration = Collaboration.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .teamId(request.getTeamId())
                 .createdBy(request.getCreatedBy())
-                .status(CollaborationStatus.ACTIVE)
-                .createdAt(LocalDateTime.now())
+                .status(CollaborationStatus.ACTIVE) // Hoặc giá trị Enum tương ứng
                 .build();
 
+        // BƯỚC 2: Lưu Collaboration vào Database để lấy ID
         Collaboration saved = collaborationRepository.save(collaboration);
 
-        // Người tạo là OWNER
+        // BƯỚC 3: Người tạo mặc định là OWNER
         CollaborationMember owner = CollaborationMember.builder()
                 .collaboration(saved)
                 .userId(request.getCreatedBy())
                 .role(CollaborationRole.OWNER)
                 .active(true)
                 .build();
-
         memberRepository.save(owner);
 
+        // BƯỚC 4: Trả về kết quả (Dùng hàm mapToResponse mình đã sửa lúc nãy)
         return mapToResponse(saved);
     }
 
