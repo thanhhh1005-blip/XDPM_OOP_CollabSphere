@@ -121,4 +121,49 @@ public class CollaborationServiceImpl implements CollaborationService {
                 .members(members)
                 .build();
     }
+
+        @Override
+        public Collaboration createCollaboration(String name, String description, String createdBy) {
+        // 1. Chuyển String userId sang Long
+        Long userId = Long.parseLong(createdBy);
+
+        // 2. Tạo đối tượng Collaboration
+        Collaboration collaboration = Collaboration.builder()
+            .name(name)
+            .description(description)
+            .createdBy(userId)
+            .status(CollaborationStatus.ACTIVE) // Mặc định là ACTIVE
+            // .createdAt(LocalDateTime.now()) // Nếu trong Entity chưa có @PrePersist
+            .build();
+
+        // 3. Lưu Collaboration
+        Collaboration saved = collaborationRepository.save(collaboration);
+
+        // 4. Thêm người tạo vào làm OWNER
+        CollaborationMember owner = CollaborationMember.builder()
+            .collaboration(saved)
+            .userId(userId)
+            .role(CollaborationRole.OWNER)
+            .active(true)
+            .build();
+    
+        memberRepository.save(owner);
+
+        return saved;
+        }
+
+        @Override
+        public List<Collaboration> getMyCollaborations(String userId) {
+                // 1. Chuyển String sang Long
+                Long uid = Long.parseLong(userId);
+
+                // 2. Gọi Repository (Hàm này mình đã thêm ở các bước trước)
+                return collaborationRepository.findByMemberUserId(uid);
+        }
+
+        @Override
+        public Collaboration getById(Long collaborationId) {
+                return collaborationRepository.findById(collaborationId)
+                .orElseThrow(() -> new RuntimeException("Collaboration not found with id: " + collaborationId));
+        }
 }

@@ -13,7 +13,7 @@ public class CreateCollaborationRequest {
     private String description;
 
     @NotNull
-    private Long createdBy; // userId
+    private Long createdBy; // userId (tạm thời, sau có thể lấy từ JWT)
 
     @NotNull
     private Long teamId;

@@ -6,10 +6,12 @@ import java.util.List;
 
 public interface CollaborationActivityService {
 
-    void logActivity(Long collaborationId,
-                     String action,
-                     Long actorId,
-                     String description);
+    void logActivity(
+            Long collaborationId,
+            String action,
+            Long actorId,
+            String description
+    );
 
     List<ActivityResponse> getActivityHistory(Long collaborationId);
 }

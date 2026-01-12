@@ -1,14 +1,19 @@
 package com.collab.projectservice.security;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 public class RoleGuard {
-  public static void require(String role, String... allow) {
-    if (role == null) {
-      throw new ForbiddenException("Missing role");
+
+  private RoleGuard() {}
+
+  public static void require(String role, String requiredRole) {
+    if (role == null || role.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Missing X-ROLE header");
     }
-    for (String r : allow) {
-      if (r.equalsIgnoreCase(role)) return;
+    if (!requiredRole.equalsIgnoreCase(role)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+          "Forbidden: required role " + requiredRole + ", but got " + role);
     }
-    throw new ForbiddenException("Permission denied for role: " + role);
   }
 }

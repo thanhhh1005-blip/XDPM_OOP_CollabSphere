@@ -7,8 +7,10 @@ const ProjectList = () => {
   const [projects, setProjects] = useState([]);
   const navigate = useNavigate();
 
-  // ✅ lấy role từ token (KHÔNG sửa Login.jsx)
-  const { role } = getAuthInfo();
+  // ✅ lấy auth info (KHÔNG sửa Login.jsx)
+  const auth = getAuthInfo() || {};
+  const { role } = auth;
+
   const isLecturer = role === 'LECTURER';
   const isHead = role === 'HEAD_DEPARTMENT';
   const isStudent = role === 'STUDENT';
@@ -20,15 +22,47 @@ const ProjectList = () => {
   const [openDesc, setOpenDesc] = useState(false);
   const [descProject, setDescProject] = useState(null);
 
+  // ✅ Lấy token + userId (fallback localStorage)
+  const token =
+    auth.token ||
+    auth.accessToken ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    JSON.parse(localStorage.getItem('user') || '{}')?.token ||
+    JSON.parse(localStorage.getItem('user') || '{}')?.accessToken;
+
+  const authHeaders = useMemo(() => {
+    const headers = {};
+
+    // Bearer token (nếu backend phía trước cần)
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    // ✅ project-service của bạn đang đọc 2 header này
+    if (auth?.role) headers['X-ROLE'] = auth.role;
+    if (auth?.userId) headers['X-USER-ID'] = String(auth.userId);
+
+    // fallback nếu authStorage không có userId/role
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!headers['X-ROLE'] && user?.role) headers['X-ROLE'] = user.role;
+
+    const fallbackUserId = user?.userId ?? user?.id;
+    if (!headers['X-USER-ID'] && fallbackUserId != null) {
+      headers['X-USER-ID'] = String(fallbackUserId);
+    }
+
+    return headers;
+  }, [token, auth?.role, auth?.userId]);
+
   const fetchProjects = () => {
     axios
-      .get(API_BASE_URL)
+      .get(API_BASE_URL, { headers: authHeaders })
       .then((response) => setProjects(response.data))
       .catch((error) => console.error('Lỗi lấy dữ liệu:', error));
   };
 
   useEffect(() => {
     fetchProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ✅ KHÓA SCROLL nền khi mở modal (fix lỗi giống “chuyển trang”)
@@ -45,7 +79,7 @@ const ProjectList = () => {
 
   const handleAction = (id, action) => {
     axios
-      .post(`${API_BASE_URL}/${id}/${action}`)
+      .post(`${API_BASE_URL}/${id}/${action}`, {}, { headers: authHeaders })
       .then(() => {
         alert(`Thực hiện ${action} thành công!`);
         fetchProjects();
@@ -59,7 +93,7 @@ const ProjectList = () => {
     const classId = prompt('Vui lòng nhập mã lớp học để giao dự án:');
     if (classId) {
       axios
-        .post(`${API_BASE_URL}/${id}/assign/${classId}`)
+        .post(`${API_BASE_URL}/${id}/assign/${classId}`, {}, { headers: authHeaders })
         .then(() => {
           alert('Giao dự án cho lớp thành công!');
           fetchProjects();
@@ -186,6 +220,7 @@ const ProjectList = () => {
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => openDescriptionModal(project)}
                     style={{
                       marginTop: 4,
@@ -210,7 +245,11 @@ const ProjectList = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {/* ✅ SUBMIT: chỉ LECTURER */}
                     {isLecturer && project.status === 'DRAFT' && (
-                      <button style={btnStyle} onClick={() => handleAction(project.id, 'submit')}>
+                      <button
+                        type="button"
+                        style={btnStyle}
+                        onClick={() => handleAction(project.id, 'submit')}
+                      >
                         Nộp duyệt
                       </button>
                     )}
@@ -219,12 +258,14 @@ const ProjectList = () => {
                     {isHead && project.status === 'PENDING' && (
                       <>
                         <button
+                          type="button"
                           style={{ ...btnStyle, color: 'green' }}
                           onClick={() => handleAction(project.id, 'approve')}
                         >
                           Duyệt
                         </button>
                         <button
+                          type="button"
                           style={{ ...btnStyle, color: 'red' }}
                           onClick={() => handleAction(project.id, 'deny')}
                         >
@@ -236,6 +277,7 @@ const ProjectList = () => {
                     {/* ✅ ASSIGN: chỉ HEAD_DEPARTMENT */}
                     {isHead && project.status === 'APPROVED' && (
                       <button
+                        type="button"
                         style={{
                           ...btnStyle,
                           background: '#007bff',
@@ -285,7 +327,7 @@ const ProjectList = () => {
             onClick={(e) => e.stopPropagation()}
             style={{
               width: 'min(900px, 100%)',
-              maxHeight: '90vh', // ✅ không cho modal cao quá màn hình
+              maxHeight: '90vh',
               background: '#fff',
               borderRadius: 12,
               boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
@@ -308,10 +350,10 @@ const ProjectList = () => {
                 <div style={{ fontWeight: 900, fontSize: 16 }}>
                   {descProject?.title || 'Chi tiết mô tả'}
                 </div>
-                
               </div>
 
               <button
+                type="button"
                 onClick={closeDescriptionModal}
                 style={{
                   border: 'none',
@@ -337,7 +379,7 @@ const ProjectList = () => {
                   border: '1px solid #eee',
                   borderRadius: 10,
                   padding: 14,
-                  maxHeight: '60vh', // ✅ nội dung dài thì cuộn trong đây
+                  maxHeight: '60vh',
                   overflowY: 'auto',
                   lineHeight: 1.5,
                   fontFamily: 'inherit',
