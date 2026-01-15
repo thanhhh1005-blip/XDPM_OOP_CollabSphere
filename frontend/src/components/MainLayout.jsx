@@ -21,7 +21,7 @@ import AiPlanning from '../pages/AI/AiPlanning';
 import ClassManager from '../pages/Education/ClassManager';
 import SubjectManager from '../pages/Education/SubjectManager';
 import ProjectList from '../pages/Projects/ProjectList';
-
+import ResourcePage from '../pages/Resource/ResourcePage';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -49,6 +49,7 @@ const MainLayout = () => {
     { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN'] },
     { key: '/users', icon: <UserOutlined />, label: 'Quản lý Người dùng', roles: ['ADMIN'] },
     { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
+    { key: '/resources', icon: <FolderOutlined />, label: 'Kho Tài liệu', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
   ];
   const filteredItems = items.filter(item => item.roles.includes(userRole));
   return (
