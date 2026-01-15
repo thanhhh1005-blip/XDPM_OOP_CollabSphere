@@ -1,19 +1,17 @@
 package com.collab.resourceservice.controller;
 
 import com.collab.resourceservice.dto.ApiResponse;
-import com.collab.resourceservice.entity.Resource;
+import com.collab.resourceservice.dto.ResourceResponse;
+import com.collab.resourceservice.enums.ResourceScope;
+import com.collab.resourceservice.enums.UserRole;
 import com.collab.resourceservice.service.ResourceService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -23,61 +21,70 @@ public class ResourceController {
 
     private final ResourceService resourceService;
 
-    /* ===================== UPLOAD ===================== */
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<Resource>> upload(
+    // 1. API UPLOAD FILE
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<ResourceResponse>> uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam String uploadedBy,
-            @RequestParam String uploaderRole
+            @RequestParam("scope") ResourceScope scope,
+            @RequestParam("scopeId") String scopeId,
+            @RequestParam("uploaderId") String uploaderId,
+            @RequestParam("role") UserRole role
     ) {
-        Resource resource = resourceService.upload(file, uploadedBy, uploaderRole);
-        return ResponseEntity.ok(ApiResponse.success("Upload thành công", resource));
-    }
-
-    /* ===================== LIST ===================== */
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<Resource>>> getAll() {
-        return ResponseEntity.ok(ApiResponse.success(resourceService.getAll()));
-    }
-
-    /* ===================== GET BY ID ===================== */
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Resource>> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(resourceService.getById(id)));
-    }
-
-    /* ===================== DOWNLOAD ===================== */
-    @GetMapping("/download/{id}")
-    public ResponseEntity<FileSystemResource> download(@PathVariable Long id) {
-
-        Resource resource = resourceService.getById(id);
-        File file = new File(resource.getFilePath());
-
-        if (!file.exists()) {
-            return ResponseEntity.notFound().build();
+        try {
+            ResourceResponse response = resourceService.uploadFile(file, scope, scopeId, uploaderId, role);
+            return ResponseEntity.ok(ApiResponse.success("Upload successful", response));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Lỗi Server: " + e.getMessage()));
         }
-
-        String encodedFileName =
-                URLEncoder.encode(resource.getFileName(), StandardCharsets.UTF_8)
-                        .replace("+", "%20");
-
-        return ResponseEntity.ok()
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename*=UTF-8''" + encodedFileName
-                )
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .contentLength(file.length())
-                .body(new FileSystemResource(file));
     }
 
-    /* ===================== DELETE (SOFT DELETE) ===================== */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(
-            @PathVariable Long id,
-            @RequestParam String requesterRole
+    // 2. API DOWNLOAD FILE
+    @GetMapping("/{id}/download")
+    public ResponseEntity<byte[]> downloadFile(@PathVariable("id") Long id) {
+        try {
+            ResourceResponse resourceInfo = resourceService.getResourceById(id);
+            byte[] data = resourceService.downloadFile(id);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(resourceInfo.getContentType()))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resourceInfo.getFileName() + "\"")
+                    .body(data);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // 3. API LẤY DANH SÁCH
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<ResourceResponse>>> getResources(
+            @RequestParam("scope") ResourceScope scope,
+            @RequestParam("scopeId") String scopeId
     ) {
-        resourceService.delete(id, requesterRole);
-        return ResponseEntity.ok(ApiResponse.success("Xóa thành công", null));
+        List<ResourceResponse> resources = resourceService.getResourcesByScope(scope, scopeId);
+        return ResponseEntity.ok(ApiResponse.success("Success", resources));
+    }
+
+    // 4. API XÓA FILE (DELETE) ---> ĐÂY LÀ PHẦN QUAN TRỌNG
+    // URL: DELETE http://localhost:8084/api/resources/{id}?userId=...
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteResource(
+            @PathVariable("id") Long id,
+            @RequestParam("userId") String userId,
+            @RequestParam("role") UserRole role
+    ) {
+        try {
+            resourceService.deleteResource(id, userId, role);
+            return ResponseEntity.ok(ApiResponse.success("Deleted successfully", null));
+        } catch (RuntimeException e) {
+            // Lỗi do không có quyền (403 Forbidden)
+            return ResponseEntity.status(403).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(ApiResponse.error("Error: " + e.getMessage()));
+        }
     }
 }

@@ -1,14 +1,4 @@
-<<<<<<< HEAD
-import React, { useState } from 'react';
-import { Layout, Menu, Button, Drawer, Typography, Avatar } from 'antd';
-import { ProjectOutlined, BulbOutlined, MessageOutlined, UserOutlined } from '@ant-design/icons';
-import ChatRoom from './ChatRoom'; // Import Chat
-import TaskBoard from '../pages/Workspace/TaskBoard'; // Import Bảng Task của em (lưu ý đường dẫn nếu em để trong pages)
-import AiPlanning from '../pages/AI/AiPlanning'; // Import trang AI mới tạo
-import EvaluationPage from '../pages/Evaluation/EvaluationPage';
-import NotificationPage from "../pages/Notification/NotificationPage";
-import NotificationBell from "./NotificationBell";
-=======
+
 import React, { useState } from "react";
 import { Layout, Menu, Button, Drawer, Typography, Avatar, Badge, Tag } from 'antd';
 import {
@@ -31,7 +21,7 @@ import AiPlanning from '../pages/AI/AiPlanning';
 import ClassManager from '../pages/Education/ClassManager';
 import SubjectManager from '../pages/Education/SubjectManager';
 import ProjectList from '../pages/Projects/ProjectList';
->>>>>>> cb0127ccb26ef039532b05bccc7c276fa2554861
+
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -50,24 +40,7 @@ const MainLayout = () => {
   // 1. Khai báo danh sách Menu
   // QUAN TRỌNG: 'key' phải trùng khớp với 'path' em đã đặt trong App.jsx
   const items = [
-<<<<<<< HEAD
-    { key: '1', icon: <ProjectOutlined />, label: 'Quản lý Sprint' },
-    { key: '2', icon: <BulbOutlined />, label: 'AI Lên Ý Tưởng' },
-    { key: '3', icon: <UserOutlined />, label: 'Evaluation' },
-    { key: '4', icon: <div style={{ fontSize: 18 }}>🔔</div>, label: 'Thông báo' },
-  ];
 
-  const renderContent = () => {
-    switch (selectedKey) {
-        case '1': return <TaskBoard />; // Của em
-        case '2': return <AiPlanning />; // Của bạn em
-        case '3': return <EvaluationPage />;
-        case '4': return <NotificationPage userId={currentUserId} />;
-        default: return <div>Chọn menu để bắt đầu</div>;
-    }
-  };
-
-=======
     { key: '/workspace', icon: <ProjectOutlined />, label: 'Quản lý Sprint', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
     { key: '/projects', icon: <FolderOutlined />, label: 'Dự án', roles: ['LECTURER', 'HEAD_DEPARTMENT'] },
     { key: '/teams', icon: <TeamOutlined />, label: 'Team', roles: ['LECTURER', 'STUDENT'] },
@@ -78,7 +51,6 @@ const MainLayout = () => {
     { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
   ];
   const filteredItems = items.filter(item => item.roles.includes(userRole));
->>>>>>> cb0127ccb26ef039532b05bccc7c276fa2554861
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {/* SIDEBAR BÊN TRÁI */}

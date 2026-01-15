@@ -1,10 +1,19 @@
 spring:
   application:
-    name: resource-service # 1. Đặt lại tên chuẩn
+    name: resource-service
+
+  # --- PHẦN MỚI THÊM ĐỂ SỬA LỖI REGION ---
+  cloud:
+    aws:
+      region:
+        static: us-east-1  # <--- Dòng này giúp fix lỗi "Unable to load region"
+      credentials:
+        access-key: admin
+        secret-key: password123
+  # ---------------------------------------
 
   datasource:
-    # 2. Đổi sang MySQL
-    url: jdbc:mysql://localhost:3306/Resource_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/collab_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -15,7 +24,7 @@ spring:
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect # 3. Đổi Dialect
+        dialect: org.hibernate.dialect.MySQLDialect
 
   rabbitmq:
     host: localhost
@@ -23,12 +32,20 @@ spring:
     username: guest
     password: guest
 
-server:
-  port: 8088 # 4. Đổi sang 8084 (theo quy hoạch)
   servlet:
-    context-path: /api/resources
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
 
-logging:
-  level:
-    root: INFO
-    com.collab: DEBUG
+server:
+  port: 8084
+
+
+# Cấu hình Custom cho Code của bạn (Vẫn giữ nguyên để Service chạy)
+aws:
+  s3:
+    access-key: admin
+    secret-key: password123
+    region: us-east-1
+    bucket-name: collab-sphere
+    endpoint: http://localhost:9000

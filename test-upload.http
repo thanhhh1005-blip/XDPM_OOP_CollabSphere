@@ -1,0 +1,30 @@
+### Yêu cầu Upload File (Test Upload API)
+POST http://localhost:8084/api/resources
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="scope"
+
+CLASS
+--WebAppBoundary
+Content-Disposition: form-data; name="scopeId"
+
+SE104
+--WebAppBoundary
+Content-Disposition: form-data; name="uploaderId"
+
+SV001
+--WebAppBoundary
+Content-Disposition: form-data; name="role"
+
+USER
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="test-note.txt"
+Content-Type: text/plain
+
+Đây là nội dung file test upload.
+Chúc mừng bạn đã fix xong lỗi!
+--WebAppBoundary--
+
+### Yêu cầu Xóa File (Test Delete API)
+DELETE http://localhost:8084/api/resources/1?userId=SV001&role=USER
