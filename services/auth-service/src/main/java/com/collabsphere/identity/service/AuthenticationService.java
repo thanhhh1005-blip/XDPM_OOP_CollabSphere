@@ -21,7 +21,7 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-
+import java.util.Optional; // Import thêm Optional
 
 // 👇 IMPORTS MỚI CHO GOOGLE LOGIN
 import com.google.firebase.auth.FirebaseAuth;
@@ -29,43 +29,46 @@ import com.google.firebase.auth.FirebaseToken;
 import com.collabsphere.identity.enums.Role;
 import java.util.UUID;
 
+// 👇 IMPORT SERVICE GỬI EMAIL
+import com.collabsphere.identity.service.EmailService; 
 
 @Service
 public class AuthenticationService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService; // 1. Khai báo biến EmailService
 
     @Value("${jwt.signerKey}")
     protected String SIGNER_KEY;
 
+    // 2. Cập nhật Constructor để Inject EmailService vào
     @Autowired
-    public AuthenticationService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthenticationService(UserRepository userRepository, 
+                                 PasswordEncoder passwordEncoder,
+                                 EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
-
-    // 1. Hàm Đăng Nhập (Login)
+    // =========================================================================
+    // CÁC HÀM CŨ (GIỮ NGUYÊN TUYỆT ĐỐI)
+    // =========================================================================
 
     // 1. Hàm Đăng Nhập (Login) - GIỮ NGUYÊN
-
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        // Tìm user theo username
         var user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Kiểm tra mật khẩu
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
         if (!authenticated)
             throw new RuntimeException("Unauthenticated");
 
-        // 👇👇👇 QUAN TRỌNG: Kiểm tra tài khoản có bị khóa không 👇👇👇
         if (!user.isActive()) {
             throw new RuntimeException("Tài khoản của bạn đã bị vô hiệu hóa! Vui lòng liên hệ Admin.");
         }
-        // 👆👆👆 HẾT PHẦN KIỂM TRA 👆👆👆
 
         var token = generateToken(user);
 
@@ -81,11 +84,7 @@ public class AuthenticationService {
             .build();
     }
 
-
-    // 2. Hàm Tạo Token
-
     // 2. Hàm Tạo Token - GIỮ NGUYÊN
-
     private String generateToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
@@ -111,11 +110,7 @@ public class AuthenticationService {
         }
     }
 
-
-    // 3. Hàm Kiểm Tra Token (Introspect)
-
     // 3. Hàm Kiểm Tra Token (Introspect) - GIỮ NGUYÊN
-
     public IntrospectResponse introspect(IntrospectRequest request) {
         var token = request.getToken();
         boolean isValid = true;
@@ -143,8 +138,10 @@ public class AuthenticationService {
         return "";
     }
 
-
-    // 👇👇👇 4. HÀM MỚI: Xử lý Đăng nhập Google (Outbound Auth) 👇👇👇
+    // =========================================================================
+    // 4. HÀM MỚI: Xử lý Đăng nhập Google (CÓ THÊM GỬI EMAIL)
+    // =========================================================================
+    
     public AuthenticationResponse outboundAuthenticate(String token) {
         try {
             // Xác thực Token với Firebase
@@ -155,8 +152,15 @@ public class AuthenticationService {
             String name = decodedToken.getName();
             String picture = decodedToken.getPicture();
 
-            // Tìm user trong DB hoặc Tạo mới
-            User user = userRepository.findByUsername(email).orElseGet(() -> {
+            // 👇 SỬA ĐỔI NHỎ: Tách logic kiểm tra user để biết khi nào cần gửi mail
+            Optional<User> userOptional = userRepository.findByUsername(email);
+            User user;
+
+            if (userOptional.isPresent()) {
+                // === USER CŨ (Đã tồn tại) ===
+                user = userOptional.get();
+            } else {
+                // === USER MỚI (Chưa tồn tại) -> Tạo mới & Gửi Mail ===
                 User newUser = new User();
                 newUser.setUsername(email);
                 newUser.setEmail(email);
@@ -164,11 +168,13 @@ public class AuthenticationService {
                 newUser.setAvatarUrl(picture);
                 newUser.setRole(Role.STUDENT);
                 newUser.setActive(true);
-                // Tạo password ngẫu nhiên
                 newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
                 
-                return userRepository.save(newUser);
-            });
+                user = userRepository.save(newUser);
+
+                // >>> GỌI EMAIL SERVICE TẠI ĐÂY <<<
+                emailService.sendWelcomeEmail(email, name);
+            }
             
             // Kiểm tra khóa tài khoản (cho user cũ đăng nhập lại bằng Google)
             if (!user.isActive()) {
@@ -177,11 +183,12 @@ public class AuthenticationService {
 
             // Tạo Token hệ thống (HS512)
             var internalToken = generateToken(user);
+            
+            // Logic trả về giữ nguyên như code bạn đưa
             return new AuthenticationResponse(internalToken, true);
 
         } catch (Exception e) {
             throw new RuntimeException("Lỗi xác thực Google: " + e.getMessage());
         }
     }
-
 }
