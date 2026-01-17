@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Layout, Menu, Button, Drawer, Typography, Avatar, Badge, Tag } from 'antd';
 import {
@@ -12,51 +11,41 @@ import {
   FolderOutlined   //  Resource
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Select } from 'antd';
 import ChatRoom from './ChatRoom';
-
-/* ===== COMPONENT CŨ CỦA NGƯỜI KHÁC (GIỮ NGUYÊN) ===== */
-import TaskBoard from '../pages/Workspace/TaskBoard';
-import AiPlanning from '../pages/AI/AiPlanning';
-import ClassManager from '../pages/Education/ClassManager';
-import SubjectManager from '../pages/Education/SubjectManager';
-import ProjectList from '../pages/Projects/ProjectList';
-import ResourcePage from '../pages/Resource/ResourcePage';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
 const MainLayout = () => { 
   const [openChat, setOpenChat] = useState(false);
-
-  const [selectedKey, setSelectedKey] = useState('1');
-
   const navigate = useNavigate();
   const location = useLocation();
-  const savedUser = JSON.parse(localStorage.getItem('user') || '{}'); // Vai trò người dùng hiện tại
+  
+  // Lấy thông tin user từ LocalStorage
+  const savedUser = JSON.parse(localStorage.getItem('user') || '{}'); 
   const userRole = savedUser.role; 
   console.log("User Role in MainLayout:", savedUser);
 
   // 1. Khai báo danh sách Menu
-  // QUAN TRỌNG: 'key' phải trùng khớp với 'path' em đã đặt trong App.jsx
   const items = [
-
     { key: '/workspace', icon: <ProjectOutlined />, label: 'Quản lý Sprint', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
     { key: '/projects', icon: <FolderOutlined />, label: 'Dự án', roles: ['LECTURER', 'HEAD_DEPARTMENT'] },
     { key: '/teams', icon: <TeamOutlined />, label: 'Team', roles: ['LECTURER', 'STUDENT'] },
     { key: '/milestones', icon: <ReadOutlined />, label: 'Lộ trình & Cột mốc', roles: ['STUDENT', 'LECTURER'] },
-    { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['LECTURER', 'ADMIN'] },
-    { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN'] },
+    { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['STAFF', 'ADMIN','LECTURER'] },
+    { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN', 'STAFF'] },
     { key: '/users', icon: <UserOutlined />, label: 'Quản lý Người dùng', roles: ['ADMIN'] },
     { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
     { key: '/resources', icon: <FolderOutlined />, label: 'Kho Tài liệu', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
   ];
+
+  // Lọc menu theo quyền (Role)
   const filteredItems = items.filter(item => item.roles.includes(userRole));
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {/* SIDEBAR BÊN TRÁI */}
       <Sider theme="light" width={250}>
-
         <div
           style={{
             height: 50,
@@ -75,11 +64,9 @@ const MainLayout = () => {
         </div>
         <Menu
           theme="light"
-          // Tự động sáng menu dựa trên URL hiện tại (Ví dụ đang ở /workspace thì menu 1 sáng)
           selectedKeys={[location.pathname]} 
           mode="inline"
           items={filteredItems}
-          // Khi bấm vào menu, nó nhảy thẳng tới URL đó
           onClick={(e) => navigate(e.key)} 
         />
       </Sider>
@@ -99,7 +86,7 @@ const MainLayout = () => {
             <Avatar
               icon={<UserOutlined />}
               style={{ cursor: "pointer" }}
-              onClick={() => navigate("/profile")} // Bấm avatar nhảy về trang cá nhân
+              onClick={() => navigate("/profile")} 
             />
             <Button
               type="primary"
@@ -114,16 +101,20 @@ const MainLayout = () => {
 
         {/* NỘI DUNG CHÍNH Ở GIỮA */}
         <Content style={{ margin: "16px", padding: 24, background: "#fff", borderRadius: 8, overflowY: "auto" }}>
-            
-            {/* 👇 ĐÂY LÀ CHỖ THAY THẾ CHO renderContent() 👇 */}
-            {/* React Router sẽ tự động lấy TaskBoard, AiPlanning... đặt vào đây dựa trên URL */}
+            {/* React Router sẽ render các trang con (TaskBoard, ClassManager...) vào đây */}
             <Outlet context={[userRole]}/> 
-
         </Content>
       </Layout>
 
       {/* CỬA SỔ CHAT TRƯỢT (DRAWER) */}
-      <Drawer title="💬 Phòng Chat" placement="right" onClose={() => setOpenChat(false)} open={openChat} width={450}>
+      <Drawer 
+        title="💬 Phòng Chat" 
+        placement="right" 
+        onClose={() => setOpenChat(false)} 
+        open={openChat} 
+        // 👇 ĐÃ SỬA: Thay width={450} bằng styles (Cách chuẩn của Antd v5)
+        styles={{ wrapper: { width: 450 } }}
+      >
         <ChatRoom />
       </Drawer>
     </Layout>

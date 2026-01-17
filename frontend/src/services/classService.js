@@ -1,48 +1,87 @@
-import axios from 'axios';
+import axios from "axios";
 
-// Đảm bảo đúng cổng của Backend (Spring Boot)
-const API_BASE_URL = "http://localhost:8080/api/v1/classes";
+// Đảm bảo đường dẫn này đúng (v1/classes)
+const API_BASE = "http://localhost:8080/api/v1/classes"; 
 
-// --- CÁC HÀM GỌI API ---
-
-export const getAllClasses = () => {
-    return axios.get(API_BASE_URL).then(res => res.data);
-};
-
-export const createClass = (classData) => {
-    return axios.post(API_BASE_URL, classData);
-};
-
-export const getClassById = (id) => {
-    return axios.get(`${API_BASE_URL}/${id}`);
-};
-
-export const updateClass = (id, classData) => {
-    return axios.put(`${API_BASE_URL}/${id}`, classData);
-};
-
-export const deleteClass = (id) => {
-    return axios.delete(`${API_BASE_URL}/${id}`);
-};
-
-export const importClasses = (file) => {
-    let formData = new FormData();
-    formData.append("file", file);
-    return axios.post(`${API_BASE_URL}/import`, formData, {
-        headers: {
-            "Content-Type": "multipart/form-data"
+const getConfig = () => {
+    const token = localStorage.getItem('token');
+    return {
+        headers: { 
+            Authorization: `Bearer ${token}`
         }
-    });
+    };
 };
 
-export const addStudentToClass = (classId, studentId) => {
-    // Lưu ý: Backend của bạn dùng @RequestParam cho studentId
-    // Nên URL sẽ là: .../students?studentId=...
-    return axios.post(`${API_BASE_URL}/${classId}/students`, null, {
-        params: { studentId: studentId }
-    });
+// --- CÁC HÀM API ---
+
+export const getAllClasses = async () => {
+    try {
+        const res = await axios.get(`${API_BASE}`, getConfig());
+        console.log("🔥 API getAllClasses Response:", res.data);
+
+        // 👇 LOGIC FIX: Nếu server trả về mảng trực tiếp (Array) thì dùng luôn
+        if (Array.isArray(res.data)) {
+            return res.data;
+        }
+
+        // Nếu server trả về object { result: [...] } (kiểu ApiResponse chuẩn)
+        return res.data.result || res.data.data || []; 
+    } catch (error) {
+        console.error("🔥 Lỗi gọi API getAllClasses:", error);
+        return []; // Trả về mảng rỗng để không bị crash trang web
+    }
 };
 
-export const getStudentsInClass = (classId) => {
-    return axios.get(`${API_BASE_URL}/${classId}/students`).then(res => res.data);
+export const createClass = async (classData) => {
+    const res = await axios.post(`${API_BASE}`, classData, getConfig());
+    return res.data;
+};
+
+export const updateClass = async (id, classData) => {
+    const res = await axios.put(`${API_BASE}/${id}`, classData, getConfig());
+    return res.data;
+};
+
+export const deleteClass = async (id) => {
+    const res = await axios.delete(`${API_BASE}/${id}`, getConfig());
+    return res.data;
+};
+
+// --- QUẢN LÝ SINH VIÊN ---
+
+export const getStudentsInClass = async (classId) => {
+    try {
+        const res = await axios.get(`${API_BASE}/${classId}/students`, getConfig());
+        console.log(`🔥 Students in Class ${classId}:`, res.data);
+        
+        // 👇 LOGIC FIX TƯƠNG TỰ
+        if (Array.isArray(res.data)) {
+            return res.data;
+        }
+        return res.data.result || res.data.data || [];
+    } catch (error) {
+        console.error("Lỗi lấy danh sách sinh viên:", error);
+        return [];
+    }
+};
+
+export const addStudentToClass = async (classId, studentId) => {
+    const res = await axios.post(`${API_BASE}/${classId}/students/${studentId}`, {}, getConfig());
+    return res.data;
+};
+
+export const removeStudentFromClass = async (classId, studentId) => {
+    const res = await axios.delete(`${API_BASE}/${classId}/students/${studentId}`, getConfig());
+    return res.data;
+};
+
+export const importClasses = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const config = getConfig();
+    config.headers["Content-Type"] = "multipart/form-data";
+
+    const res = await axios.post(`${API_BASE}/import`, formData, config);
+    return res.data;
 };

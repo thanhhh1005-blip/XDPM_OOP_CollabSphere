@@ -52,3 +52,29 @@ export const getMyInfo = async () => {
     const res = await axios.get(`${API_BASE}/my-info`, getConfig());
     return res.data; 
 };
+
+// 👇 HÀM MỚI: Lấy danh sách Giảng viên (Role = LECTURER)
+// Backend API: GET /users/role/LECTURER
+export const getLecturers = async () => {
+    try {
+        // API_BASE đang là ".../users", ta nối thêm "/role/LECTURER"
+        const res = await axios.get(`${API_BASE}/role/LECTURER`, getConfig());
+        
+        // Backend trả về: { code: 1000, result: [...] } -> Ta lấy .result
+        return res.data.result; 
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách giảng viên:", error);
+        return []; // Trả về mảng rỗng để không bị lỗi màn hình
+    }
+};
+
+// 👇 HÀM MỚI: Lấy danh sách Sinh Viên (Role = STUDENT)
+export const getStudents = async () => {
+    try {
+        const res = await axios.get(`${API_BASE}/role/STUDENT`, getConfig());
+        return res.data.result; 
+    } catch (error) {
+        console.error("Lỗi lấy danh sách sinh viên:", error);
+        return [];
+    }
+};

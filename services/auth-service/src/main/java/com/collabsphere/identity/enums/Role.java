@@ -5,5 +5,7 @@ public enum Role {
     STAFF,              // Giáo vụ
     HEAD_DEPARTMENT,    // Trưởng bộ môn
     LECTURER,           // Giảng viên
-    STUDENT             // Sinh viên
+    STUDENT,             // Sinh viên
+    LEADER,              // Lớp trưởng
+    MEMBER         // Thành viên lớp học
 }
