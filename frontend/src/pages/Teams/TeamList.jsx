@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getAuthInfo } from "../../utils/authStorage";
-import { Card, Button, Table, Space, Typography, Alert } from "antd";
+import { Card, Button, Table, Space, Typography, Alert, Popconfirm, message } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -106,6 +106,17 @@ const TeamList = () => {
     return code;
   };
 
+  const handleDelete = async (teamId) => {
+    try {
+      await axios.delete(`http://localhost:8080/api/v1/teams/${teamId}`, { headers });
+      message.success("Đã xóa team");
+      fetchTeams();
+    } catch (e) {
+      console.error(e);
+      message.error(e.response?.data?.message || "Xóa team thất bại");
+    }
+  };
+
   const columns = [
     {
       title: "Tên team",
@@ -130,9 +141,26 @@ const TeamList = () => {
     {
       title: "Hành động",
       key: "action",
-      width: 140,
+      width: 220,
       render: (_, t) => (
-        <Button onClick={() => navigate(`/teams/${t.id}`)}>Xem</Button>
+        <Space>
+          <Button onClick={() => navigate(`/teams/${t.id}`)}>Xem</Button>
+
+          <Button onClick={() => navigate(`/teams/${t.id}/edit`)} disabled={role !== "LECTURER"}>
+            Sửa
+          </Button>
+
+          <Popconfirm
+            title="Xóa team này?"
+            description="Hành động không thể hoàn tác."
+            okText="Xóa"
+            cancelText="Hủy"
+            onConfirm={() => handleDelete(t.id)}
+            disabled={role !== "LECTURER"}
+          >
+            <Button danger disabled={role !== "LECTURER"}>Xóa</Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
