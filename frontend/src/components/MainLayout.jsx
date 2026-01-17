@@ -8,7 +8,8 @@ import {
   ReadOutlined,
   BookOutlined,
   TeamOutlined,
-  FolderOutlined   //  Resource
+  FolderOutlined,
+  LogoutOutlined // <--- 1. THÊM ICON ĐĂNG XUẤT
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import ChatRoom from './ChatRoom';
@@ -16,17 +17,26 @@ import ChatRoom from './ChatRoom';
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
-const MainLayout = () => { 
+const MainLayout = () => {
   const [openChat, setOpenChat] = useState(false);
+
+  const [selectedKey, setSelectedKey] = useState('1');
+
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Lấy thông tin user từ LocalStorage
-  const savedUser = JSON.parse(localStorage.getItem('user') || '{}'); 
-  const userRole = savedUser.role; 
+  const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = savedUser.role;
   console.log("User Role in MainLayout:", savedUser);
 
-  // 1. Khai báo danh sách Menu
+  // --- 2. THÊM HÀM XỬ LÝ ĐĂNG XUẤT ---
+  const handleLogout = () => {
+    // Xóa thông tin user đã lưu
+    localStorage.removeItem('user');
+    // Chuyển hướng về trang login
+    navigate('/login');
+  };
+  // ------------------------------------
+
   const items = [
     { key: '/workspace', icon: <ProjectOutlined />, label: 'Quản lý Sprint', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
     { key: '/projects', icon: <FolderOutlined />, label: 'Dự án', roles: ['LECTURER', 'HEAD_DEPARTMENT'] },
@@ -64,10 +74,11 @@ const MainLayout = () => {
         </div>
         <Menu
           theme="light"
-          selectedKeys={[location.pathname]} 
+
+          selectedKeys={[location.pathname]}
           mode="inline"
           items={filteredItems}
-          onClick={(e) => navigate(e.key)} 
+          onClick={(e) => navigate(e.key)}
         />
       </Sider>
 
@@ -77,17 +88,20 @@ const MainLayout = () => {
           <div>
             <Title level={4} style={{ margin: 0 }}>Dashboard</Title>
           </div>
-          
+
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <div style={{ lineHeight: '1.2' }}>
-                <div style={{ fontWeight: 'bold' }}>{savedUser.fullName}</div>
-                <Tag color="blue">{userRole}</Tag> 
+              <div style={{ fontWeight: 'bold' }}>{savedUser.fullName}</div>
+              <Tag color="blue">{userRole}</Tag>
             </div>
+            
             <Avatar
               icon={<UserOutlined />}
               style={{ cursor: "pointer" }}
-              onClick={() => navigate("/profile")} 
+
+              onClick={() => navigate("/profile")}
             />
+            
             <Button
               type="primary"
               shape="round"
@@ -96,13 +110,25 @@ const MainLayout = () => {
             >
               Chat Nhóm
             </Button>
+
+            {/* --- 3. THÊM NÚT ĐĂNG XUẤT TẠI ĐÂY --- */}
+            <Button
+                danger
+                type="text"
+                icon={<LogoutOutlined />}
+                onClick={handleLogout}
+            >
+                Đăng xuất
+            </Button>
+             {/* ------------------------------------ */}
+
           </div>
         </Header>
 
         {/* NỘI DUNG CHÍNH Ở GIỮA */}
         <Content style={{ margin: "16px", padding: 24, background: "#fff", borderRadius: 8, overflowY: "auto" }}>
-            {/* React Router sẽ render các trang con (TaskBoard, ClassManager...) vào đây */}
-            <Outlet context={[userRole]}/> 
+
+          <Outlet context={[userRole]} />
         </Content>
       </Layout>
 
@@ -120,5 +146,5 @@ const MainLayout = () => {
     </Layout>
   );
 };
-
+ 
 export default MainLayout;

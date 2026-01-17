@@ -1,5 +1,6 @@
 package com.collab.teamservice.client;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -19,7 +20,7 @@ public class ClassServiceClient {
   // ✅ class-service JSON: { "id": 1, "class_code": "CN23", "semester": "...", ... }
   public record ClassroomDTO(
       Long id,
-      @JsonProperty("class_code") String classCode,
+      @JsonAlias({"code", "class_code", "classCode"}) String classCode,
       String semester
   ) {}
 

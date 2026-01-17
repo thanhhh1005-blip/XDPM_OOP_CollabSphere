@@ -61,7 +61,7 @@ const TeamCreate = () => {
   // Khi chọn lớp -> load students của lớp
   const onChangeClass = async (classId) => {
     // reset leader
-    form.setFieldsValue({ leaderId: undefined });
+    form.setFieldsValue({ leaderId: undefined, memberIds: [] });
     setStudents([]);
 
     if (!classId) return;
@@ -86,21 +86,22 @@ const TeamCreate = () => {
     try {
       setSubmitting(true);
 
-      // ✅ classId là Long
-      const params = {
-        name: values.name?.trim(),
-        classId: values.classId, // Long
-      };
+      const params = new URLSearchParams();
+      params.append("name", values.name?.trim());
+      params.append("classId", String(values.classId));
 
       const projectId = values.projectId?.trim();
-      if (projectId) params.projectId = projectId;
+      if (projectId) params.append("projectId", projectId);
 
       const leaderId = values.leaderId?.trim();
-      if (leaderId) params.leaderId = leaderId;
+      if (leaderId) params.append("leaderId", leaderId);
+
+      const memberIds = Array.isArray(values.memberIds) ? values.memberIds : [];
+      memberIds.forEach((m) => params.append("memberIds", m));
 
       await axios.post("http://localhost:8080/api/v1/teams", null, {
         headers,
-        params, // ✅ backend dùng @RequestParam
+        params, // ✅ gửi memberIds=...&memberIds=... (không phải memberIds[])
       });
 
       message.success("Tạo team thành công!");
@@ -169,19 +170,15 @@ const TeamCreate = () => {
                   showSearch
                   optionFilterProp="label"
                   options={classes.map((c) => ({
-                    value: c.id,            // ✅ Long
-                    label: c.code,
-     // hiển thị CN23
+                    value: c.id, // ✅ Long
+                    label: c.classCode,
                   }))}
                   onChange={onChangeClass}
                 />
               </Form.Item>
 
               {/* ✅ chọn trưởng nhóm theo lớp */}
-              <Form.Item
-                label="Trưởng nhóm (tuỳ chọn)"
-                name="leaderId"
-              >
+              <Form.Item label="Trưởng nhóm (tuỳ chọn)" name="leaderId">
                 <Select
                   placeholder="Chọn sinh viên làm trưởng nhóm"
                   loading={loadingStudents}
@@ -189,16 +186,35 @@ const TeamCreate = () => {
                   showSearch
                   optionFilterProp="label"
                   options={students.map((s) => ({
-                    value: s.studentId,
-                    label: s.studentId,
+                    value: s.studentId, // ✅ gửi sv011
+                    label: `${s.id} - ${s.fullName}`, // ✅ hiển thị tên
+                    disabled: !!s.leaderUsed,
                   }))}
                 />
               </Form.Item>
 
+              {/* ✅ chọn thành viên nhóm theo lớp */}
               <Form.Item
-                label="Project ID (tuỳ chọn)"
-                name="projectId"
+                label="Thành viên nhóm"
+                name="memberIds"
+                rules={[{ required: true, message: "Vui lòng chọn ít nhất 1 thành viên" }]}
               >
+                <Select
+                  mode="multiple"
+                  allowClear
+                  placeholder="Chọn thành viên trong lớp"
+                  loading={loadingStudents}
+                  disabled={!form.getFieldValue("classId")}
+                  showSearch
+                  optionFilterProp="label"
+                  options={students.map((s) => ({
+                    value: s.studentId,
+                    label: `${s.id} - ${s.fullName || s.studentId}`, // ✅ bỏ ngoặc
+                  }))}
+                />
+              </Form.Item>
+
+              <Form.Item label="Project ID (tuỳ chọn)" name="projectId">
                 <Input placeholder="VD: PR01 (có thể để trống)" />
               </Form.Item>
             </div>

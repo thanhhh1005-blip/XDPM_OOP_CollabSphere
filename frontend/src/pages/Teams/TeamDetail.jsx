@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { Alert, Button, Card, Descriptions, Space, Spin, Typography } from "antd";
+import { Alert, Button, Card, Descriptions, Space, Spin, Typography, Table, Tag, message } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { getAuthInfo } from "../../utils/authStorage";
 
@@ -24,6 +24,9 @@ export default function TeamDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [members, setMembers] = useState([]);          // ✅ ADD
+  const [loadingMembers, setLoadingMembers] = useState(false); // ✅ ADD
+
   const auth = getAuthInfo() || {};
   const { role, userId } = auth;
 
@@ -43,6 +46,22 @@ export default function TeamDetail() {
 
   const TEAM_API = `http://localhost:8080/api/v1/teams/${id}`;
   const META_CLASSES_API = `http://localhost:8080/api/v1/teams/meta/classes`;
+  const TEAM_MEMBERS_API = `http://localhost:8080/api/v1/teams/${id}/members`; // ✅ ADD
+
+  const fetchMembers = async () => {
+    try {
+      setLoadingMembers(true);
+      const res = await axios.get(TEAM_MEMBERS_API, { headers });
+      const data = res.data?.result ?? res.data ?? [];
+      setMembers(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      message.error("Không tải được danh sách thành viên");
+      setMembers([]);
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
 
   const fetchDetail = async () => {
     try {
@@ -88,6 +107,10 @@ export default function TeamDetail() {
       } catch (e) {
         setLeaderLabel(t?.leaderId || "—");
       }
+
+      // ✅ ADD: load members
+      await fetchMembers();
+
     } catch (e) {
       console.error(e);
       setError(e?.response?.data?.message || "Không thể tải chi tiết team");
@@ -146,6 +169,36 @@ export default function TeamDetail() {
     );
   }
 
+  const memberColumns = [
+    {
+      title: "UserId",
+      dataIndex: "userId",
+      key: "userId",
+      width: 180,
+      render: (v) => v || "—",
+    },
+    {
+      title: "Họ tên",
+      dataIndex: "fullName",
+      key: "fullName",
+      render: (v, r) => v || r?.userId || "—",
+    },
+    {
+      title: "Vai trò",
+      dataIndex: "memberRole",
+      key: "memberRole",
+      width: 140,
+      render: (v) => (v === "LEADER" ? <Tag color="blue">LEADER</Tag> : <Tag>MEMBER</Tag>),
+    },
+    {
+      title: "% đóng góp",
+      dataIndex: "contributionPercent",
+      key: "contributionPercent",
+      width: 140,
+      render: (v) => (v === null || v === undefined ? 0 : v),
+    },
+  ];
+
   return (
     <Card style={{ borderRadius: 16 }} styles={{ body: { padding: 20 } }}>
       <div
@@ -177,6 +230,19 @@ export default function TeamDetail() {
           </Descriptions.Item>
           <Descriptions.Item label="Ngày tạo">{formatISO(team.createdAt)}</Descriptions.Item>
         </Descriptions>
+      </div>
+
+      {/* ✅ ADD: danh sách thành viên */}
+      <div style={{ marginTop: 16 }}>
+        <Title level={5} style={{ marginBottom: 8 }}>Thành viên nhóm</Title>
+
+        <Table
+          rowKey={(r) => `${r.userId}-${r.memberRole}`}
+          columns={memberColumns}
+          dataSource={members}
+          loading={loadingMembers}
+          pagination={false}
+        />
       </div>
     </Card>
   );

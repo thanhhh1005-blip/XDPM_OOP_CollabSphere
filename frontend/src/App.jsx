@@ -22,6 +22,11 @@ import SubjectManager from './pages/Education/SubjectManager';
 import ClassManager from './pages/Education/ClassManager';
 import ProjectList from './pages/Projects/ProjectList'; 
 import ProjectForm from './pages/Projects/ProjectForm';
+import TeamList from './pages/Teams/TeamList';
+import TeamCreate from './pages/Teams/TeamCreate';
+import TeamDetail from './pages/Teams/TeamDetail';
+import CollaborationPage from './pages/Collaboration/CollaborationPage'; 
+import TeamEdit from './pages/Teams/TeamEdit';
 
 function App() {
   return (
@@ -49,6 +54,15 @@ function App() {
             <Route path="/classes" element={<ClassManager />} />
             <Route path="/subjects" element={<SubjectManager />} />
 
+            {/* 👇 Route team */}
+            <Route path="/resources/*" element={<ResourcePage />} />
+            <Route path="/collaborations/*" element={<CollaborationPage />} />
+            <Route path="/teams" element={<TeamList />} />
+            <Route path="/teams/new" element={<TeamCreate />} />
+            <Route path="/teams/:id" element={<TeamDetail />} />
+            <Route path="/teams/:id/edit" element={<TeamEdit />} />
+
+
             {/* 👇 ROUTE RESOURCE (ĐÃ CHỈNH SỬA) */}
             {/* Truy cập http://localhost:3000/resources để vào trang quản lý file */}
             <Route path="/resources" element={<ResourcePage />} />
@@ -61,6 +75,7 @@ function App() {
 
         {/* ===== Fallback (Trang 404 hoặc về Login) ===== */}
         <Route path="*" element={<Navigate to="/login" replace />} />
+        
 
       </Routes>
     </BrowserRouter>
