@@ -4,7 +4,7 @@ spring:
   application:
     name: ai-service
   datasource:
-    url: jdbc:mysql://localhost:3306/AI_db?createDatabaseIfNotExist=true
+    url: jdbc:mysql://localhost:3307/AI_db?createDatabaseIfNotExist=true
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver

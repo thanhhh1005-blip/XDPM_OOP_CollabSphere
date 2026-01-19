@@ -73,7 +73,8 @@ public class UserService {
     UserDTO event = new UserDTO(
         user.getId(), 
         user.getFullName(), 
-        user.getAvatarUrl(), 
+        user.getAvatarUrl(),
+        user.getEmail(), 
         user.getRole().name()
     );
 
@@ -214,4 +215,31 @@ public class UserService {
         }
     }
 
+    // Sửa lại hoặc thêm mới hàm này
+    public User getUser(String idOrUsername) {
+        // 1. Thử tìm theo ID (Long) trước
+        try {
+            Long id = Long.parseLong(idOrUsername);
+            if (userRepository.existsById(id)) {
+                 return userRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+            }
+        } catch (NumberFormatException e) {
+            // Không phải số, bỏ qua
+        }
+
+        // 2. Nếu không phải ID, tìm theo Username
+        return userRepository.findByUsername(idOrUsername)
+                .orElseThrow(() -> new RuntimeException("User not found: " + idOrUsername));
+    }
+    // 👇 THÊM HÀM NÀY VÀO UserService
+    public List<User> getUsersByRole(String roleName) {
+        try {
+            // Chuyển String thành Enum ngay tại Service
+            com.collabsphere.identity.enums.Role role = com.collabsphere.identity.enums.Role.valueOf(roleName.toUpperCase());
+            return userRepository.findAllByRole(role);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Role không hợp lệ: " + roleName);
+        }
+    }
 }

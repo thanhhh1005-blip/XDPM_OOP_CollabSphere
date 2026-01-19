@@ -1,114 +1,185 @@
 package com.collab.resourceservice.service.impl;
 
+import com.collab.resourceservice.dto.ResourceResponse;
 import com.collab.resourceservice.entity.Resource;
+import com.collab.resourceservice.enums.ResourceScope;
 import com.collab.resourceservice.enums.ResourceType;
-import com.collab.resourceservice.enums.UserRole; // Đã sửa từ Role -> UserRole
-import com.collab.resourceservice.exception.BadRequestException;
-import com.collab.resourceservice.exception.FileStorageException;
-import com.collab.resourceservice.exception.ForbiddenException;
-import com.collab.resourceservice.exception.ResourceNotFoundException; // Đã sửa tên
+import com.collab.resourceservice.enums.UserRole;
 import com.collab.resourceservice.repository.ResourceRepository;
 import com.collab.resourceservice.service.ResourceService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ResourceServiceImpl implements ResourceService {
 
+    private final S3Client s3Client;
     private final ResourceRepository resourceRepository;
-    private static final String UPLOAD_DIR = "uploads";
 
+    @Value("${aws.s3.bucket-name}")
+    private String bucketName;
+
+    @Value("${aws.s3.endpoint}")
+    private String endpointUrl;
+
+    // 1. UPLOAD FILE
     @Override
-    public Resource upload(MultipartFile file, String uploadedBy, String uploaderRole) {
-        UserRole role = parseRole(uploaderRole);
-        validateUploadPermission(role);
-
-        if (file == null || file.isEmpty()) {
-            throw new BadRequestException("File must not be empty");
+    public ResourceResponse uploadFile(MultipartFile file, ResourceScope scope, String scopeId, String uploaderId, UserRole uploaderRole) {
+        if (file.isEmpty()) {
+            throw new RuntimeException("File cannot be empty");
         }
 
-        File uploadDir = new File(UPLOAD_DIR);
-        if (!uploadDir.exists() && !uploadDir.mkdirs()) {
-            throw new FileStorageException("Cannot create upload directory");
+        // Tạo tên file duy nhất (UUID)
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
+        String storedFileName = UUID.randomUUID().toString() + extension;
 
-        String storedFileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        File dest = new File(uploadDir, storedFileName);
-
+        // Upload lên MinIO
         try {
-            file.transferTo(dest);
+            PutObjectRequest putOb = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(storedFileName)
+                    .contentType(file.getContentType())
+                    .build();
+
+            s3Client.putObject(putOb, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+            log.info("Uploaded file to MinIO: {}", storedFileName);
         } catch (IOException e) {
-            throw new FileStorageException("Upload file failed");
+            log.error("Error uploading to S3", e);
+            throw new RuntimeException("Failed to upload file to storage");
         }
 
+        // Lưu DB
+        String fileUrl = endpointUrl + "/" + bucketName + "/" + storedFileName;
         Resource resource = Resource.builder()
-                .fileName(file.getOriginalFilename())
+                .fileName(originalFilename)
                 .storedFileName(storedFileName)
-                .filePath(dest.getAbsolutePath())
+                .filePath(fileUrl)
+                .contentType(file.getContentType())
                 .fileSize(file.getSize())
-                .type(detectType(file.getOriginalFilename()))
-                .uploadedBy(uploadedBy)
-                .uploaderRole(role.name())
-                .deleted(false)
+                .type(determineResourceType(file.getContentType()))
+                .scope(scope)
+                .scopeId(scopeId)
+                .uploadedBy(uploaderId)
+                .uploaderRole(uploaderRole)
                 .build();
 
-        return resourceRepository.save(resource);
+        Resource savedResource = resourceRepository.save(resource);
+        return mapToResponse(savedResource);
     }
 
+    // 2. DOWNLOAD FILE (Mới thêm logic)
     @Override
-    public List<Resource> getAll() {
-        return resourceRepository.findByDeletedFalse();
-    }
-    
-    @Override
-    public Resource getById(Long id) {
-        return resourceRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Resource not found with id: " + id));
-    }
+    public byte[] downloadFile(Long resourceId) {
+        // Tìm file trong DB để lấy tên storedFileName (UUID)
+        Resource resource = resourceRepository.findById(resourceId)
+                .orElseThrow(() -> new RuntimeException("File not found with id: " + resourceId));
 
-    @Override
-    public void delete(Long id, String requesterRole) {
-        UserRole role = parseRole(requesterRole);
-        validateDeletePermission(role);
-
-        Resource resource = getById(id);
-        resource.setDeleted(true);
-        resourceRepository.save(resource);
-    }
-
-    private void validateUploadPermission(UserRole role) {
-        if (role == UserRole.USER) { // Ví dụ logic, tùy em chỉnh
-            throw new ForbiddenException("USER is not allowed to upload resource");
-        }
-    }
-
-    private void validateDeletePermission(UserRole role) {
-        if (role != UserRole.ADMIN && role != UserRole.HEAD_DEPARTMENT) {
-            throw new ForbiddenException("You do not have permission to delete resource");
-        }
-    }
-
-    private UserRole parseRole(String role) {
         try {
-            return UserRole.valueOf(role.toUpperCase());
+            // Gọi MinIO để lấy nội dung file
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(resource.getStoredFileName())
+                    .build();
+
+            ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(getObjectRequest);
+            return objectBytes.asByteArray(); // Trả về mảng byte dữ liệu
+
         } catch (Exception e) {
-            throw new BadRequestException("Invalid role: " + role);
+            log.error("Error downloading from S3", e);
+            throw new RuntimeException("Could not download file from storage");
         }
     }
 
-    private ResourceType detectType(String fileName) {
-        if (fileName == null) return ResourceType.OTHER;
-        String name = fileName.toLowerCase();
-        if (name.endsWith(".pdf")) return ResourceType.PDF;
-        if (name.endsWith(".doc") || name.endsWith(".docx")) return ResourceType.DOCX;
-        if (name.endsWith(".mp4")) return ResourceType.VIDEO;
+    // 3. GET INFO (Mới thêm logic)
+    @Override
+    public ResourceResponse getResourceById(Long resourceId) {
+        Resource resource = resourceRepository.findById(resourceId)
+                .orElseThrow(() -> new RuntimeException("File not found with id: " + resourceId));
+        return mapToResponse(resource);
+    }
+
+    // 4. GET LIST (ĐÃ CẬP NHẬT LOGIC)
+    @Override
+    public List<ResourceResponse> getResourcesByScope(ResourceScope scope, String scopeId) {
+        // 1. Gọi Repo lấy danh sách Entity
+        List<Resource> resources = resourceRepository.findByScopeAndScopeIdOrderByCreatedAtDesc(scope, scopeId);
+
+        // 2. Chuyển đổi từ Entity -> DTO (ResourceResponse) để trả về
+        return resources.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // 5. DELETE FILE (ĐÃ CẬP NHẬT LOGIC)
+    @Override
+    public void deleteResource(Long resourceId, String userId, UserRole role) {
+        // 1. Tìm file trong DB
+        Resource resource = resourceRepository.findById(resourceId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        // 2. Kiểm tra quyền xóa (Chỉ người up file hoặc GV/Admin mới được xóa)
+        // Nếu không phải người up VÀ không phải GV/Admin -> Báo lỗi
+        if (!resource.getUploadedBy().equals(userId) && 
+            role != UserRole.LECTURER && 
+            role != UserRole.ADMIN) {
+            throw new RuntimeException("You do not have permission to delete this file");
+        }
+
+        // 3. Xóa trên MinIO
+        try {
+            s3Client.deleteObject(builder -> builder.bucket(bucketName).key(resource.getStoredFileName()));
+        } catch (Exception e) {
+            log.error("Error deleting from S3", e);
+            // Vẫn tiếp tục xóa trong DB để tránh rác dữ liệu
+        }
+
+        // 4. Xóa trong Database
+        resourceRepository.delete(resource);
+    }
+    // --- Helper Methods ---
+
+    private ResourceResponse mapToResponse(Resource resource) {
+        return ResourceResponse.builder()
+                .id(resource.getId())
+                .fileName(resource.getFileName())
+                .fileUrl(resource.getFilePath())
+                .contentType(resource.getContentType())
+                .fileSize(resource.getFileSize())
+                .type(resource.getType())
+                .scope(resource.getScope())
+                .scopeId(resource.getScopeId())
+                .uploadedBy(resource.getUploadedBy())
+                .uploaderRole(resource.getUploaderRole())
+                .createdAt(resource.getCreatedAt())
+                .build();
+    }
+
+    private ResourceType determineResourceType(String contentType) {
+        if (contentType == null) return ResourceType.OTHER;
+        if (contentType.contains("pdf")) return ResourceType.PDF;
+        if (contentType.contains("image")) return ResourceType.IMAGE;
+        if (contentType.contains("video")) return ResourceType.VIDEO;
+        if (contentType.contains("word") || contentType.contains("document")) return ResourceType.DOCX;
         return ResourceType.OTHER;
     }
 }

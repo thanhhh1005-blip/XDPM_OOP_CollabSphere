@@ -13,7 +13,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
-  # 2. RabbitMQ (message broker)
+  # 2. RabbitMQ (Message Broker)
   rabbitmq:
     image: rabbitmq:3-management
     container_name: collab-rabbitmq
@@ -23,8 +23,24 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+
+  # 3. MinIO (Giả lập AWS S3 - MỚI THÊM)
+  minio:
+    image: minio/minio
+    container_name: collab-minio
+    ports:
+      - "9000:9000"  # Cổng API (Code Java gọi vào đây)
+      - "9001:9001"  # Cổng Web UI (Bạn vào đây để tạo Bucket)
+    environment:
+      MINIO_ROOT_USER: admin           # Access Key
+      MINIO_ROOT_PASSWORD: password123 # Secret Key
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data # Lưu dữ liệu upload ra ổ cứng
+
 volumes:
   mysql_data:
+  minio_data: # Volume mới cho MinIO
  # 3. Resource Service (Quản lý tài nguyên)
   # resource-service:
   #   build:

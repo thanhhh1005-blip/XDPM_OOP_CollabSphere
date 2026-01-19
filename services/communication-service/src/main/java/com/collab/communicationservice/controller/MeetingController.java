@@ -25,14 +25,14 @@ public class MeetingController {
       m.setHostName(hostName);
       m.setStartTime(LocalDateTime.now());
       m.setPassword(password); // 👈 Lưu mật khẩu vào DB
-      return new ApiResponse<>(true, "Meeting Started", meetingRepo.save(m));
+      return new ApiResponse<>(1000, "Meeting Started", meetingRepo.save(m));
     }
 
     @GetMapping("/{roomId}/status")
     public ApiResponse<Meeting> getStatus(
         @PathVariable("roomId") Long roomId        // 👈 PHẢI THÊM ("roomId")
     ) {
-        return new ApiResponse<>(true, "Status", meetingRepo.findById(roomId).orElse(null));
+        return new ApiResponse<>(1000, "Status", meetingRepo.findById(roomId).orElse(null));
     }
 
     @DeleteMapping("/{roomId}/end")
@@ -40,6 +40,6 @@ public class MeetingController {
         @PathVariable("roomId") Long roomId        // 👈 PHẢI THÊM ("roomId")
     ) {
         meetingRepo.deleteById(roomId);
-        return new ApiResponse<>(true, "Meeting Ended", null);
+        return new ApiResponse<>(1000, "Meeting Ended", null);
     }
 }

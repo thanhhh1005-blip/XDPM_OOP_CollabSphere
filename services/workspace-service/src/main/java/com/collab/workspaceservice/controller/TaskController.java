@@ -22,7 +22,7 @@ public class TaskController {
     @PostMapping
     public ApiResponse<Task> createTask(@RequestBody Task task) {
         Task savedTask = taskRepository.save(task);
-        return new ApiResponse<>(true, "Create success", savedTask);
+        return new ApiResponse<>(1000, "Create success", savedTask);
     }
     
     // API quan trọng nhất: Cập nhật Status VÀ Sprint
@@ -34,7 +34,7 @@ public class TaskController {
     ) {
         Task task = taskRepository.findById(taskId).orElse(null);
         if (task == null) {
-            return new ApiResponse<>(false, "Task not found", null);
+            return new ApiResponse<>(1000, "Task not found", null);
         }
         
         // 1. Cập nhật trạng thái
@@ -48,22 +48,22 @@ public class TaskController {
             task.setSprint(null); // Về kho thì xóa sprint
         }
 
-        return new ApiResponse<>(true, "Status updated", taskRepository.save(task));
+        return new ApiResponse<>(1000, "Status updated", taskRepository.save(task));
     }
     
     // API lấy Task (Hỗ trợ lọc)
     @GetMapping
     public ApiResponse<Iterable<Task>> getTasks(@RequestParam(name = "sprintId", required = false) Long sprintId) {
         if (sprintId != null) {
-            return new ApiResponse<>(true, "Tasks by sprint", taskRepository.findBySprintId(sprintId));
+            return new ApiResponse<>(1000, "Tasks by sprint", taskRepository.findBySprintId(sprintId));
         }
-        return new ApiResponse<>(true, "All tasks", taskRepository.findAll());
+        return new ApiResponse<>(1000, "All tasks", taskRepository.findAll());
     }
 
     @DeleteMapping("/{id}")
     @Transactional
     public ApiResponse<Void> deleteTask(@PathVariable("id") Long id) {
         taskRepository.deleteById(id);
-        return new ApiResponse<>(true, "Task deleted", null);
+        return new ApiResponse<>(1000, "Task deleted", null);
     }
 }

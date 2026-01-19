@@ -35,21 +35,21 @@ public class SprintController {
             Milestone ms = milestoneRepository.findById(milestoneId).orElse(null);
             sprint.setMilestone(ms);
         }
-        return new ApiResponse<>(true, "Created sprint", sprintRepository.save(sprint));
+        return new ApiResponse<>(1000, "Created sprint", sprintRepository.save(sprint));
     }
 
     @GetMapping("/project/{projectId}")
     public ApiResponse<Iterable<Sprint>> getSprintsByProject(@PathVariable Long projectId) {
-        return new ApiResponse<>(true, "List sprints", sprintRepository.findByProjectId(projectId));
+        return new ApiResponse<>(1000, "List sprints", sprintRepository.findByProjectId(projectId));
     }
     @GetMapping
     public ApiResponse<Iterable<Sprint>> getAllSprints() {
-        return new ApiResponse<>(true, "List sprints", sprintRepository.findAll());
+        return new ApiResponse<>(1000, "List sprints", sprintRepository.findAll());
     }
     @GetMapping("/milestone/{msId}")
     public ApiResponse<Iterable<Sprint>> getSprintsByMilestone(@PathVariable("msId") Long msId) {
         // Em cần thêm hàm findByMilestoneId vào SprintRepository
-        return new ApiResponse<>(true, "Sprints in Milestone", sprintRepository.findByMilestoneId(msId));
+        return new ApiResponse<>(1000, "Sprints in Milestone", sprintRepository.findByMilestoneId(msId));
     }
     // API Xóa Sprint
     @DeleteMapping("/{id}")
@@ -64,6 +64,6 @@ public class SprintController {
         
         // BƯỚC 2: Xóa Sprint
         sprintRepository.deleteById(id);
-        return new ApiResponse<>(true, "Sprint deleted", null);
+        return new ApiResponse<>(1000, "Sprint deleted", null);
     }
 }

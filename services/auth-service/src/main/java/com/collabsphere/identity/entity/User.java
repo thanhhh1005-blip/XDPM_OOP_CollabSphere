@@ -57,7 +57,6 @@ public class User {
     public String getAvatarUrl() { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 
-    // Getter cho boolean active (Quan trọng: Phải khớp với bên Service gọi user.isActive())
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
 

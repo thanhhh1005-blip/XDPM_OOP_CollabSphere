@@ -21,32 +21,32 @@ public class MilestoneController {
     // 1. Lấy tất cả cột mốc dự án
     @GetMapping
     public ApiResponse<Iterable<Milestone>> getAll() {
-        return new ApiResponse<>(true, "Lấy danh sách Milestone thành công", milestoneRepo.findAll());
+        return new ApiResponse<>(1000, "Lấy danh sách Milestone thành công", milestoneRepo.findAll());
     }
 
     // 2. Tạo Milestone mới (Giảng viên dùng)
     @PostMapping
     public ApiResponse<Milestone> create(@RequestBody Milestone milestone) {
-        return new ApiResponse<>(true, "Tạo cột mốc thành công", milestoneRepo.save(milestone));
+        return new ApiResponse<>(1000, "Tạo cột mốc thành công", milestoneRepo.save(milestone));
     }
 
     // 3. Tạo Checkpoint cho Milestone
     @PostMapping("/{milestoneId}/checkpoints")
     public ApiResponse<Checkpoint> addCheckpoint(@PathVariable("milestoneId") Long milestoneId, @RequestBody Checkpoint cp) {
         Milestone ms = milestoneRepo.findById(milestoneId).orElse(null);
-        if (ms == null) return new ApiResponse<>(false, "Không tìm thấy Milestone", null);
+        if (ms == null) return new ApiResponse<>(1000, "Không tìm thấy Milestone", null);
         cp.setMilestone(ms);
-        return new ApiResponse<>(true, "Tạo Checkpoint thành công", checkpointRepo.save(cp));
+        return new ApiResponse<>(1000, "Tạo Checkpoint thành công", checkpointRepo.save(cp));
     }
 
     // 4. Sinh viên nộp bài cho Checkpoint (Cập nhật URL nộp bài)
     @PutMapping("/checkpoints/{cpId}/submit")
     public ApiResponse<Checkpoint> submitCheckpoint(@PathVariable("cpId") Long cpId, @RequestParam("url") String url) {
         Checkpoint cp = checkpointRepo.findById(cpId).orElse(null);
-        if (cp == null) return new ApiResponse<>(false, "Không tìm thấy Checkpoint", null);
+        if (cp == null) return new ApiResponse<>(1000, "Không tìm thấy Checkpoint", null);
         
         cp.setSubmissionUrl(url);
         cp.setStatus("SUBMITTED"); // Đổi trạng thái sang Đã nộp
-        return new ApiResponse<>(true, "Nộp bài thành công!", checkpointRepo.save(cp));
+        return new ApiResponse<>(1000, "Nộp bài thành công!", checkpointRepo.save(cp));
     }
 }

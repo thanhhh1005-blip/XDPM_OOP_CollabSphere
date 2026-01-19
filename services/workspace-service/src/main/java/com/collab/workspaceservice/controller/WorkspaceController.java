@@ -20,14 +20,14 @@ public class WorkspaceController {
     public ApiResponse<Workspace> createForTeam(@PathVariable Long teamId) {
         // Kiểm tra xem nhóm này đã có workspace chưa để tránh tạo trùng
         if (workspaceRepository.existsByTeamId(teamId)) {
-            return new ApiResponse<>(false, "Nhóm này đã có không gian làm việc rồi!", null);
+            return new ApiResponse<>(1000, "Nhóm này đã có không gian làm việc rồi!", null);
         }
         
         Workspace ws = new Workspace();
         ws.setTeamId(teamId);
         // Có thể set thêm config mặc định nếu cần
         
-        return new ApiResponse<>(true, "Kích hoạt Workspace thành công", workspaceRepository.save(ws));
+        return new ApiResponse<>(1000, "Kích hoạt Workspace thành công", workspaceRepository.save(ws));
     }
 
     // 2. API: Tìm Workspace theo Team ID (Frontend dùng cái này để dẫn SV vào đúng nhà)
@@ -36,21 +36,21 @@ public class WorkspaceController {
     public ApiResponse<Workspace> getByTeam(@PathVariable Long teamId) {
         Workspace ws = workspaceRepository.findByTeamId(teamId).orElse(null);
         if (ws == null) {
-            return new ApiResponse<>(false, "Nhóm này chưa có Workspace", null);
+            return new ApiResponse<>(1000, "Nhóm này chưa có Workspace", null);
         }
-        return new ApiResponse<>(true, "Workspace của nhóm", ws);
+        return new ApiResponse<>(1000, "Workspace của nhóm", ws);
     }
     
     // 3. API: Lấy tất cả (Dùng cho Admin hoặc debug)
     @GetMapping
     public ApiResponse<Iterable<Workspace>> getAll() {
-        return new ApiResponse<>(true, "Danh sách tất cả Workspace", workspaceRepository.findAll());
+        return new ApiResponse<>(1000, "Danh sách tất cả Workspace", workspaceRepository.findAll());
     }
 
     // 4. API: Xóa Workspace (Khi giải tán nhóm)
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deleteWorkspace(@PathVariable Long id) {
         workspaceRepository.deleteById(id);
-        return new ApiResponse<>(true, "Đã xóa Workspace", null);
+        return new ApiResponse<>(1000, "Đã xóa Workspace", null);
     }
 }

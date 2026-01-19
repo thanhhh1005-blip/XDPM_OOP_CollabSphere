@@ -1,84 +1,82 @@
 import axios from 'axios';
 
-/**
- * ===================== CONFIG =====================
- * Đi qua API Gateway
- * Ví dụ Gateway chạy port 8080
- */
-const API_BASE = '/api/resources';
-// hoặc nếu chưa proxy:
-// const API_BASE = 'http://localhost:8080/api/resources';
+// Đổi port 8084 nếu backend của bạn chạy port khác
+const API_URL = "http://localhost:8084/api/resources";
 
-/**
- * Axios instance riêng cho Resource
- * → dễ gắn interceptor (JWT, refresh token…)
- */
-const resourceApi = axios.create({
-  baseURL: API_BASE,
-  timeout: 15000,
-});
-
-/* ===================== API FUNCTIONS ===================== */
-
-/**
- * Lấy danh sách resource
- * @param {Object} params { keyword, type }
- */
-export const getResources = async (params = {}) => {
-  try {
-    const res = await resourceApi.get('/', { params });
-    return res.data; // FE đang dùng trực tiếp array
-  } catch (error) {
-    console.error('getResources error:', error);
-    throw error;
-  }
+// Cấu hình cứng tạm thời (Sau này sẽ lấy từ Login/AuthContext)
+const CURRENT_USER = {
+    id: "SV001",
+    role: "USER" // Hoặc "STUDENT" tùy enum của bạn
 };
 
-/**
- * Upload resource
- * @param {FormData} formData
- */
-export const uploadResource = async (formData) => {
-  try {
-    const res = await resourceApi.post('/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return res.data;
-  } catch (error) {
-    console.error('uploadResource error:', error);
-    throw error;
-  }
+const ResourceService = {
+    // 1. Lấy danh sách file
+    getResources: async (scope, scopeId) => {
+        try {
+            const response = await axios.get(API_URL, {
+                params: { scope, scopeId }
+            });
+            return response.data.data; // Trả về mảng file
+        } catch (error) {
+            console.error("Lỗi lấy danh sách:", error);
+            throw error;
+        }
+    },
+
+    // 2. Upload file
+    uploadFile: async (file, scope, scopeId) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("scope", scope);
+        formData.append("scopeId", scopeId);
+        formData.append("uploaderId", CURRENT_USER.id);
+        formData.append("role", CURRENT_USER.role);
+
+        try {
+            const response = await axios.post(API_URL, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Lỗi upload:", error);
+            throw error;
+        }
+    },
+
+    // 3. Download file
+    downloadFile: async (resourceId, fileName) => {
+        try {
+            const response = await axios.get(`${API_URL}/${resourceId}/download`, {
+                responseType: 'blob', // Quan trọng: Báo cho axios biết đây là file binary
+            });
+
+            // Tạo link ảo để trình duyệt tự tải về
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', fileName); // Đặt tên file khi tải về
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error("Lỗi download:", error);
+        }
+    },
+
+    // 4. Xóa file
+    deleteFile: async (resourceId) => {
+        try {
+            await axios.delete(`${API_URL}/${resourceId}`, {
+                params: {
+                    userId: CURRENT_USER.id,
+                    role: CURRENT_USER.role
+                }
+            });
+        } catch (error) {
+            console.error("Lỗi xóa file:", error);
+            throw error;
+        }
+    }
 };
 
-/**
- * Xóa resource theo id
- * @param {number|string} id
- */
-export const deleteResource = async (id) => {
-  try {
-    const res = await resourceApi.delete(`/${id}`);
-    return res.data;
-  } catch (error) {
-    console.error('deleteResource error:', error);
-    throw error;
-  }
-};
-
-/**
- * Download / Preview resource
- * @param {number|string} id
- * @returns Blob
- */
-export const downloadResource = async (id) => {
-  try {
-    const res = await resourceApi.get(`/download/${id}`, {
-      responseType: 'blob',
-    });
-    return res.data;
-  } catch (error) {
-    console.error('downloadResource error:', error);
-    throw error;
-  }
-};
+export default ResourceService;

@@ -9,10 +9,10 @@ import {
   BookOutlined,
   TeamOutlined,
   FolderOutlined,   //  Resource
-  EditOutlined
+  EditOutlined,
+  LogoutOutlined // <--- 1. THÊM ICON ĐĂNG XUẤT
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Select } from 'antd';
 import ChatRoom from './ChatRoom';
 
 /* ===== COMPONENT CŨ CỦA NGƯỜI KHÁC (GIỮ NGUYÊN) ===== */
@@ -25,30 +25,38 @@ import ProjectList from '../pages/Projects/ProjectList';
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
-const MainLayout = () => { 
+const MainLayout = () => {
   const [openChat, setOpenChat] = useState(false);
 
   const [selectedKey, setSelectedKey] = useState('1');
 
   const navigate = useNavigate();
   const location = useLocation();
-  const savedUser = JSON.parse(localStorage.getItem('user') || '{}'); // Vai trò người dùng hiện tại
-  const userRole = savedUser.role; 
+  const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = savedUser.role;
   console.log("User Role in MainLayout:", savedUser);
   const groupId = savedUser.teamName;
 
-  // 1. Khai báo danh sách Menu
-  // QUAN TRỌNG: 'key' phải trùng khớp với 'path' em đã đặt trong App.jsx
+  // --- 2. THÊM HÀM XỬ LÝ ĐĂNG XUẤT ---
+  const handleLogout = () => {
+    // Xóa thông tin user đã lưu
+    localStorage.removeItem('user');
+    // Chuyển hướng về trang login
+    navigate('/login');
+  };
+  // ------------------------------------
+
   const items = [
     { key: '/workspace', icon: <ProjectOutlined />, label: 'Quản lý Sprint', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
     { key: '/collaboration', icon: <EditOutlined />, label: 'Cộng tác nhóm', roles: ['STUDENT', 'LECTURER'],onlyIfHasGroup: true},
     { key: '/projects', icon: <FolderOutlined />, label: 'Dự án', roles: ['LECTURER', 'HEAD_DEPARTMENT'] },
     { key: '/teams', icon: <TeamOutlined />, label: 'Team', roles: ['LECTURER', 'STUDENT'] },
     { key: '/milestones', icon: <ReadOutlined />, label: 'Lộ trình & Cột mốc', roles: ['STUDENT', 'LECTURER'] },
-    { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['ADMIN', 'STAFF'] },
-    { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN'] },
+    { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['STAFF', 'ADMIN','LECTURER'] },
+    { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN', 'STAFF'] },
     { key: '/users', icon: <UserOutlined />, label: 'Quản lý Người dùng', roles: ['ADMIN'] },
     { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
+    { key: '/resources', icon: <FolderOutlined />, label: 'Kho Tài liệu', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
   ];
   const filteredItems = items.filter(item => {
     const hasRole = item.roles.includes(userRole);
@@ -64,7 +72,6 @@ const MainLayout = () => {
     <Layout style={{ minHeight: "100vh" }}>
       {/* SIDEBAR BÊN TRÁI */}
       <Sider theme="light" width={250}>
-
         <div
           style={{
             height: 50,
@@ -83,8 +90,8 @@ const MainLayout = () => {
         </div>
         <Menu
           theme="light"
-          // Tự động sáng menu dựa trên URL hiện tại (Ví dụ đang ở /workspace thì menu 1 sáng)
-          selectedKeys={[location.pathname]} 
+
+          selectedKeys={[location.pathname]}
           mode="inline"
           items={filteredItems.map(({ onlyIfHasGroup, roles, ...rest }) => rest)}
           // Khi bấm vào menu, nó nhảy thẳng tới URL đó
@@ -98,17 +105,20 @@ const MainLayout = () => {
           <div>
             <Title level={4} style={{ margin: 0 }}>Dashboard</Title>
           </div>
-          
+
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <div style={{ lineHeight: '1.2' }}>
-                <div style={{ fontWeight: 'bold' }}>{savedUser.fullName}</div>
-                <Tag color="blue">{userRole}</Tag> 
+              <div style={{ fontWeight: 'bold' }}>{savedUser.fullName}</div>
+              <Tag color="blue">{userRole}</Tag>
             </div>
+            
             <Avatar
               icon={<UserOutlined />}
               style={{ cursor: "pointer" }}
-              onClick={() => navigate("/profile")} // Bấm avatar nhảy về trang cá nhân
+
+              onClick={() => navigate("/profile")}
             />
+            
             <Button
               type="primary"
               shape="round"
@@ -117,25 +127,41 @@ const MainLayout = () => {
             >
               Chat Nhóm
             </Button>
+
+            {/* --- 3. THÊM NÚT ĐĂNG XUẤT TẠI ĐÂY --- */}
+            <Button
+                danger
+                type="text"
+                icon={<LogoutOutlined />}
+                onClick={handleLogout}
+            >
+                Đăng xuất
+            </Button>
+             {/* ------------------------------------ */}
+
           </div>
         </Header>
 
         {/* NỘI DUNG CHÍNH Ở GIỮA */}
         <Content style={{ margin: "16px", padding: 24, background: "#fff", borderRadius: 8, overflowY: "auto" }}>
-            
-            {/* 👇 ĐÂY LÀ CHỖ THAY THẾ CHO renderContent() 👇 */}
-            {/* React Router sẽ tự động lấy TaskBoard, AiPlanning... đặt vào đây dựa trên URL */}
-            <Outlet context={[userRole]}/> 
 
+          <Outlet context={[userRole]} />
         </Content>
       </Layout>
 
       {/* CỬA SỔ CHAT TRƯỢT (DRAWER) */}
-      <Drawer title="💬 Phòng Chat" placement="right" onClose={() => setOpenChat(false)} open={openChat} width={450}>
+      <Drawer 
+        title="💬 Phòng Chat" 
+        placement="right" 
+        onClose={() => setOpenChat(false)} 
+        open={openChat} 
+        // 👇 ĐÃ SỬA: Thay width={450} bằng styles (Cách chuẩn của Antd v5)
+        styles={{ wrapper: { width: 450 } }}
+      >
         <ChatRoom />
       </Drawer>
     </Layout>
   );
 };
-
+ 
 export default MainLayout;
