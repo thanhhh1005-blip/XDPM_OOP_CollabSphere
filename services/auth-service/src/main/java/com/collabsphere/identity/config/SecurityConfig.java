@@ -3,6 +3,7 @@ package com.collabsphere.identity.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // <--- Import thêm cái này nếu muốn chặn Method (Optional)
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -24,20 +25,22 @@ import java.nio.charset.StandardCharsets;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-
     // 👇 CẬP NHẬT DANH SÁCH NÀY 👇
     private final String[] PUBLIC_ENDPOINTS = {
-            "/users", 
-            "/auth/token", 
+            "/users/**",
+            "/auth/token",
             "/auth/introspect",
-            "/auth/outbound/authentication", // 👈 QUAN TRỌNG: Phải thêm dòng này để Login Google không bị chặn 401
+            "/auth/outbound/authentication",
             
-            // Các đường dẫn cũ của bạn (Giữ nguyên)
-            "/api/identity/users", 
-            "/api/identity/auth/token", 
-            "/api/identity/auth/introspect",
-            "/error" 
+            // 👇 THÊM DÒNG NÀY ĐỂ CLASS SERVICE GỌI ĐƯỢC (QUAN TRỌNG) 👇
+            "/api/users/**", 
+            // -----------------------------------------------------------
 
+            // Các đường dẫn cũ (Giữ nguyên nếu cần tương thích ngược)
+            "/api/identity/users",
+            "/api/identity/auth/token",
+            "/api/identity/auth/introspect",
+            "/error"
     };
 
     @Value("${jwt.signerKey}")
@@ -47,10 +50,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request ->
                 request
-
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll() // Cho phép tất cả link trong mảng trên
-                        .anyRequest().authenticated()); // Còn lại bắt buộc đăng nhập
-
+                        // 1. Cho phép các endpoint public (Đăng nhập, đăng ký, lấy info user)
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll() 
+                        
+                        // 2. Các endpoint còn lại bắt buộc phải có Token
+                        .anyRequest().authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 ->
             oauth2.jwt(jwtConfigurer ->
@@ -58,17 +62,12 @@ public class SecurityConfig {
                              .jwtAuthenticationConverter(jwtAuthenticationConverter()))
         );
 
-
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
 
         return httpSecurity.build();
     }
 
-
-
-    
-    // --- CÁC BEAN KHÁC GIỮ NGUYÊN ---
-
+    // --- CÁC BEAN KHÁC GIỮ NGUYÊN (Không thay đổi) ---
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {

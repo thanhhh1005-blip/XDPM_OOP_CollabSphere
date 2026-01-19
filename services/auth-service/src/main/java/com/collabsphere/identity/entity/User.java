@@ -28,6 +28,15 @@ public class User {
 
     private String avatarUrl;
 
+    // --- 🆕 MỚI THÊM: Class và Team (Cho phép NULL) ---
+    // Vì 'class' là từ khóa trong Java nên đặt là className
+    @Column(name = "class_name") 
+    private String className; 
+
+    @Column(name = "team_name")
+    private String teamName;
+    // --------------------------------------------------
+
     // Mặc định là true khi tạo mới
     private boolean isActive = true; 
 
@@ -57,7 +66,14 @@ public class User {
     public String getAvatarUrl() { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 
-    // Getter cho boolean active (Quan trọng: Phải khớp với bên Service gọi user.isActive())
+    // --- 🆕 GETTER & SETTER CHO 2 CỘT MỚI ---
+    public String getClassName() { return className; }
+    public void setClassName(String className) { this.className = className; }
+
+    public String getTeamName() { return teamName; }
+    public void setTeamName(String teamName) { this.teamName = teamName; }
+    // ----------------------------------------
+
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
 

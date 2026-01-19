@@ -16,11 +16,11 @@ public class ClassroomDTO {
     private String room;        // Phòng học
     
     private Long subjectId;     // ID môn học
+    private String teacherId;   // Username giảng viên (Ví dụ: "giangvien")
     
-    // --- CẬP NHẬT MỚI: THÊM DÒNG NÀY ---
-    private String teacherId;   // Mã giảng viên (Ví dụ: "GV001")
-    // -----------------------------------
+    // --- THÔNG TIN CHI TIẾT (Để hiển thị ra Frontend) ---
+    private SubjectDTO subject; // Tên môn, số tín chỉ...
     
-    // Thông tin chi tiết môn học (khi cần hiển thị)
-    private SubjectDTO subject; 
+    // 👇 THÊM DÒNG NÀY VÀO NHÉ 👇
+    private UserDTO teacher;    // Tên thầy cô, avatar, email...
 }

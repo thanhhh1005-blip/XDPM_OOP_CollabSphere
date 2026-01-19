@@ -7,10 +7,7 @@ import com.collabsphere.identity.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-
-// 👇 IMPORTS MỚI CHO UPLOAD FILE
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartFile; // Import cho Upload File
 
 import java.util.List;
 
@@ -25,12 +22,7 @@ public class UserController {
         this.userService = userService;
     }
 
-
-    // 1. Tạo User (POST /users)
-
-    // --- CÁC API CŨ (GIỮ NGUYÊN) ---
-
-
+    // --- 1. Tạo User ---
     @PostMapping
     public ApiResponse<User> createUser(@RequestBody UserCreationRequest request) {
         return ApiResponse.<User>builder()
@@ -38,9 +30,7 @@ public class UserController {
                 .build();
     }
 
-
-    // 2. Lấy danh sách Users (GET /users)
-
+    // --- 2. Lấy danh sách Users ---
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<List<User>> getAllUsers() {
@@ -49,9 +39,7 @@ public class UserController {
                 .build();
     }
 
-
-    // 3. Lấy thông tin chính mình (GET /users/my-info)
-
+    // --- 3. Lấy thông tin chính mình ---
     @GetMapping("/my-info")
     public ApiResponse<User> getMyInfo() {
         return ApiResponse.<User>builder()
@@ -59,9 +47,7 @@ public class UserController {
                 .build();
     }
 
-
-    // 👇 4. API MỚI: Cập nhật thông tin (PUT /users/{userId})
-
+    // --- 4. Cập nhật thông tin ---
     @PutMapping("/{userId}")
     public ApiResponse<User> updateUser(@PathVariable Long userId, @RequestBody UserUpdateRequest request) {
         return ApiResponse.<User>builder()
@@ -69,9 +55,7 @@ public class UserController {
                 .build();
     }
 
-
-    // 👇 5. API MỚI: Đổi mật khẩu (POST /users/{userId}/change-password)
-
+    // --- 5. Đổi mật khẩu ---
     @PostMapping("/{userId}/change-password")
     public ApiResponse<String> changePassword(@PathVariable Long userId, @RequestBody PasswordChangeRequest request) {
         userService.changePassword(userId, request);
@@ -80,28 +64,39 @@ public class UserController {
                 .build();
     }
 
-
-    // 👇 6. API MỚI: Vô hiệu hóa/Kích hoạt tài khoản (PATCH /users/{userId}/status)
-
-
+    // --- 6. Vô hiệu hóa/Kích hoạt ---
     @PatchMapping("/{userId}/status")
     @PreAuthorize("hasRole('ADMIN')")
-
     public ApiResponse<User> toggleUserStatus(@PathVariable Long userId, @RequestBody UserStatusRequest request) {
         return ApiResponse.<User>builder()
                 .result(userService.toggleUserStatus(userId, request.isActive()))
                 .build();
     }
 
+    // --- 7. Lấy thông tin User (Sửa lỗi 405) ---
+    @GetMapping("/{userId}")
+    public ApiResponse<User> getUser(@PathVariable("userId") String userId) {
+        return ApiResponse.<User>builder()
+                .result(userService.getUser(userId))
+                .build();
+    }
 
-    // --- 👇 API MỚI: IMPORT EXCEL 👇 ---
-    
+    // --- 8. LẤY DANH SÁCH USER THEO ROLE (API MỚI) ---
+    // Sửa lỗi: Gọi qua Service chứ không gọi trực tiếp Repository
+    @GetMapping("/role/{roleName}")
+    public ApiResponse<List<User>> getUsersByRole(@PathVariable String roleName) {
+        return ApiResponse.<List<User>>builder()
+                // 👇 Gọi hàm mới trong Service (Đỡ phải import Role ở đây)
+                .result(userService.getUsersByRole(roleName)) 
+                .build();
+    }
+
+    // --- 9. IMPORT EXCEL ---
     @PostMapping("/import")
-    @PreAuthorize("hasRole('ADMIN')") // Chỉ Admin được import
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<List<User>> importUsers(@RequestParam("file") MultipartFile file) {
         return ApiResponse.<List<User>>builder()
                 .result(userService.importUsers(file))
                 .build();
     }
-
 }

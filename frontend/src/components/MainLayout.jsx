@@ -12,22 +12,14 @@ import {
   LogoutOutlined // <--- 1. THÊM ICON ĐĂNG XUẤT
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Select } from 'antd';
 import ChatRoom from './ChatRoom';
-
-/* ===== COMPONENT CŨ CỦA NGƯỜI KHÁC (GIỮ NGUYÊN) ===== */
-import TaskBoard from '../pages/Workspace/TaskBoard';
-import AiPlanning from '../pages/AI/AiPlanning';
-import ClassManager from '../pages/Education/ClassManager';
-import SubjectManager from '../pages/Education/SubjectManager';
-import ProjectList from '../pages/Projects/ProjectList';
-import ResourcePage from '../pages/Resource/ResourcePage';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
 const MainLayout = () => {
   const [openChat, setOpenChat] = useState(false);
+
   const [selectedKey, setSelectedKey] = useState('1');
 
   const navigate = useNavigate();
@@ -50,12 +42,14 @@ const MainLayout = () => {
     { key: '/projects', icon: <FolderOutlined />, label: 'Dự án', roles: ['LECTURER', 'HEAD_DEPARTMENT'] },
     { key: '/teams', icon: <TeamOutlined />, label: 'Team', roles: ['LECTURER', 'STUDENT'] },
     { key: '/milestones', icon: <ReadOutlined />, label: 'Lộ trình & Cột mốc', roles: ['STUDENT', 'LECTURER'] },
-    { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['LECTURER', 'ADMIN'] },
-    { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN'] },
+    { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['STAFF', 'ADMIN','LECTURER'] },
+    { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN', 'STAFF'] },
     { key: '/users', icon: <UserOutlined />, label: 'Quản lý Người dùng', roles: ['ADMIN'] },
     { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
     { key: '/resources', icon: <FolderOutlined />, label: 'Kho Tài liệu', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
   ];
+
+  // Lọc menu theo quyền (Role)
   const filteredItems = items.filter(item => item.roles.includes(userRole));
 
   return (
@@ -80,6 +74,7 @@ const MainLayout = () => {
         </div>
         <Menu
           theme="light"
+
           selectedKeys={[location.pathname]}
           mode="inline"
           items={filteredItems}
@@ -103,6 +98,7 @@ const MainLayout = () => {
             <Avatar
               icon={<UserOutlined />}
               style={{ cursor: "pointer" }}
+
               onClick={() => navigate("/profile")}
             />
             
@@ -131,16 +127,24 @@ const MainLayout = () => {
 
         {/* NỘI DUNG CHÍNH Ở GIỮA */}
         <Content style={{ margin: "16px", padding: 24, background: "#fff", borderRadius: 8, overflowY: "auto" }}>
+
           <Outlet context={[userRole]} />
         </Content>
       </Layout>
 
       {/* CỬA SỔ CHAT TRƯỢT (DRAWER) */}
-      <Drawer title="💬 Phòng Chat" placement="right" onClose={() => setOpenChat(false)} open={openChat} width={450}>
+      <Drawer 
+        title="💬 Phòng Chat" 
+        placement="right" 
+        onClose={() => setOpenChat(false)} 
+        open={openChat} 
+        // 👇 ĐÃ SỬA: Thay width={450} bằng styles (Cách chuẩn của Antd v5)
+        styles={{ wrapper: { width: 450 } }}
+      >
         <ChatRoom />
       </Drawer>
     </Layout>
   );
 };
-
+ 
 export default MainLayout;
