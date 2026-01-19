@@ -15,21 +15,19 @@ public class Project {
   @GeneratedValue(strategy = GenerationType.UUID)
   private String id;
 
+  // ✅ ADD: mã đẹp để hiển thị (PR0001...)
+  @Column(name = "project_code", nullable = false, unique = true, length = 20)
+  private String projectCode;
+
   @Column(nullable = false)
   private String title;
 
- @Lob
-@Column(columnDefinition = "LONGTEXT")
-private String description;
+  @Lob
+  @Column(columnDefinition = "LONGTEXT")
+  private String description;
 
-
-  // Bổ sung: ID của đề cương môn học dùng để tạo dự án mẫu
-  private String syllabusId; 
-
-  // Bổ sung: ID của lớp học sau khi dự án được phê duyệt và giao lớp
+  private String syllabusId;
   private String classId;
-
-  // Bổ sung: ID của giảng viên tạo đề xuất dự án
   private String ownerId;
 
   @Enumerated(EnumType.STRING)
@@ -43,8 +41,7 @@ private String description;
   void prePersist() {
     createdAt = Instant.now();
     updatedAt = createdAt;
-    // Đảm bảo trạng thái mặc định luôn là DRAFT
-    if (status == null) status = ProjectStatus.DRAFT; 
+    if (status == null) status = ProjectStatus.DRAFT;
   }
 
   @PreUpdate

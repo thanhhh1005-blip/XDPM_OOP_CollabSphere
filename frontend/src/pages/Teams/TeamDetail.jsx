@@ -1,7 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { Alert, Button, Card, Descriptions, Space, Spin, Typography, Table, Tag, message } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  Descriptions,
+  Space,
+  Spin,
+  Typography,
+  Table,
+  Tag,
+  message,
+} from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { getAuthInfo } from "../../utils/authStorage";
 
@@ -19,13 +30,17 @@ export default function TeamDetail() {
   const navigate = useNavigate();
 
   const [team, setTeam] = useState(null);
-  const [classLabel, setClassLabel] = useState("—");   // ✅ mã lớp
+  const [classLabel, setClassLabel] = useState("—"); // ✅ mã lớp
   const [leaderLabel, setLeaderLabel] = useState("—"); // ✅ studentId nếu match
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [members, setMembers] = useState([]);          // ✅ ADD
+  const [members, setMembers] = useState([]); // ✅ ADD
   const [loadingMembers, setLoadingMembers] = useState(false); // ✅ ADD
+
+  // ✅ ADD: hiển thị tên dự án thay vì id
+  const [projectTitle, setProjectTitle] = useState("—");
+  const [loadingProject, setLoadingProject] = useState(false);
 
   const auth = getAuthInfo() || {};
   const { role, userId } = auth;
@@ -48,6 +63,10 @@ export default function TeamDetail() {
   const META_CLASSES_API = `http://localhost:8080/api/v1/teams/meta/classes`;
   const TEAM_MEMBERS_API = `http://localhost:8080/api/v1/teams/${id}/members`; // ✅ ADD
 
+  // ✅ ADD: project-service
+  const PROJECT_DETAIL_API = (projectId) =>
+    `http://localhost:8080/api/v1/projects/${projectId}`;
+
   const fetchMembers = async () => {
     try {
       setLoadingMembers(true);
@@ -63,6 +82,25 @@ export default function TeamDetail() {
     }
   };
 
+  // ✅ ADD: lấy title theo projectId (không làm fail trang nếu lỗi)
+  const fetchProjectTitle = async (projectId) => {
+    try {
+      if (!projectId) {
+        setProjectTitle("—");
+        return;
+      }
+      setLoadingProject(true);
+      const res = await axios.get(PROJECT_DETAIL_API(projectId), { headers });
+      const p = res.data?.result ?? res.data;
+      setProjectTitle(p?.title || "—");
+    } catch (e) {
+      console.error(e);
+      setProjectTitle("—");
+    } finally {
+      setLoadingProject(false);
+    }
+  };
+
   const fetchDetail = async () => {
     try {
       setLoading(true);
@@ -72,6 +110,9 @@ export default function TeamDetail() {
       const res = await axios.get(TEAM_API, { headers });
       const t = res.data?.result ?? res.data;
       setTeam(t);
+
+      // ✅ ADD: load project title (hiển thị tên thay vì id)
+      await fetchProjectTitle(t?.projectId);
 
       // 2) load class meta => map classId -> code
       try {
@@ -100,7 +141,7 @@ export default function TeamDetail() {
           const found = students.find(
             (s) => String(s.studentId) === String(t.leaderId)
           );
-          setLeaderLabel(found ? found.studentId : (t.leaderId || "—"));
+          setLeaderLabel(found ? found.studentId : t.leaderId || "—");
         } else {
           setLeaderLabel(t?.leaderId || "—");
         }
@@ -110,7 +151,6 @@ export default function TeamDetail() {
 
       // ✅ ADD: load members
       await fetchMembers();
-
     } catch (e) {
       console.error(e);
       setError(e?.response?.data?.message || "Không thể tải chi tiết team");
@@ -142,7 +182,10 @@ export default function TeamDetail() {
         showIcon
         action={
           <Space>
-            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/teams")}>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate("/teams")}
+            >
               Quay lại
             </Button>
             <Button type="primary" onClick={fetchDetail}>
@@ -161,7 +204,10 @@ export default function TeamDetail() {
         message="Không tìm thấy team"
         showIcon
         action={
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/teams")}>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/teams")}
+          >
             Quay lại
           </Button>
         }
@@ -188,7 +234,8 @@ export default function TeamDetail() {
       dataIndex: "memberRole",
       key: "memberRole",
       width: 140,
-      render: (v) => (v === "LEADER" ? <Tag color="blue">LEADER</Tag> : <Tag>MEMBER</Tag>),
+      render: (v) =>
+        v === "LEADER" ? <Tag color="blue">LEADER</Tag> : <Tag>MEMBER</Tag>,
     },
     {
       title: "% đóng góp",
@@ -224,17 +271,26 @@ export default function TeamDetail() {
       <div style={{ marginTop: 16 }}>
         <Descriptions bordered column={1} size="middle">
           <Descriptions.Item label="Lớp">{classLabel || "—"}</Descriptions.Item>
-          <Descriptions.Item label="Dự án">{team.projectId || "—"}</Descriptions.Item>
+
+          {/* ✅ CHỈ SỬA DÒNG NÀY: hiển thị tên dự án */}
+          <Descriptions.Item label="Dự án">
+            {team.projectId ? (loadingProject ? "Đang tải..." : projectTitle) : "—"}
+          </Descriptions.Item>
+
           <Descriptions.Item label="Trưởng nhóm">
             {leaderLabel || team.leaderId || "—"}
           </Descriptions.Item>
-          <Descriptions.Item label="Ngày tạo">{formatISO(team.createdAt)}</Descriptions.Item>
+          <Descriptions.Item label="Ngày tạo">
+            {formatISO(team.createdAt)}
+          </Descriptions.Item>
         </Descriptions>
       </div>
 
       {/* ✅ ADD: danh sách thành viên */}
       <div style={{ marginTop: 16 }}>
-        <Title level={5} style={{ marginBottom: 8 }}>Thành viên nhóm</Title>
+        <Title level={5} style={{ marginBottom: 8 }}>
+          Thành viên nhóm
+        </Title>
 
         <Table
           rowKey={(r) => `${r.userId}-${r.memberRole}`}
