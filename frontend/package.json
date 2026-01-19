@@ -15,12 +15,9 @@
     "@stomp/stompjs": "^7.2.1",
     "antd": "^6.1.4",
     "axios": "^1.13.2",
-<<<<<<< HEAD
     "lucide-react": "^0.562.0",
-=======
     "firebase": "^12.7.0",
     "jwt-decode": "^4.0.0",
->>>>>>> cb0127ccb26ef039532b05bccc7c276fa2554861
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.11.0",

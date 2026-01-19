@@ -22,10 +22,10 @@ import SubjectManager from './pages/Education/SubjectManager';
 import ClassManager from './pages/Education/ClassManager';
 import ProjectList from './pages/Projects/ProjectList'; 
 import ProjectForm from './pages/Projects/ProjectForm';
-// import TeamList from './pages/Teams/TeamList';
-// import TeamCreate from './pages/Teams/TeamCreate';
-// import TeamDetail from './pages/Teams/TeamDetail';
-
+import TeamList from './pages/Teams/TeamList';
+import TeamCreate from './pages/Teams/TeamCreate';
+import TeamDetail from './pages/Teams/TeamDetail';
+import CollabPage from './pages/Collaboration/CollabPage';
 
 
 function App() {
@@ -51,6 +51,7 @@ function App() {
             
             {/* 👇 Route của người khác (Khai báo để URL đẹp, MainLayout sẽ tự render component cứng) */}
             <Route path="/workspace" element={<TaskBoard />} />
+            <Route path="/collaboration" element={<CollabPage />} />
             <Route path="/milestones" element={<MilestonePage />} />
             <Route path="/ai-planning" element={<AiPlanning />} />
             <Route path="/classes" element={<ClassManager />} />
@@ -60,9 +61,9 @@ function App() {
             {/* <Route path="/collaborations/*" element={<CollaborationPage />} /> */}
             <Route path="/projects" element={<ProjectList />} />   {/* ✅ ADD */}
             <Route path="/projects/new" element={<ProjectForm />} /> {/* ✅ ADD */}
-            {/* <Route path="/teams" element={<TeamList />} />
+            <Route path="/teams" element={<TeamList />} />
             <Route path="/teams/new" element={<TeamCreate />} />
-            <Route path="/teams/:id" element={<TeamDetail />} /> */}
+            <Route path="/teams/:id" element={<TeamDetail />} />
         </Route>
 {/* ===== Fallback ===== */}
 

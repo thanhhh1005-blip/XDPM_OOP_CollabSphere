@@ -28,4 +28,7 @@ public class Sprint {
     @Column(nullable = false)
     private Long classId;
     private Long subjectId;
+    @ManyToOne
+    @JoinColumn(name = "workspace_id")
+    private Workspace workspace;
 }

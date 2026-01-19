@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-import React, { useState } from 'react';
-import { Layout, Menu, Button, Drawer, Typography, Avatar } from 'antd';
-import { ProjectOutlined, BulbOutlined, MessageOutlined, UserOutlined } from '@ant-design/icons';
-import ChatRoom from './ChatRoom'; // Import Chat
-import TaskBoard from '../pages/Workspace/TaskBoard'; // Import Bảng Task của em (lưu ý đường dẫn nếu em để trong pages)
-import AiPlanning from '../pages/AI/AiPlanning'; // Import trang AI mới tạo
-import EvaluationPage from '../pages/Evaluation/EvaluationPage';
-import NotificationPage from "../pages/Notification/NotificationPage";
-import NotificationBell from "./NotificationBell";
-=======
 import React, { useState } from "react";
 import { Layout, Menu, Button, Drawer, Typography, Avatar, Badge, Tag } from 'antd';
 import {
@@ -19,7 +8,8 @@ import {
   ReadOutlined,
   BookOutlined,
   TeamOutlined,
-  FolderOutlined   //  Resource
+  FolderOutlined,   //  Resource
+  EditOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Select } from 'antd';
@@ -31,7 +21,6 @@ import AiPlanning from '../pages/AI/AiPlanning';
 import ClassManager from '../pages/Education/ClassManager';
 import SubjectManager from '../pages/Education/SubjectManager';
 import ProjectList from '../pages/Projects/ProjectList';
->>>>>>> cb0127ccb26ef039532b05bccc7c276fa2554861
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -46,39 +35,31 @@ const MainLayout = () => {
   const savedUser = JSON.parse(localStorage.getItem('user') || '{}'); // Vai trò người dùng hiện tại
   const userRole = savedUser.role; 
   console.log("User Role in MainLayout:", savedUser);
+  const groupId = savedUser.teamName;
 
   // 1. Khai báo danh sách Menu
   // QUAN TRỌNG: 'key' phải trùng khớp với 'path' em đã đặt trong App.jsx
   const items = [
-<<<<<<< HEAD
-    { key: '1', icon: <ProjectOutlined />, label: 'Quản lý Sprint' },
-    { key: '2', icon: <BulbOutlined />, label: 'AI Lên Ý Tưởng' },
-    { key: '3', icon: <UserOutlined />, label: 'Evaluation' },
-    { key: '4', icon: <div style={{ fontSize: 18 }}>🔔</div>, label: 'Thông báo' },
-  ];
-
-  const renderContent = () => {
-    switch (selectedKey) {
-        case '1': return <TaskBoard />; // Của em
-        case '2': return <AiPlanning />; // Của bạn em
-        case '3': return <EvaluationPage />;
-        case '4': return <NotificationPage userId={currentUserId} />;
-        default: return <div>Chọn menu để bắt đầu</div>;
-    }
-  };
-
-=======
     { key: '/workspace', icon: <ProjectOutlined />, label: 'Quản lý Sprint', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
+    { key: '/collaboration', icon: <EditOutlined />, label: 'Cộng tác nhóm', roles: ['STUDENT', 'LECTURER'],onlyIfHasGroup: true},
     { key: '/projects', icon: <FolderOutlined />, label: 'Dự án', roles: ['LECTURER', 'HEAD_DEPARTMENT'] },
     { key: '/teams', icon: <TeamOutlined />, label: 'Team', roles: ['LECTURER', 'STUDENT'] },
     { key: '/milestones', icon: <ReadOutlined />, label: 'Lộ trình & Cột mốc', roles: ['STUDENT', 'LECTURER'] },
-    { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['LECTURER', 'ADMIN'] },
+    { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['ADMIN', 'STAFF'] },
     { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN'] },
     { key: '/users', icon: <UserOutlined />, label: 'Quản lý Người dùng', roles: ['ADMIN'] },
     { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
   ];
-  const filteredItems = items.filter(item => item.roles.includes(userRole));
->>>>>>> cb0127ccb26ef039532b05bccc7c276fa2554861
+  const filteredItems = items.filter(item => {
+    const hasRole = item.roles.includes(userRole);
+    
+    // Nếu là mục cần Group và user là STUDENT, phải có groupId mới hiện
+    if (item.onlyIfHasGroup && userRole === 'STUDENT') {
+        return hasRole && groupId; 
+    }
+    
+    return hasRole;
+  });
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {/* SIDEBAR BÊN TRÁI */}
@@ -105,7 +86,7 @@ const MainLayout = () => {
           // Tự động sáng menu dựa trên URL hiện tại (Ví dụ đang ở /workspace thì menu 1 sáng)
           selectedKeys={[location.pathname]} 
           mode="inline"
-          items={filteredItems}
+          items={filteredItems.map(({ onlyIfHasGroup, roles, ...rest }) => rest)}
           // Khi bấm vào menu, nó nhảy thẳng tới URL đó
           onClick={(e) => navigate(e.key)} 
         />

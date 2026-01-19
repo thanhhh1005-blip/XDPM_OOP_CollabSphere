@@ -21,7 +21,6 @@
     <name>collab-sphere</name>
     <description>CollabSphere Microservices Project</description>
     <modules>
-        <module>shared</module>
         <module>api-gateway</module>
         <module>services/auth-service</module>
         <module>services/ai-service</module>
@@ -33,6 +32,8 @@
         <module>services/class-service</module>
         <module>services/subject-service</module>
         <module>services/notification-service</module>
+        <module>services/team-service</module>
+        <module>services/project-service</module>
         <!-- Sau này thêm service nào thì điền thêm vào đây -->
     </modules>
 

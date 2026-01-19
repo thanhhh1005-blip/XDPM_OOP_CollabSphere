@@ -53,8 +53,7 @@ const Login = () => {
         localStorage.setItem("token", token);
         
         // Lấy thông tin user để lưu (nếu có)
-        const authResponse = data.result ? data.result : data;
-        const userInfo = authResponse.user; // Giả sử backend trả về object user nằm trong response
+        const userInfo = data.result ? data.result.user : data.user;
 
         if (userInfo) {
             const userToStore = {
@@ -104,6 +103,13 @@ const Login = () => {
 
       if (token) {
         localStorage.setItem('token', token);
+        const userInfo = data.result ? data.result.user : data.user;
+        const userToStore = {
+            id: userInfo?.id || result.user.uid,
+            fullName: userInfo?.fullName || result.user.displayName,
+            avatar: userInfo?.avatarUrl || result.user.photoURL
+        };
+        localStorage.setItem("user", JSON.stringify(userToStore));
         navigate('/workspace'); 
       } else {
         setError("Không nhận được token xác thực.");
