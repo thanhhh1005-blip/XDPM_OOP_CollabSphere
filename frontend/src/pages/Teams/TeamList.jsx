@@ -43,20 +43,33 @@ const TeamList = () => {
   const META_CLASSES_API = "http://localhost:8080/api/v1/teams/meta/classes";
 
   const fetchTeams = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const token = localStorage.getItem('token');
+    const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      const res = await axios.get(TEAMS_API, { headers });
-      const data = res.data?.result ?? res.data ?? [];
-      setTeams(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || "Không thể tải danh sách team");
+    try {
+        setLoading(true);
+        let url = "http://localhost:8080/api/v1/teams"; // Mặc định cho Admin
+
+        if (user.role === 'STUDENT') {
+            // Nếu là SV: Chỉ lấy team mình tham gia
+            url = `http://localhost:8080/api/v1/teams/student/${user.username}`;
+        } 
+        else if (user.role === 'LECTURER') {
+            // 👇 SỬA CHỖ NÀY: Nếu là GV: Chỉ lấy team thuộc các lớp mình dạy
+            url = `http://localhost:8080/api/v1/teams/lecturer/${user.username}`;
+        }
+
+        const res = await axios.get(url, config);
+        const teamData = res.data?.result ?? res.data;
+        setTeams(Array.isArray(teamData) ? teamData : []);
+    } catch (error) {
+        console.error(error);
+        message.error("Không thể tải danh sách nhóm");
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  }, [headers]);
+}, []);
 
   const fetchClassesMap = useCallback(async () => {
     try {

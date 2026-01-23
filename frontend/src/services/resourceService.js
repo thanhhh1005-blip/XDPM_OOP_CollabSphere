@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Đổi port 8084 nếu backend của bạn chạy port khác
-const API_URL = "http://localhost:8084/api/resources";
+const API_URL = "http://localhost:8080/api/resources";
 
 // Cấu hình cứng tạm thời (Sau này sẽ lấy từ Login/AuthContext)
 const CURRENT_USER = {

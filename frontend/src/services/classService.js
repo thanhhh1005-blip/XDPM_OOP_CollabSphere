@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Đảm bảo đường dẫn này đúng (v1/classes)
-const API_BASE = "http://localhost:8080/api/v1/classes"; 
+const API_BASE = "http://localhost:8080/api/classes"; 
 
 const getConfig = () => {
     const token = localStorage.getItem('token');

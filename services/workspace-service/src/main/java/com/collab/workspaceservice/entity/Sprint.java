@@ -3,8 +3,6 @@ package com.collab.workspaceservice.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
@@ -15,19 +13,29 @@ public class Sprint {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    private String name; // Ví dụ: "Sprint 1 - Khởi tạo"
+    private String name; 
     private LocalDate startDate;
     private LocalDate endDate;
     
-    private Long projectId; // ID của dự án (tham chiếu từ Project Service)
+    private Long projectId;
 
     @ManyToOne
-    @JoinColumn(name = "milestone_id") // Quan hệ: 1 Milestone có nhiều Sprint
+    @JoinColumn(name = "milestone_id") 
     @JsonIgnore
     private Milestone milestone;
-    @Column(nullable = false)
-    private Long classId;
+
+    // --- SỬA Ở ĐÂY ---
+    // Bỏ "nullable = false" đi. 
+    // Lý do: Sprint của Team có thể không cần lưu classId trực tiếp (vì đã link qua Workspace -> Team -> Class)
+    @Column(name = "class_id") 
+    private Long classId; 
+    // -----------------
+
+    @Column(name = "team_id", length = 36)
+    private String teamId;
+    
     private Long subjectId;
+
     @ManyToOne
     @JoinColumn(name = "workspace_id")
     private Workspace workspace;

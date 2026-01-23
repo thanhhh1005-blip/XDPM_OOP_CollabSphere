@@ -21,4 +21,6 @@ public interface TeamRepository extends JpaRepository<Team, String> {
 
   // ✅ ADD: dùng khi update, loại trừ chính team hiện tại
   boolean existsByProjectIdAndIdNot(String projectId, String id);
+
+  List<Team> findByClassIdIn(List<Long> classIds);
 }

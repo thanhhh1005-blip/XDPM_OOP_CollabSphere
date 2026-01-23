@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/workspace/workspaces")
-@CrossOrigin("*") // Cho phép Frontend gọi vào
 public class WorkspaceController {
 
     @Autowired
@@ -17,15 +16,17 @@ public class WorkspaceController {
     // 1. API: Kích hoạt Workspace cho một Team (Gọi khi GV tạo nhóm)
     // URL: POST /api/workspace/workspaces/team/10
     @PostMapping("/team/{teamId}")
-    public ApiResponse<Workspace> createForTeam(@PathVariable Long teamId) {
-        // Kiểm tra xem nhóm này đã có workspace chưa để tránh tạo trùng
+    public ApiResponse<Workspace> createForTeam(
+        @PathVariable("teamId") String teamId,
+        @RequestParam("classId") Long classId // Nhận thêm classId từ bên gọi
+    ) {
         if (workspaceRepository.existsByTeamId(teamId)) {
-            return new ApiResponse<>(1000, "Nhóm này đã có không gian làm việc rồi!", null);
+            return new ApiResponse<>(1001, "Nhóm đã có Workspace", null);
         }
         
         Workspace ws = new Workspace();
         ws.setTeamId(teamId);
-        // Có thể set thêm config mặc định nếu cần
+        ws.setClassId(classId); // Lưu cả thông tin lớp
         
         return new ApiResponse<>(1000, "Kích hoạt Workspace thành công", workspaceRepository.save(ws));
     }
@@ -33,11 +34,15 @@ public class WorkspaceController {
     // 2. API: Tìm Workspace theo Team ID (Frontend dùng cái này để dẫn SV vào đúng nhà)
     // URL: GET /api/workspace/workspaces/team/10
     @GetMapping("/team/{teamId}")
-    public ApiResponse<Workspace> getByTeam(@PathVariable Long teamId) {
+    public ApiResponse<Workspace> getByTeam(@PathVariable("teamId") String teamId) {
         Workspace ws = workspaceRepository.findByTeamId(teamId).orElse(null);
+        System.out.println(">>> BACKEND NHẬN ĐƯỢC TEAM_ID: [" + teamId + "]");
         if (ws == null) {
+            System.out.println(">>> KẾT QUẢ: KHÔNG TÌM THẤY TRONG DB!");
             return new ApiResponse<>(1000, "Nhóm này chưa có Workspace", null);
+            
         }
+        System.out.println(">>> KẾT QUẢ: ĐÃ THẤY WORKSPACE ID = " + ws.getId());
         return new ApiResponse<>(1000, "Workspace của nhóm", ws);
     }
     
@@ -52,5 +57,18 @@ public class WorkspaceController {
     public ApiResponse<Void> deleteWorkspace(@PathVariable Long id) {
         workspaceRepository.deleteById(id);
         return new ApiResponse<>(1000, "Đã xóa Workspace", null);
+    }
+
+    // Thêm vào WorkspaceController.java
+    @GetMapping("/{id}")
+    public ApiResponse<Workspace> getById(@PathVariable("id") Long id) {
+        // Trả về cả cục Workspace, trong đó có chứa teamId (mã UUID)
+        return new ApiResponse<>(1000, "Thành công", workspaceRepository.findById(id).orElse(null));
+    }
+
+    @GetMapping("/class/{classId}")
+    public ApiResponse<Workspace> getByClass(@PathVariable("classId") Long classId) {
+        Workspace ws = workspaceRepository.findByClassId(classId).orElse(null);
+        return new ApiResponse<>(1000, "Workspace của lớp", ws);
     }
 }

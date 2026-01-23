@@ -9,4 +9,9 @@ import java.util.List;
 public interface SprintRepository extends JpaRepository<Sprint, Long> {
     List<Sprint> findByProjectId(Long projectId);
     List<Sprint> findByMilestoneId(Long milestoneId);
+    List<Sprint> findByWorkspaceId(Long workspaceId);
+    List<Sprint> findByWorkspaceIdAndClassId(Long workspaceId, Long classId);
+
+    // 2. Tìm Sprint của TEAM (Rạch ròi: Phải đúng teamId)
+    List<Sprint> findByWorkspaceIdAndTeamId(Long workspaceId, String teamId);
 }

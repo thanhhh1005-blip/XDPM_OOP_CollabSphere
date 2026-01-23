@@ -7,6 +7,6 @@ import java.util.List;
 
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
-    // Tạm thời để trống, JpaRepository đã có sẵn hàm save(), findAll() rồi
-    // Nếu cần, em có thể thêm: List<ChatMessage> findByRoomId(Long roomId);
+    // 👇 SỬA DÒNG NÀY: Tham số roomId truyền vào là String
+    List<ChatMessage> findByRoomId(String roomId);
 }

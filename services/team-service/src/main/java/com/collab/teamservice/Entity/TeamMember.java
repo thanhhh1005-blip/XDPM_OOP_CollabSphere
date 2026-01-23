@@ -25,14 +25,14 @@ public class TeamMember {
   @Column(name="member_role", nullable=false)
   private MemberRole memberRole;
 
-  private Integer contributionPercent;
+  private Double contributionPercent;
 
   private Instant joinedAt;
 
   @PrePersist
   void prePersist() {
     joinedAt = Instant.now();
-    if (contributionPercent == null) contributionPercent = 0;
+    if (contributionPercent == null) contributionPercent = 0.0;
     if (memberRole == null) memberRole = MemberRole.MEMBER;
   }
 }

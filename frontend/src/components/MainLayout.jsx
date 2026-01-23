@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout, Menu, Button, Drawer, Typography, Avatar, Badge, Tag } from 'antd';
 import {
   ProjectOutlined,
@@ -14,6 +14,7 @@ import {
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import ChatRoom from './ChatRoom';
+import axios from "axios";
 
 /* ===== COMPONENT CŨ CỦA NGƯỜI KHÁC (GIỮ NGUYÊN) ===== */
 import TaskBoard from '../pages/Workspace/TaskBoard';
@@ -35,8 +36,41 @@ const MainLayout = () => {
   const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const userRole = savedUser.role;
   console.log("User Role in MainLayout:", savedUser);
-  const groupId = savedUser.teamName;
+  const groupId = savedUser.teamId;
 
+
+  // 1. Thêm useEffect để tự động nạp TeamId và ClassId nếu thiếu
+  useEffect(() => {
+    const enrichUserInfo = async () => {
+      // Nếu là Sinh viên mà trong máy chưa có teamId
+      if (userRole === 'STUDENT' && savedUser.username && !savedUser.teamId) {
+        try {
+          
+          console.log(">>> Đang đi tìm 'hộ khẩu' cho SV:", savedUser.username);
+          // Gọi API team-service để lấy nhóm của sinh viên này
+          const res = await axios.get(`http://localhost:8080/api/v1/teams/student/${savedUser.username}`);
+          const myTeams = res.data?.result || res.data || [];
+          if (myTeams.length > 0) {
+            const myTeam = myTeams[0]; // Lấy nhóm đầu tiên
+            const newUser = { 
+              ...savedUser, 
+              teamId: myTeam.id, 
+              classId: myTeam.classId 
+            };
+            // Lưu lại vào máy cục User đầy đủ
+            localStorage.setItem('user', JSON.stringify(newUser));
+            console.log(">>> Đã cập nhật xong ID Nhóm và Lớp cho SV!");
+            
+            // Ép trang web load lại 1 lần để các linh kiện khác nhận dữ liệu mới
+            window.location.reload(); 
+          }
+        } catch (e) {
+          console.error("Lỗi khi đi tìm nhóm cho sinh viên:", e);
+        }
+      }
+    };
+    enrichUserInfo();
+  }, [userRole, savedUser.username]);
   // --- 2. THÊM HÀM XỬ LÝ ĐĂNG XUẤT ---
   const handleLogout = () => {
     // Xóa thông tin user đã lưu

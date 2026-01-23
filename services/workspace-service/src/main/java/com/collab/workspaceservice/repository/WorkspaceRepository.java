@@ -8,8 +8,11 @@ import java.util.Optional;
 @Repository
 public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
     // Tìm workspace theo mã nhóm
-    Optional<Workspace> findByTeamId(Long teamId);
+    Optional<Workspace> findByTeamId(String teamId);
     
     // Kiểm tra xem nhóm đã có workspace chưa
-    boolean existsByTeamId(Long teamId);
+    boolean existsByTeamId(String teamId);
+
+    Optional<Workspace> findByClassId(Long classId);
+    boolean existsByClassId(Long classId);
 }

@@ -10,8 +10,9 @@ import java.time.LocalDateTime;
 @Data
 public class Meeting {
   @Id
-  private Long roomId; // Dùng chung ID với Team/Phòng chat
-    private String hostName;
-    private LocalDateTime startTime;
-    private String password; // Lưu password cuộc họp nếu muốn
+  @Column(name = "room_id", length = 255)
+  private String roomId; // Dùng chung ID với Team/Phòng chat
+  private String hostName;
+  private LocalDateTime startTime;
+  private String password; // Lưu password cuộc họp nếu muốn
 }

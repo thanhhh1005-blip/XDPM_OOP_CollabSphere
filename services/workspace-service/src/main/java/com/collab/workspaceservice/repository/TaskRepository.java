@@ -11,4 +11,8 @@ import org.springframework.stereotype.Repository;
 public interface TaskRepository extends JpaRepository<Task, Long> {
     // Hiện tại để trống, JpaRepository đã có sẵn hàm save(), findAll() rồi
     List<Task> findBySprintId(Long sprintId);
+    List<Task> findByWorkspaceId(Long workspaceId);
+    List<Task> findBySprintWorkspaceId(Long workspaceId);
+    List<Task> findByWorkspaceIdAndTeamId(Long workspaceId, String teamId);
+    List<Task> findByWorkspaceIdAndClassId(Long workspaceId, Long classId);
 }

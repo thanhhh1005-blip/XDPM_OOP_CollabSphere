@@ -65,6 +65,7 @@ const Login = () => {
             };
             localStorage.setItem("user", JSON.stringify(userToStore));
             message.success(`Chào mừng ${userToStore.fullName} quay trở lại!`);
+            console.log("User Info:", userToStore);
         }
         
         navigate("/workspace");

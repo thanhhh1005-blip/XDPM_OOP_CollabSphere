@@ -4,5 +4,5 @@ public record TeamMemberView(
     String userId,
     String fullName,
     String memberRole,
-    Integer contributionPercent
+    Double contributionPercent
 ) {}

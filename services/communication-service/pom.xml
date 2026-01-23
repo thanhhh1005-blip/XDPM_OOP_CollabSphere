@@ -42,5 +42,16 @@
             <artifactId>shared</artifactId>
             <version>1.0.0</version>
         </dependency>
+
+        <!-- Thư viện RabbitMQ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+        <!-- Thư viện xử lý JSON (để gửi object qua mạng) -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
     </dependencies>
 </project>

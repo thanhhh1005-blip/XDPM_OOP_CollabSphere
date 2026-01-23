@@ -1,5 +1,6 @@
 package com.collabsphere.identity.service;
 
+import com.collab.shared.dto.UserDTO;
 import com.collabsphere.identity.dto.request.AuthenticationRequest;
 import com.collabsphere.identity.dto.request.IntrospectRequest;
 import com.collabsphere.identity.dto.response.AuthenticationResponse;
@@ -73,17 +74,18 @@ public class AuthenticationService {
         var token = generateToken(user);
 
         return AuthenticationResponse.builder()
-            .token(token)
-            .authenticated(true)
-            .user(new com.collab.shared.dto.UserDTO(
-                user.getId(), 
-                user.getFullName(), 
-                user.getAvatarUrl(),
-                user.getEmail(), 
-                user.getRole().name()
-            ))
-            .build();
-    }
+                .token(token)
+                .authenticated(true)
+                .user(UserDTO.builder()
+                    .id(user.getId())
+                    .username(user.getUsername())
+                    .fullName(user.getFullName())
+                    .avatarUrl(user.getAvatarUrl())
+                    .email(user.getEmail())
+                    .role(user.getRole().name())
+                    .build())
+                .build();
+            }
 
     // 2. Hàm Tạo Token - GIỮ NGUYÊN
     private String generateToken(User user) {

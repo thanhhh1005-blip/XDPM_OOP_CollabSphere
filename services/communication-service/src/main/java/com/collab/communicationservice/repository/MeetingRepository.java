@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MeetingRepository extends JpaRepository<Meeting, Long> {
+public interface MeetingRepository extends JpaRepository<Meeting, String> {
     // JpaRepository đã có sẵn findById, save, deleteById... 
     // nên chúng ta không cần viết thêm gì ở đây cả.
 }

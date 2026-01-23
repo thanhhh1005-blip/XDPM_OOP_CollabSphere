@@ -45,6 +45,11 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>com.collab</groupId>
+            <artifactId>shared</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
 </project>

@@ -16,6 +16,7 @@ import UserProfile from './pages/User/UserProfile';
 
 // Các trang khác
 import AiPlanning from './pages/AI/AiPlanning';
+import WorkspaceList from './pages/Workspace/WorkspaceList';
 import TaskBoard from './pages/Workspace/TaskBoard';
 import MilestonePage from './pages/Workspace/MilestonePage';
 import SubjectManager from './pages/Education/SubjectManager';
@@ -26,8 +27,7 @@ import TeamList from './pages/Teams/TeamList';
 import TeamCreate from './pages/Teams/TeamCreate';
 import TeamDetail from './pages/Teams/TeamDetail';
 import CollabPage from './pages/Collaboration/CollabPage';
-
-import CollaborationPage from './pages/Collaboration/CollaborationPage'; 
+import CollabList from './pages/Collaboration/CollabList';
 import TeamEdit from './pages/Teams/TeamEdit';
 
 function App() {
@@ -50,15 +50,17 @@ function App() {
             <Route path="/profile" element={<UserProfile />} />
             
             {/* 👇 Route Workspace & Education */}
-            <Route path="/workspace" element={<TaskBoard />} />
-            <Route path="/collaboration" element={<CollabPage />} />
+            <Route path="/workspace" element={<WorkspaceList />} />
+            <Route path="/workspace/:id" element={<TaskBoard />} />
+            <Route path="/workspace/:id/class/:classId/board" element={<TaskBoard />} />
+            <Route path="/collaboration" element={<CollabList />} />
+            <Route path="/collaboration/:roomId" element={<CollabPage />} />
             <Route path="/milestones" element={<MilestonePage />} />
             <Route path="/ai-planning" element={<AiPlanning />} />
             <Route path="/classes" element={<ClassManager />} />
             <Route path="/subjects" element={<SubjectManager />} />
 
             {/* 👇 Route team */}
-            <Route path="/collaborations/*" element={<CollaborationPage />} />
             <Route path="/resources" element={<ResourcePage />} />
             {/* <Route path="/collaborations/*" element={<CollaborationPage />} /> */}
             <Route path="/projects" element={<ProjectList />} />   {/* ✅ ADD */}

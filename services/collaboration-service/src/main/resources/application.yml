@@ -8,11 +8,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
 server:
   port: 8090
-  servlet:
-    context-path: /api/v1
+  # servlet:
+    # context-path: /api/v1

@@ -13,9 +13,10 @@ public class Workspace {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private Long teamId; // Đây là "Chìa khóa" duy nhất để liên kết
-
+    @Column(name = "team_id", nullable = true, unique = true) 
+    private String teamId;// Đây là "Chìa khóa" duy nhất để liên kết
+    @Column(name = "class_id", nullable = false) 
+    private Long classId;
     // Các thiết lập riêng của workspace (nếu cần)
     private String settingConfig; 
 
