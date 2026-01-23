@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, Select, Card, message, Tag, Space, Tooltip, List, Avatar, Upload, Popconfirm } from 'antd';
 import { UserAddOutlined, EyeOutlined, UserOutlined, TeamOutlined, EditOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons';
+import axios from 'axios';
 
 // Import các hàm từ ClassService
 import { 
@@ -17,6 +18,10 @@ const ClassManager = () => {
     // --- 0. LẤY ROLE NGƯỜI DÙNG ---
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const isLecturer = user.role === 'LECTURER'; // true nếu là Giảng viên
+    console.log(">>> CHECK ROLE:", user.role, "| isLecturer:", isLecturer); // <--- THÊM DÒNG NÀY
+    console.log("FULL USER INFO:", user);
+    const currentUsername = user.username || user.sub; // Đảm bảo lấy đúng username
+
 
     // --- STATE DỮ LIỆU ---
     const [classes, setClasses] = useState([]);
@@ -48,21 +53,44 @@ const ClassManager = () => {
 
     const fetchInitialData = async () => {
         setLoading(true);
+
+        // 1. ĐỊNH NGHĨA CONFIG Ở ĐÂY (Lấy token từ máy để đi "thông quan" Gateway)
+        const token = localStorage.getItem('token'); 
+        const config = {
+            headers: { Authorization: `Bearer ${token}` }
+        };
+
         try {
+            console.log(">>> Đang tải dữ liệu cho:", currentUsername, "| Role:", user.role);
+
+            let classPromise;
+            
+            if (isLecturer) {
+                // 2. Dùng 'config' vừa định nghĩa ở trên vào đây
+                console.log(">>> Gọi API Lọc theo GV");
+                classPromise = axios.get(`http://localhost:8080/api/classes/teacher/${currentUsername}`, config)
+                                    .then(res => res.data); 
+            } else {
+                console.log(">>> Gọi API Lấy tất cả");
+                classPromise = getAllClasses();
+            }
+
+            // Chạy song song các API khác
             const [classData, subjectData, lecturerData, studentData] = await Promise.all([
-                getAllClasses(),
+                classPromise,
                 getAllSubjects(),
                 getLecturers(),
                 getStudents() 
             ]);
 
-            setClasses(classData);
+            setClasses(classData || []);
             setSubjects(subjectData);
             setLecturers(lecturerData);
             setAllStudents(studentData);
+
         } catch (error) {
             console.error(error);
-            message.error("Failed to connect to server!");
+            message.error("Lỗi kết nối server!");
         } finally {
             setLoading(false);
         }
@@ -108,20 +136,38 @@ const ClassManager = () => {
         }
     };
 
-    const handleAddStudent = async (values) => {
-        try {
-            await addStudentToClass(selectedClassId, values.studentId);
-            message.success(`Student added successfully!`);
-            setIsAddStudentModalOpen(false);
-            formAddStudent.resetFields();
-            
-            if (isViewModalOpen) {
-                handleViewStudents(selectedClassId);
-            }
-        } catch (error) {
-            message.error("Failed to add student.");
-        }
-    };
+    // --- Sửa tại ClassManager.jsx ---
+
+const handleAddStudent = async (values) => {
+    // values.studentIds lúc này phải là ['sv1', 'sv2', ...]
+    console.log("Danh sách ID gửi đi:", values.studentIds); 
+
+    if (!values.studentIds || values.studentIds.length === 0) {
+        message.warning("Vui lòng chọn ít nhất một sinh viên!");
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        
+        // 👇 Đổi URL thành bulk-enroll
+        const url = `http://localhost:8080/api/classes/${selectedClassId}/bulk-enroll`;
+        
+        console.log("Đang gửi mảng sinh viên:", values.studentIds);
+
+        await axios.post(url, values.studentIds, config);
+        
+        message.success(`Đã thêm ${values.studentIds.length} sinh viên thành công!`);
+        setIsAddStudentModalOpen(false);
+        formAddStudent.resetFields();
+        fetchInitialData(); 
+        
+    } catch (error) {
+        console.error(error);
+        message.error("Lỗi khi thêm sinh viên.");
+    }
+};
 
     const handleViewStudents = async (classId) => {
         setSelectedClassId(classId);
@@ -178,6 +224,9 @@ const ClassManager = () => {
             onError(error);
         }
     };
+    console.log("Tổng số SV hệ thống:", allStudents.length);
+    console.log("Số SV đã có trong lớp hiện tại:", studentList.length);
+    console.log("Số SV khả dụng để thêm:", availableStudents.length);
 
     // --- 4. CẤU HÌNH CỘT BẢNG ---
     const columns = [
@@ -275,19 +324,23 @@ const ClassManager = () => {
                 </Form>
             </Modal>
 
-            {/* Modal 2: Enroll Student */}
-            <Modal title="Enroll Student" open={isAddStudentModalOpen} onCancel={() => setIsAddStudentModalOpen(false)} onOk={() => formAddStudent.submit()} okText="Enroll">
+            {/* Modal 2: Enroll Student - ĐÃ CẬP NHẬT CHỌN NHIỀU */}
+            <Modal title="Enroll Students" open={isAddStudentModalOpen} onCancel={() => setIsAddStudentModalOpen(false)} onOk={() => formAddStudent.submit()} okText="Enroll All">
                 <Form form={formAddStudent} layout="vertical" onFinish={handleAddStudent}>
                     <Form.Item 
-                        label="Select Student" 
-                        name="studentId" 
-                        rules={[{ required: true, message: 'Please select a student' }]}
+                        label="Select Students" 
+                        name="studentIds" // Đổi tên thành số nhiều
+                        rules={[{ required: true, message: 'Please select at least one student' }]}
                     >
                         <Select 
-                            placeholder={availableStudents.length > 0 ? "Type to search student..." : "All students are enrolled!"}
+                            mode="multiple" // 👈 DÒNG QUAN TRỌNG NHẤT: Bật chế độ chọn nhiều
+                            allowClear
+                            style={{ width: '100%' }}
+                            placeholder="Select one or more students..."
+                            maxTagCount="responsive" // Để hiển thị gọn gàng khi chọn quá nhiều
                             showSearch
                             optionFilterProp="children"
-                            disabled={availableStudents.length === 0}
+                            // disabled={availableStudents.length === 0}
                         >
                             {availableStudents.map(student => (
                                 <Select.Option key={student.id} value={student.username}>
@@ -298,51 +351,63 @@ const ClassManager = () => {
                                 </Select.Option>
                             ))}
                         </Select>
-                        {availableStudents.length === 0 && (
-                            <div style={{ color: 'green', marginTop: 8 }}>✅ All students are already in this class.</div>
-                        )}
                     </Form.Item>
                 </Form>
             </Modal>
-
+            
             {/* Modal 3: View Students */}
             <Modal 
                 title={`Student List (Class ID: ${selectedClassId})`} 
                 open={isViewModalOpen} 
                 onCancel={() => setIsViewModalOpen(false)} 
                 footer={[<Button key="close" onClick={() => setIsViewModalOpen(false)}>Close</Button>]}
+                width={500}
             >
                 {studentList.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: 20, color: '#999' }}>No students enrolled yet.</div>
                 ) : (
-                    <List 
-                        itemLayout="horizontal" 
-                        dataSource={studentList} 
-                        renderItem={(item) => (
-                            <List.Item
-                                actions={[
-                                    // 👇 Ẩn nút xóa sinh viên nếu là Giảng viên
-                                    !isLecturer && (
-                                        <Popconfirm 
-                                            title="Remove student?" 
-                                            description={`Are you sure to remove ${item.studentId}?`}
-                                            onConfirm={() => handleRemoveStudent(item.studentId)}
-                                            okText="Yes"
-                                            cancelText="No"
-                                        >
-                                            <Button danger size="small" icon={<DeleteOutlined />} type="text" />
-                                        </Popconfirm>
-                                    )
-                                ]}
-                            >
-                                <List.Item.Meta 
-                                    avatar={<Avatar style={{ backgroundColor: '#1890ff' }} icon={<UserOutlined />} />} 
-                                    title={<b>{item.studentId}</b>} 
-                                    description={`Enrollment ID: ${item.id}`} 
-                                />
-                            </List.Item>
-                        )} 
-                    />
+                    /* 👇 KHỐI CỐ ĐỊNH CHIỀU CAO VÀ CÓ THANH CUỘN 👇 */
+                    <div style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '10px' }}>
+                        <List 
+                            itemLayout="horizontal" 
+                            dataSource={studentList} 
+                            renderItem={(item) => {
+                                // 🔍 LOGIC TÌM HỌ TÊN: Đối chiếu ID từ bảng class_enrollments với bảng users
+                                const studentInfo = allStudents.find(s => s.username === item.studentId);
+                                const fullNameDisplay = studentInfo ? studentInfo.fullName : item.studentId;
+
+                                return (
+                                    <List.Item
+                                        actions={[
+                                            !isLecturer && (
+                                                <Popconfirm 
+                                                    title="Remove student?" 
+                                                    description={`Are you sure to remove ${fullNameDisplay}?`}
+                                                    onConfirm={() => handleRemoveStudent(item.studentId)}
+                                                    okText="Yes"
+                                                    cancelText="No"
+                                                >
+                                                    <Button danger size="small" icon={<DeleteOutlined />} type="text" />
+                                                </Popconfirm>
+                                            )
+                                        ]}
+                                    >
+                                        <List.Item.Meta 
+                                            avatar={<Avatar style={{ backgroundColor: '#1890ff' }} icon={<UserOutlined />} />} 
+                                            /* 👇 HIỂN THỊ HỌ TÊN Ở ĐÂY 👇 */
+                                            title={<b style={{ fontSize: '15px' }}>{fullNameDisplay}</b>} 
+                                            description={
+                                                <Space direction="vertical" size={0}>
+                                                    <small style={{ color: '#888' }}>Username: {item.studentId}</small>
+                                                    <small style={{ color: '#ccc' }}>Enrollment ID: {item.id}</small>
+                                                </Space>
+                                            } 
+                                        />
+                                    </List.Item>
+                                );
+                            }} 
+                        />
+                    </div>
                 )}
             </Modal>
 

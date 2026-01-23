@@ -3,8 +3,12 @@ package com.collab.workspaceservice.controller;
 import com.collab.shared.dto.ApiResponse;
 import com.collab.workspaceservice.entity.Sprint;
 import com.collab.workspaceservice.entity.Task;
+import com.collab.workspaceservice.entity.Workspace;
 import com.collab.workspaceservice.repository.SprintRepository;
 import com.collab.workspaceservice.repository.TaskRepository;
+import com.collab.workspaceservice.repository.WorkspaceRepository;
+
+import org.aspectj.internal.lang.annotation.ajcDeclareAnnotation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +23,23 @@ public class TaskController {
     @Autowired // <--- THÊM CÁI NÀY
     private SprintRepository sprintRepository;
 
+    @Autowired
+    private WorkspaceRepository workspaceRepository;
+
     @PostMapping
-    public ApiResponse<Task> createTask(@RequestBody Task task) {
-        Task savedTask = taskRepository.save(task);
-        return new ApiResponse<>(true, "Create success", savedTask);
+    public ApiResponse<Task> createTask(
+        @RequestBody Task task,
+        @RequestParam("workspaceId") Long workspaceId,
+        @RequestParam("teamId") String teamId, // <--- SỬA: Nhận String
+        @RequestParam(name = "classId", required = false) Long classId
+    ) {
+        Workspace ws = workspaceRepository.findById(workspaceId).orElse(null);
+        task.setWorkspace(ws);
+        
+        if (teamId != null) task.setTeamId(teamId);
+        if (classId != null) task.setClassId(classId); // Lưu UUID dạng chuỗi
+        task.setStatus("BACKLOG");
+        return new ApiResponse<>(1000, "Create success", taskRepository.save(task));
     }
     
     // API quan trọng nhất: Cập nhật Status VÀ Sprint
@@ -34,7 +51,7 @@ public class TaskController {
     ) {
         Task task = taskRepository.findById(taskId).orElse(null);
         if (task == null) {
-            return new ApiResponse<>(false, "Task not found", null);
+            return new ApiResponse<>(1000, "Task not found", null);
         }
         
         // 1. Cập nhật trạng thái
@@ -48,22 +65,42 @@ public class TaskController {
             task.setSprint(null); // Về kho thì xóa sprint
         }
 
-        return new ApiResponse<>(true, "Status updated", taskRepository.save(task));
+        return new ApiResponse<>(1000, "Status updated", taskRepository.save(task));
     }
     
+    @PutMapping("/{id}/assign")
+    @Transactional
+    public ApiResponse<Task> assignTask(
+        @PathVariable("id") Long id,
+        @RequestParam("assigneeId") Long assigneeId
+    ) {
+        Task task = taskRepository.findById(id).orElseThrow();
+        task.setAssigneeId(assigneeId);
+        return new ApiResponse<>(1000, "Assigned successfully", taskRepository.save(task));
+    }
     // API lấy Task (Hỗ trợ lọc)
     @GetMapping
-    public ApiResponse<Iterable<Task>> getTasks(@RequestParam(name = "sprintId", required = false) Long sprintId) {
-        if (sprintId != null) {
-            return new ApiResponse<>(true, "Tasks by sprint", taskRepository.findBySprintId(sprintId));
+    public ApiResponse<Iterable<Task>> getTasks(
+            @RequestParam("workspaceId") Long workspaceId,
+            @RequestParam(name = "teamId", required = false) String teamId, // <--- SỬA: Nhận String
+            @RequestParam(name = "classId", required = false) Long classId
+    ) {
+        if (teamId != null && !teamId.isEmpty()) {
+            return new ApiResponse<>(1000, "Dữ liệu Task theo Team", 
+                    taskRepository.findByWorkspaceIdAndTeamId(workspaceId, teamId));
         }
-        return new ApiResponse<>(true, "All tasks", taskRepository.findAll());
+        if (classId != null) {
+            return new ApiResponse<>(1000, "Dữ liệu Task theo Class", 
+                    taskRepository.findByWorkspaceIdAndClassId(workspaceId, classId));
+        }
+        return new ApiResponse<>(1000, "Dữ liệu Task (All)", 
+                taskRepository.findByWorkspaceId(workspaceId));
     }
 
     @DeleteMapping("/{id}")
     @Transactional
     public ApiResponse<Void> deleteTask(@PathVariable("id") Long id) {
         taskRepository.deleteById(id);
-        return new ApiResponse<>(true, "Task deleted", null);
+        return new ApiResponse<>(1000, "Task deleted", null);
     }
 }

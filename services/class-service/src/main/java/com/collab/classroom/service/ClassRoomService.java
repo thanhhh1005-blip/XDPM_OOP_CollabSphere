@@ -85,6 +85,18 @@ public class ClassRoomService {
         return dtos;
     }
 
+    public List<ClassroomDTO> getClassesByTeacher(String teacherId) {
+        List<ClassRoom> entities = classRoomRepository.findByTeacherId(teacherId);
+        
+        List<ClassroomDTO> dtos = entities.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+
+        // Điền thêm thông tin Môn học (cho đẹp)
+        dtos.forEach(this::enrichClassroomDTO);
+        return dtos;
+    }
+    
     // 👇 ĐÂY LÀ HÀM BẠN BỊ THIẾU (Gây lỗi undefined ở Controller) 👇
     public List<ClassEnrollment> getStudentsByClass(Long classId) {
         return classEnrollmentRepository.findByClassId(classId);
@@ -241,6 +253,23 @@ public class ClassRoomService {
         }
     }
 
+    public List<ClassroomDTO> getClassesForStudent(String studentId) {
+    // 1. Tìm tất cả bản ghi ghi danh của sinh viên này
+    List<ClassEnrollment> enrollments = classEnrollmentRepository.findByStudentId(studentId);
+    
+    // 2. Lấy danh sách ID lớp từ các bản ghi ghi danh đó
+    List<Long> classIds = enrollments.stream()
+            .map(ClassEnrollment::getClassId)
+            .collect(Collectors.toList());
+
+    // 3. Tìm các lớp tương ứng và đổi sang DTO
+    List<ClassRoom> entities = classRoomRepository.findAllById(classIds);
+    List<ClassroomDTO> dtos = entities.stream().map(this::mapToDTO).collect(Collectors.toList());
+    
+    dtos.forEach(this::enrichClassroomDTO); // Điền thêm tên môn, tên GV cho đẹp
+    return dtos;
+    }
+
     private ClassroomDTO mapToDTO(ClassRoom entity) {
         return ClassroomDTO.builder()
                 .id(entity.getId())
@@ -261,5 +290,32 @@ public class ClassRoomService {
                 .teacherId(dto.getTeacherId())
                 .isActive(true)
                 .build();
+    }
+
+        // =========================================================================
+    // THÊM NHIỀU SINH VIÊN CÙNG LÚC
+    // =========================================================================
+    @Transactional // Quan trọng: Đảm bảo nếu lỗi 1 người thì sẽ không lưu tất cả
+    public void addStudentsToClass(Long classId, List<String> studentIds) {
+        if (!classRoomRepository.existsById(classId)) {
+            throw new RuntimeException("Lớp học không tồn tại!");
+        }
+
+        List<ClassEnrollment> newEnrollments = new ArrayList<>();
+
+        for (String studentId : studentIds) {
+            // Nếu sinh viên chưa có trong lớp thì mới thêm
+            if (!classEnrollmentRepository.existsByClassIdAndStudentId(classId, studentId)) {
+                ClassEnrollment enrollment = new ClassEnrollment();
+                enrollment.setClassId(classId);
+                enrollment.setStudentId(studentId);
+                newEnrollments.add(enrollment);
+            }
+        }
+
+        if (!newEnrollments.isEmpty()) {
+            classEnrollmentRepository.saveAll(newEnrollments);
+            log.info("Đã thêm {} sinh viên vào lớp {}", newEnrollments.size(), classId);
+        }
     }
 }

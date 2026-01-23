@@ -13,6 +13,14 @@ public interface TeamRepository extends JpaRepository<Team, String> {
 
   // ✅ lấy danh sách leaderId đã dùng trong lớp (để meta trả về leaderUsed)
   List<Team> findByClassIdAndLeaderIdIsNotNull(Long classId);
+
   boolean existsByClassIdAndLeaderIdAndIdNot(Long classId, String leaderId, String id);
 
+  // ✅ ADD: chặn project bị gán cho nhiều team
+  boolean existsByProjectId(String projectId);
+
+  // ✅ ADD: dùng khi update, loại trừ chính team hiện tại
+  boolean existsByProjectIdAndIdNot(String projectId, String id);
+
+  List<Team> findByClassIdIn(List<Long> classIds);
 }

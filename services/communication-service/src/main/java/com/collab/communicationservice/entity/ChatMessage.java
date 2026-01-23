@@ -12,9 +12,13 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String senderName; // Tên người gửi
+    private Long senderId;
+    private String senderName;
+    @Column(columnDefinition = "TEXT") // Tên người gửi
     private String content;    // Nội dung chat
-    private Long roomId;       // ID phòng chat (hoặc ID nhóm)
+    private String roomId;       // ID phòng chat (hoặc ID nhóm)
     
     private LocalDateTime timestamp;
+    private String type; 
+
 }

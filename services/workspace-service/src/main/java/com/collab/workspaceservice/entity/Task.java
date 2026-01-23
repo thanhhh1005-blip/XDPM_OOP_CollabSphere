@@ -3,6 +3,8 @@ package com.collab.workspaceservice.entity;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -21,8 +23,19 @@ public class Task {
     private String submissionUrl; // Link bài nộp của sinh viên
     private LocalDateTime submittedAt; // Thời gian nộp
 
+    @ManyToOne
+    @JoinColumn(name = "workspace_id")
+    @JsonIgnore
+    private Workspace workspace; 
+    
     @Column(columnDefinition = "boolean default false")
     private Boolean isSubmissionRequired = false; // Giảng viên tick vào đây thì mới bắt nộp
+
+    @Column(name = "class_id")
+    private Long classId;
+    
+    @Column(name = "team_id", length = 36) 
+    private String teamId;
 
     @ManyToOne
     @JoinColumn(name = "sprint_id")

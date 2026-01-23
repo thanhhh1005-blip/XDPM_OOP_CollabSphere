@@ -42,7 +42,7 @@ spring:
         - id: class-service
           uri: http://localhost:8084
           predicates:
-            - Path=/api/v1/classes/** 
+            - Path=/api/classes/** 
 
         # 5. Subject (8085)
         - id: subject-service
@@ -88,7 +88,13 @@ spring:
         - id: collaboration-service
           uri: http://localhost:8090
           predicates:
-            - Path=/api/collaborations/**
+            - Path=/api/collab/**  # <-- Sửa từ 'collaborations' thành 'collab' cho khớp với Controller
+
+        # 👇 THÊM ĐOẠN NÀY ĐỂ VẼ BẢNG TRẮNG ĐƯỢC 👇
+        - id: collab-websocket
+          uri: ws://localhost:8090
+          predicates:
+            - Path=/ws-collab/**
 
         # 11. Team Service (8091)
         - id: team-service

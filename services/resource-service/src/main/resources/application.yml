@@ -6,7 +6,7 @@ spring:
   cloud:
     aws:
       region:
-        static: us-east-1  # <--- Dòng này giúp fix lỗi "Unable to load region"
+        static: us-east-1 # <--- Dòng này giúp fix lỗi "Unable to load region"
       credentials:
         access-key: admin
         secret-key: password123
@@ -38,8 +38,7 @@ spring:
       max-request-size: 50MB
 
 server:
-  port: 8084
-
+  port: 8088
 
 # Cấu hình Custom cho Code của bạn (Vẫn giữ nguyên để Service chạy)
 aws:

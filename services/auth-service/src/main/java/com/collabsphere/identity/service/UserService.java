@@ -72,8 +72,10 @@ public class UserService {
     // Tạo data cần gửi
     UserDTO event = new UserDTO(
         user.getId(), 
+        user.getUsername(),
         user.getFullName(), 
-        user.getAvatarUrl(), 
+        user.getAvatarUrl(),
+        user.getEmail(), 
         user.getRole().name()
     );
 

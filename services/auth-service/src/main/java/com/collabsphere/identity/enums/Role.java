@@ -6,6 +6,6 @@ public enum Role {
     HEAD_DEPARTMENT,    // Trưởng bộ môn
     LECTURER,           // Giảng viên
     STUDENT,             // Sinh viên
-    LEADER,              // Lớp trưởng
-    MEMBER         // Thành viên lớp học
+    LEADER,
+    MEMBER
 }

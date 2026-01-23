@@ -1,158 +1,248 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, Col, Row, Button, Input, Modal, message, Tag, Select, Tooltip, Avatar, Typography, Space, List } from 'antd';
+import { 
+  PlusOutlined, ArrowRightOutlined, ArrowLeftOutlined, 
+  DeleteOutlined, UserOutlined, BankOutlined, TeamOutlined 
+} from '@ant-design/icons';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Card, Col, Row, Button, Input, Modal, message, Tag, Select, Empty, Checkbox, Tooltip, Avatar } from 'antd';
-import { PlusOutlined, ArrowRightOutlined, ArrowLeftOutlined, DeleteOutlined, UserAddOutlined, PaperClipOutlined } from '@ant-design/icons';
 
 const TaskBoard = () => {
+  // Lấy cả workspaceId và classId từ URL (nếu có)
+  // Route Nhóm: /workspace/:id
+  // Route Lớp:  /workspace/:id/class/:classId/board
+  const { id: workspaceId, classId } = useParams(); 
+  const navigate = useNavigate();
+
+  // --- BIẾN CỜ XÁC ĐỊNH CHẾ ĐỘ ---
+  const isClassMode = !!classId; // True nếu đang ở giao diện Lớp
+
   const [tasks, setTasks] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [selectedSprintId, setSelectedSprintId] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
   
-  // Modal States
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isSprintModalOpen, setIsSprintModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   
-  // Form Data
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newSprintName, setNewSprintName] = useState('');
-  const [newTaskAssignee, setNewTaskAssignee] = useState(null); // ID người được giao
-  const [newTaskRequired, setNewTaskRequired] = useState(false); // Checkbox nộp bài
-
-  // Dữ liệu giả lập thành viên (Sau này lấy từ API)
-  const [users] = useState([
-    { id: 1, name: 'Nguyễn Văn A', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=A' },
-    { id: 2, name: 'Trần Thị B', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=B' },
-    { id: 3, name: 'Lê Văn C', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=C' },
-  ]);
+  const [selectedTask, setSelectedTask] = useState(null);
+  
+  // State lưu ID của Team (chỉ dùng khi ở chế độ Team)
+  const [currentTeamId, setCurrentTeamId] = useState(null);
 
   const API_BASE = 'http://localhost:8080/api/workspace';
-
-  const fetchSprints = async () => {
+  const API_CLASS = 'http://localhost:8080/api/classes';
+  const token = localStorage.getItem('token');
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+  
+  // --- 1. TẢI DỮ LIỆU ---
+  // 1. Tải dữ liệu
+  const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
-        const res = await axios.get(`${API_BASE}/sprints`);
-        const data = res.data.data || [];
-        setSprints(data);
-        if (data.length > 0 && !selectedSprintId) setSelectedSprintId(data[0].id);
-    } catch (e) {}
-  };
+      let teamIdToUse = null;
 
-  const fetchTasks = async () => {
-    try {
-        const res = await axios.get(`${API_BASE}/tasks`); 
-        setTasks(res.data.data || []);
-    } catch (e) {}
-  };
+      // A. XỬ LÝ ID (Lấy Team ID nếu đang ở chế độ Nhóm)
+      if (!isClassMode) {
+          // Nếu là chế độ TEAM: Cần lấy thông tin Workspace để tìm teamId
+          const wsRes = await axios.get(`${API_BASE}/workspaces/${workspaceId}`, config);
+          teamIdToUse = wsRes.data.result?.teamId;
+          
+          if (teamIdToUse) {
+              setCurrentTeamId(teamIdToUse);
+          }
+      }
 
-  useEffect(() => { fetchSprints(); fetchTasks(); }, []);
+      // B. LẤY SPRINTS (ĐÃ SỬA: Tách biệt Sprint Lớp & Sprint Team)
+      // -----------------------------------------------------------
+      let sprintUrl = `${API_BASE}/sprints/by-workspace/${workspaceId}`;
 
-  // --- LOGIC XỬ LÝ ---
-  const updateTask = async (task, newStatus, assignToCurrentSprint = false) => {
-    try {
-        let url = `${API_BASE}/tasks/${task.id}/status?status=${newStatus}`;
-        if (assignToCurrentSprint && selectedSprintId) url += `&sprintId=${selectedSprintId}`;
-        await axios.put(url);
-        fetchTasks();
-    } catch (e) { message.error("Lỗi cập nhật"); }
-  };
+      // Logic ghép tham số:
+      if (isClassMode) {
+          // 1. Nếu đang ở LỚP -> Gửi classId
+          sprintUrl += `?classId=${classId}`;
+      } else if (teamIdToUse) {
+          // 2. Nếu đang ở NHÓM -> Gửi teamId (vừa lấy được ở bước A)
+          sprintUrl += `?teamId=${teamIdToUse}`;
+      }
 
-  const handleCreateTask = async () => {
-    if (!newTaskTitle) return;
-    try {
-      // Gửi đầy đủ thông tin lên Backend
-      await axios.post(`${API_BASE}/tasks`, {
-        title: newTaskTitle,
-        description: "New Task",
-        status: "BACKLOG", 
-        sprint: null,
-        assigneeId: newTaskAssignee, // Gán người làm
-        isSubmissionRequired: newTaskRequired // Có bắt nộp bài không
-      });
-      message.success("Đã thêm vào Backlog!");
+      // Gọi API Sprint với URL đã lọc
+      const sprRes = await axios.get(sprintUrl, config);
+      setSprints(sprRes.data.result || []);
+
+      // Logic chọn sprint mặc định
+      if (sprRes.data.result?.length > 0) {
+          // Nếu chưa chọn sprint nào thì chọn cái đầu tiên
+          if (!selectedSprintId) {
+             setSelectedSprintId(sprRes.data.result[0].id);
+          }
+      } else {
+          // Nếu không có sprint nào -> Reset về null
+          setSelectedSprintId(null);
+      }
+      // -----------------------------------------------------------
+
+
+      // C. Lấy Members (Logic rẽ nhánh như cũ)
+      if (isClassMode) {
+          // API LẤY THÀNH VIÊN LỚP (GV + SV)
+          const memRes = await axios.get(`${API_CLASS}/${classId}/workspace-members`, config);
+          setMembers(memRes.data.result || memRes.data || []);
+      } else if (teamIdToUse) {
+          // API LẤY THÀNH VIÊN TEAM
+          const memRes = await axios.get(`http://localhost:8080/api/v1/teams/${teamIdToUse}/members`, config);
+          setMembers(memRes.data.result || memRes.data || []);
+      }
+
+      // D. Lấy Tasks (Cũng phải lọc task theo ngữ cảnh)
+      let taskUrl = `${API_BASE}/tasks?workspaceId=${workspaceId}`;
       
-      // Reset form
-      setIsTaskModalOpen(false); 
-      setNewTaskTitle('');
-      setNewTaskAssignee(null);
-      setNewTaskRequired(false);
+      if (isClassMode) {
+          taskUrl += `&classId=${classId}`; // Lọc theo Lớp
+      } else if (teamIdToUse) {
+          taskUrl += `&teamId=${teamIdToUse}`; // Lọc theo Team
+      }
       
-      fetchTasks();
-    } catch (e) { message.error("Lỗi tạo task"); }
-  };
+      const taskRes = await axios.get(taskUrl, config);
+      setTasks(taskRes.data.result || []);
 
+    } catch (e) { 
+        console.error("Lỗi tải dữ liệu:", e); 
+    } finally { 
+        setLoading(false); 
+    }
+  }, [workspaceId, classId, selectedSprintId, isClassMode]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  // --- 2. XỬ LÝ SPRINT ---
+  // --- 2. XỬ LÝ SPRINT (ĐÃ SỬA LỖI 500) ---
   const handleCreateSprint = async () => {
-    if(!newSprintName) return;
     try {
-        await axios.post(`${API_BASE}/sprints`, { name: newSprintName });
-        message.success("Tạo Sprint thành công!");
-        setIsSprintModalOpen(false); setNewSprintName(''); fetchSprints();
-    } catch (e) { message.error("Lỗi tạo Sprint"); }
-  };
+        const payload = { 
+            name: newSprintName, 
+            workspace: { id: workspaceId } 
+        };
 
-  const handleDeleteTask = async (id) => {
-    try { await axios.delete(`${API_BASE}/tasks/${id}`); fetchTasks(); } catch(e) {}
+        // --- PHÂN LOẠI RẠCH RÒI KHI TẠO ---
+        if (isClassMode && classId) {
+            // Tạo cho LỚP
+            payload.classId = classId;
+            payload.teamId = null; // Đảm bảo teamId rỗng
+        } else if (!isClassMode && currentTeamId) {
+            // Tạo cho NHÓM
+            payload.teamId = currentTeamId;
+            payload.classId = null; // Đảm bảo classId rỗng
+        } else {
+            message.error("Không xác định được ngữ cảnh (Lớp/Team) để tạo Sprint");
+            return;
+        }
+
+        await axios.post(`${API_BASE}/sprints`, payload, config);
+        message.success("Đã tạo Sprint thành công");
+        setIsSprintModalOpen(false); 
+        setNewSprintName(''); 
+        fetchData();
+    } catch (e) { 
+        console.error(e);
+        message.error("Lỗi tạo Sprint"); 
+    }
   };
 
   const handleDeleteSprint = async () => {
-    if(!selectedSprintId) return;
+    if (!selectedSprintId) return;
+    if (!window.confirm("Xóa Sprint này? Task sẽ về Backlog.")) return;
     try {
-        await axios.delete(`${API_BASE}/sprints/${selectedSprintId}`);
+        await axios.delete(`${API_BASE}/sprints/${selectedSprintId}`, config);
         message.success("Đã xóa Sprint");
-        setSelectedSprintId(null); fetchSprints();
-    } catch(e) {}
+        setSelectedSprintId(null); fetchData();
+    } catch (e) { message.error("Lỗi khi xóa"); }
   };
 
-  const getNextStatus = (s) => s === 'BACKLOG' ? 'TODO' : s === 'TODO' ? 'IN_PROGRESS' : 'DONE';
-  const getPrevStatus = (s) => s === 'DONE' ? 'IN_PROGRESS' : s === 'IN_PROGRESS' ? 'TODO' : 'BACKLOG';
+  // --- 3. XỬ LÝ TASK ---
+  const handleCreateTask = async () => {
+    // Validate trước khi tạo
+    if (!isClassMode && !currentTeamId) {
+        message.error("Lỗi: Không tìm thấy Team ID"); return;
+    }
 
-  // --- RENDER GIAO DIỆN ---
+    try {
+      let createUrl = `${API_BASE}/tasks?workspaceId=${workspaceId}`;
+      
+      // Ghép tham số tùy theo chế độ
+      if (isClassMode) {
+          createUrl += `&classId=${classId}`;
+      } else {
+          createUrl += `&teamId=${currentTeamId}`;
+      }
+
+      await axios.post(createUrl, { title: newTaskTitle, status: "BACKLOG" }, config);
+
+      message.success(isClassMode ? "Đã giao bài tập cho lớp" : "Đã thêm task cho nhóm");
+      setIsTaskModalOpen(false); 
+      setNewTaskTitle(''); 
+      fetchData();
+    } catch (e) { message.error("Lỗi tạo task"); }
+  };
+
+  const updateTaskStatus = async (task, newStatus) => {
+    if (newStatus === 'TODO' && !selectedSprintId) {
+        message.warning("Hãy chọn một Sprint trước!"); return;
+    }
+    try {
+        let url = `${API_BASE}/tasks/${task.id}/status?status=${newStatus}`;
+        if (selectedSprintId) url += `&sprintId=${selectedSprintId}`;
+        await axios.put(url, {}, config); fetchData();
+    } catch (e) { message.error("Lỗi cập nhật"); }
+  };
+
+  const handleAssignUser = async (userId) => {
+    try {
+        await axios.put(`${API_BASE}/tasks/${selectedTask.id}/assign?assigneeId=${userId}`, {}, config);
+        message.success("Đã giao việc thành công!");
+        setIsAssignModalOpen(false);
+        fetchData();
+    } catch (e) { message.error("Lỗi giao việc"); }
+  };
+
+  // --- RENDER ---
   const renderColumn = (title, status, color, isBacklog = false) => {
-    const filteredTasks = tasks.filter(t => {
-        if (status === 'BACKLOG') return t.status === 'BACKLOG';
-        return t.status === status && t.sprint?.id == selectedSprintId; 
-    });
+    const filteredTasks = tasks.filter(t => isBacklog ? t.status === 'BACKLOG' : (t.status === status && t.sprint?.id == selectedSprintId));
 
     return (
       <Col span={6}>
-        <Card 
-            title={<Tag color={color} style={{width:'100%', textAlign:'center'}}>{title} ({filteredTasks.length})</Tag>} 
-            style={{ backgroundColor: isBacklog ? '#fff1f0' : '#f0f2f5', border: 'none' }}
-            bodyStyle={{ padding: '10px', height: '600px', overflowY: 'auto' }}
-        >
-          {filteredTasks.length === 0 && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Trống" />}
-          
+        <Card title={<Tag color={color} style={{width:'100%', textAlign:'center'}}>{title} ({filteredTasks.length})</Tag>} 
+              style={{ backgroundColor: isBacklog ? '#fff1f0' : '#f0f2f5', borderRadius: '12px' }}
+              bodyStyle={{ padding: '10px', height: '550px', overflowY: 'auto' }}>
           {filteredTasks.map(task => (
             <Card key={task.id} size="small" style={{ marginBottom: '10px' }} hoverable>
-              
-              {/* HEADER TASK: Tiêu đề + Nút Xóa */}
-              <div style={{display:'flex', justifyContent: 'space-between', alignItems:'flex-start'}}>
-                  <b style={{wordBreak:'break-word'}}>{task.title}</b>
-                  <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => handleDeleteTask(task.id)} />
+              <div style={{display:'flex', justifyContent: 'space-between'}}>
+                  <b style={{fontSize: '13px'}}>{task.title}</b>
+                  <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => {
+                      if(window.confirm("Xóa task?")) axios.delete(`${API_BASE}/tasks/${task.id}`, config).then(()=>fetchData());
+                  }} />
               </div>
 
-              {/* BODY TASK: Avatar + Icon Nộp bài */}
-              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:'8px', marginBottom:'8px'}}>
-                 
-                 {/* Hiển thị Avatar người làm */}
+              <div style={{marginTop:'10px'}}>
                  {task.assigneeId ? (
-                    <Tooltip title={users.find(u=>u.id===task.assigneeId)?.name}>
-                        <Avatar src={users.find(u=>u.id===task.assigneeId)?.avatar} size="small" />
+                    <Tooltip title={`Người làm: ${task.assigneeId}`}>
+                        <Avatar style={{backgroundColor: '#87d068'}} icon={<UserOutlined />} size="small"/>
+                        <span style={{marginLeft: 5, fontSize: 12}}>{task.assigneeId}</span>
                     </Tooltip>
                  ) : (
-                    <Tooltip title="Chưa có người làm">
-                        <Button size="small" type="dashed" shape="circle" icon={<UserAddOutlined />} />
-                    </Tooltip>
-                 )}
-
-                 {/* Hiển thị Icon Nộp bài nếu bắt buộc */}
-                 {task.isSubmissionRequired && (
-                    <Tag color="warning" icon={<PaperClipOutlined />}>Nộp bài</Tag>
+                    <Button size="small" type="dashed" shape="circle" icon={<PlusOutlined style={{fontSize: '10px'}}/>} 
+                            onClick={() => { setSelectedTask(task); setIsAssignModalOpen(true); }} 
+                    />
                  )}
               </div>
               
-              {/* FOOTER TASK: Nút điều hướng */}
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                 {status !== 'BACKLOG' && <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => updateTask(task, getPrevStatus(status))} />}
-                 {status !== 'DONE' && <Button type="primary" size="small" icon={<ArrowRightOutlined />} onClick={() => updateTask(task, getNextStatus(status), status === 'BACKLOG')} />}
+              <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                 {status !== 'BACKLOG' && <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => updateTaskStatus(task, status === 'TODO' ? 'BACKLOG' : status === 'IN_PROGRESS' ? 'TODO' : 'IN_PROGRESS')} />}
+                 {status !== 'DONE' && <Button type="primary" size="small" icon={<ArrowRightOutlined />} onClick={() => updateTaskStatus(task, status === 'BACKLOG' ? 'TODO' : status === 'TODO' ? 'IN_PROGRESS' : 'DONE', status === 'BACKLOG')} />}
               </div>
             </Card>
           ))}
@@ -162,50 +252,66 @@ const TaskBoard = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <Card style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 'bold' }}>🚀 Sprint Board:</span>
-                <Select value={selectedSprintId} style={{ width: 200 }} onChange={setSelectedSprintId} placeholder="Chọn Sprint...">
+    <div style={{ padding: '0px' }}>
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between' }}>
+        <Space size="large">
+            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>Quay lại</Button>
+            
+            {/* HIỂN THỊ LABEL ĐỂ BIẾT ĐANG Ở ĐÂU */}
+            {isClassMode ? (
+                 <Tag icon={<BankOutlined />} color="purple" style={{padding: '5px 10px', fontSize: '14px'}}>LỚP HỌC</Tag>
+            ) : (
+                 <Tag icon={<TeamOutlined />} color="blue" style={{padding: '5px 10px', fontSize: '14px'}}>NHÓM DỰ ÁN</Tag>
+            )}
+
+            <div style={{ background: '#fff', padding: '5px 15px', borderRadius: '20px', border: '1px solid #d9d9d9' }}>
+                <span style={{ fontWeight: 'bold' }}>Sprint: </span>
+                <Select value={selectedSprintId} style={{ width: 150 }} onChange={setSelectedSprintId} variant="borderless" placeholder="Chọn Sprint">
                     {sprints.map(s => <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>)}
                 </Select>
-                <Button icon={<PlusOutlined />} onClick={() => setIsSprintModalOpen(true)}>Tạo Sprint</Button>
-                {selectedSprintId && <Button danger icon={<DeleteOutlined />} onClick={handleDeleteSprint} />}
+                {selectedSprintId && <Button type="text" danger icon={<DeleteOutlined />} onClick={handleDeleteSprint} />}
             </div>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsTaskModalOpen(true)}>Thêm Task vào Backlog</Button>
-        </div>
-      </Card>
+            <Button icon={<PlusOutlined />} onClick={() => setIsSprintModalOpen(true)}>Thêm Sprint</Button>
+        </Space>
+        <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => setIsTaskModalOpen(true)}>
+            {isClassMode ? 'Giao bài tập mới' : 'Thêm Task mới'}
+        </Button>
+      </div>
 
       <Row gutter={16}>
-        {renderColumn('Kho (Backlog)', 'BACKLOG', 'default', true)}
-        {renderColumn('Cần làm (Todo)', 'TODO', 'blue')}
-        {renderColumn('Đang làm', 'IN_PROGRESS', 'orange')}
-        {renderColumn('Hoàn thành', 'DONE', 'green')}
+        {renderColumn('📌 Kho (Backlog)', 'BACKLOG', 'default', true)}
+        {renderColumn('📋 Cần làm (Todo)', 'TODO', 'blue')}
+        {renderColumn('🔥 Đang làm', 'IN_PROGRESS', 'orange')}
+        {renderColumn('✅ Hoàn thành', 'DONE', 'green')}
       </Row>
 
-      {/* MODAL TẠO TASK (ĐÃ NÂNG CẤP) */}
-      <Modal title="Thêm công việc mới" open={isTaskModalOpen} onOk={handleCreateTask} onCancel={() => setIsTaskModalOpen(false)}>
-        <Input placeholder="Tên công việc..." value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} style={{marginBottom: 15}} />
-        
-        {/* Checkbox Nộp bài */}
-        <div style={{marginBottom: 15}}>
-            <Checkbox checked={newTaskRequired} onChange={e => setNewTaskRequired(e.target.checked)}>
-                Yêu cầu nộp bài (Report/File)
-            </Checkbox>
-        </div>
+      {/* Modal Gán Người làm - Có hiển thị Role nếu là lớp */}
+      <Modal title="Phân công công việc" open={isAssignModalOpen} footer={null} onCancel={() => setIsAssignModalOpen(false)}>
+        <List
+            dataSource={members}
+            renderItem={m => (
+                <List.Item actions={[<Button type="link" onClick={() => handleAssignUser(m.userId)}>Giao việc</Button>]}>
+                    <List.Item.Meta 
+                        avatar={<Avatar src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${m.userId}`} />} 
+                        title={
+                            <Space>
+                                {m.fullName || m.userId}
+                                {/* Chỉ hiện Role nếu có (ClassMode) */}
+                                {m.role && <Tag color={m.role === 'TEACHER' ? 'red' : 'blue'}>{m.role}</Tag>}
+                            </Space>
+                        } 
+                    />
+                </List.Item>
+            )}
+        />
+      </Modal>
 
-        {/* Dropdown chọn người */}
-        <div>
-            <span>Giao cho: </span>
-            <Select style={{width: '100%'}} placeholder="Chọn thành viên..." allowClear onChange={val => setNewTaskAssignee(val)} value={newTaskAssignee}>
-                {users.map(u => <Select.Option key={u.id} value={u.id}>{u.name}</Select.Option>)}
-            </Select>
-        </div>
+      <Modal title={isClassMode ? "Giao bài tập" : "Thêm công việc"} open={isTaskModalOpen} onOk={handleCreateTask} onCancel={() => setIsTaskModalOpen(false)}>
+        <Input placeholder="Tên công việc..." value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} />
       </Modal>
 
       <Modal title="Tạo Sprint" open={isSprintModalOpen} onOk={handleCreateSprint} onCancel={() => setIsSprintModalOpen(false)}>
-        <Input placeholder="Tên Sprint..." value={newSprintName} onChange={e => setNewSprintName(e.target.value)} onPressEnter={handleCreateSprint} />
+        <Input placeholder="Tên Sprint..." value={newSprintName} onChange={e => setNewSprintName(e.target.value)} />
       </Modal>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout, Menu, Button, Drawer, Typography, Avatar, Badge, Tag } from 'antd';
 import {
   ProjectOutlined,
@@ -8,11 +8,20 @@ import {
   ReadOutlined,
   BookOutlined,
   TeamOutlined,
-  FolderOutlined,
+  FolderOutlined,   //  Resource
+  EditOutlined,
   LogoutOutlined // <--- 1. THÊM ICON ĐĂNG XUẤT
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import ChatRoom from './ChatRoom';
+import axios from "axios";
+
+/* ===== COMPONENT CŨ CỦA NGƯỜI KHÁC (GIỮ NGUYÊN) ===== */
+import TaskBoard from '../pages/Workspace/TaskBoard';
+import AiPlanning from '../pages/AI/AiPlanning';
+import ClassManager from '../pages/Education/ClassManager';
+import SubjectManager from '../pages/Education/SubjectManager';
+import ProjectList from '../pages/Projects/ProjectList';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -27,7 +36,41 @@ const MainLayout = () => {
   const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const userRole = savedUser.role;
   console.log("User Role in MainLayout:", savedUser);
+  const groupId = savedUser.teamId;
 
+
+  // 1. Thêm useEffect để tự động nạp TeamId và ClassId nếu thiếu
+  useEffect(() => {
+    const enrichUserInfo = async () => {
+      // Nếu là Sinh viên mà trong máy chưa có teamId
+      if (userRole === 'STUDENT' && savedUser.username && !savedUser.teamId) {
+        try {
+          
+          console.log(">>> Đang đi tìm 'hộ khẩu' cho SV:", savedUser.username);
+          // Gọi API team-service để lấy nhóm của sinh viên này
+          const res = await axios.get(`http://localhost:8080/api/v1/teams/student/${savedUser.username}`);
+          const myTeams = res.data?.result || res.data || [];
+          if (myTeams.length > 0) {
+            const myTeam = myTeams[0]; // Lấy nhóm đầu tiên
+            const newUser = { 
+              ...savedUser, 
+              teamId: myTeam.id, 
+              classId: myTeam.classId 
+            };
+            // Lưu lại vào máy cục User đầy đủ
+            localStorage.setItem('user', JSON.stringify(newUser));
+            console.log(">>> Đã cập nhật xong ID Nhóm và Lớp cho SV!");
+            
+            // Ép trang web load lại 1 lần để các linh kiện khác nhận dữ liệu mới
+            window.location.reload(); 
+          }
+        } catch (e) {
+          console.error("Lỗi khi đi tìm nhóm cho sinh viên:", e);
+        }
+      }
+    };
+    enrichUserInfo();
+  }, [userRole, savedUser.username]);
   // --- 2. THÊM HÀM XỬ LÝ ĐĂNG XUẤT ---
   const handleLogout = () => {
     // Xóa thông tin user đã lưu
@@ -39,6 +82,7 @@ const MainLayout = () => {
 
   const items = [
     { key: '/workspace', icon: <ProjectOutlined />, label: 'Quản lý Sprint', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
+    { key: '/collaboration', icon: <EditOutlined />, label: 'Cộng tác nhóm', roles: ['STUDENT', 'LECTURER'],onlyIfHasGroup: true},
     { key: '/projects', icon: <FolderOutlined />, label: 'Dự án', roles: ['LECTURER', 'HEAD_DEPARTMENT'] },
     { key: '/teams', icon: <TeamOutlined />, label: 'Team', roles: ['LECTURER', 'STUDENT'] },
     { key: '/milestones', icon: <ReadOutlined />, label: 'Lộ trình & Cột mốc', roles: ['STUDENT', 'LECTURER'] },
@@ -48,10 +92,16 @@ const MainLayout = () => {
     { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
     { key: '/resources', icon: <FolderOutlined />, label: 'Kho Tài liệu', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
   ];
-
-  // Lọc menu theo quyền (Role)
-  const filteredItems = items.filter(item => item.roles.includes(userRole));
-
+  const filteredItems = items.filter(item => {
+    const hasRole = item.roles.includes(userRole);
+    
+    // Nếu là mục cần Group và user là STUDENT, phải có groupId mới hiện
+    if (item.onlyIfHasGroup && userRole === 'STUDENT') {
+        return hasRole && groupId; 
+    }
+    
+    return hasRole;
+  });
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {/* SIDEBAR BÊN TRÁI */}
@@ -77,8 +127,9 @@ const MainLayout = () => {
 
           selectedKeys={[location.pathname]}
           mode="inline"
-          items={filteredItems}
-          onClick={(e) => navigate(e.key)}
+          items={filteredItems.map(({ onlyIfHasGroup, roles, ...rest }) => rest)}
+          // Khi bấm vào menu, nó nhảy thẳng tới URL đó
+          onClick={(e) => navigate(e.key)} 
         />
       </Sider>
 

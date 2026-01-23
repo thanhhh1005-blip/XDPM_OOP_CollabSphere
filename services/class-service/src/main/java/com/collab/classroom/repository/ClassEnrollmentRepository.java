@@ -18,4 +18,6 @@ public interface ClassEnrollmentRepository extends JpaRepository<ClassEnrollment
 
     // 3. 👇 HÀM QUAN TRỌNG ĐỂ XÓA (Tìm bản ghi để Service gọi delete())
     Optional<ClassEnrollment> findByClassIdAndStudentId(Long classId, String studentId);
+
+    List<ClassEnrollment> findByStudentId(String studentId);
 }

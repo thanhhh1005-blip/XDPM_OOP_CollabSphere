@@ -4,16 +4,19 @@ import com.collab.classroom.entity.ClassEnrollment;
 import com.collab.classroom.service.ClassRoomService;
 import com.collab.shared.dto.ApiResponse;
 import com.collab.shared.dto.ClassroomDTO;
+import com.collab.shared.dto.ClassMemberDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/classes")
+@RequestMapping("/api/classes")
 @RequiredArgsConstructor
 public class ClassRoomController {
 
@@ -68,9 +71,8 @@ public class ClassRoomController {
             @PathVariable("studentId") String studentId // 👇 Đổi @RequestParam thành @PathVariable
     ) {
         classRoomService.addStudentToClass(classId, studentId);
-        return ApiResponse.<Void>builder()
-                .message("Thêm sinh viên " + studentId + " thành công!")
-                .build();
+        return new ApiResponse<Void>(1000, "Thêm sinh viên " + studentId + " thành công!", null);
+
     }
 
     // --- 8. LẤY DSSV CỦA LỚP ---
@@ -81,10 +83,57 @@ public class ClassRoomController {
 
     // --- 9. XÓA SINH VIÊN KHỎI LỚP (ĐÃ CÓ) ---
     @DeleteMapping("/{classId}/students/{studentId}")
-    public ApiResponse<Void> removeStudentFromClass(@PathVariable Long classId, @PathVariable String studentId) {
+    public ApiResponse<Void> removeStudentFromClass(@PathVariable("classId") Long classId, @PathVariable("studentId") String studentId) {
         classRoomService.removeStudentFromClass(classId, studentId);
-        return ApiResponse.<Void>builder()
-                .message("Xóa sinh viên thành công")
-                .build();
+        return new ApiResponse<Void>(1000, "Xóa sinh viên thành công", null);
+    }
+
+    // --- 10. API LẤY LỚP CỦA TÔI (Dành cho GV) ---
+    // Frontend gọi: GET /api/v1/classes/teacher/{username}
+    @GetMapping("/teacher/{username}")
+    public ResponseEntity<List<ClassroomDTO>> getMyClasses(@PathVariable("username") String username) {
+        return ResponseEntity.ok(classRoomService.getClassesByTeacher(username));
+    }
+
+    // GET /api/v1/classes/student/{studentId}
+    @GetMapping("/student/{studentId}")
+    public ResponseEntity<List<ClassroomDTO>> getStudentClasses(@PathVariable("studentId") String studentId) {
+    return ResponseEntity.ok(classRoomService.getClassesForStudent(studentId));
+    }
+
+    // --- Sửa tại ClassRoomController.java ---
+
+    @PostMapping("/{classId}/bulk-enroll") // 👈 Đổi từ students/bulk thành bulk-enroll
+    public ApiResponse<Void> addStudents(@PathVariable("classId") Long classId, @RequestBody List<String> studentIds) {
+        classRoomService.addStudentsToClass(classId, studentIds);
+        return new ApiResponse<>(1000, "Đã thêm sinh viên vào lớp", null); // 👈 Sửa thành true
+    }
+
+    @GetMapping("/teacher/{username}/ids")
+    public List<Long> getClassIds(@PathVariable("username") String username) {
+        return classRoomService.getClassesByTeacher(username)
+                .stream()
+                .map(dto -> dto.getId())
+                .toList();
+    }
+
+    @GetMapping("/{classId}/workspace-members")
+    public ResponseEntity<List<ClassMemberDTO>> getWorkspaceMembers(@PathVariable("classId") Long classId) {
+        // 1. Lấy thông tin lớp để tìm Giảng viên
+        ClassroomDTO classroom = classRoomService.getClassById(classId);
+        
+        List<ClassMemberDTO> members = new ArrayList<>();
+
+        // 2. Thêm Giảng viên vào list (Role: TEACHER)
+        // Lưu ý: classroom.getTeacherId() trả về String (username hoặc id)
+        members.add(new ClassMemberDTO(classroom.getTeacherId(), "TEACHER", "Giảng viên (" + classroom.getTeacherId() + ")"));
+
+        // 3. Lấy danh sách Sinh viên
+        List<ClassEnrollment> students = classRoomService.getStudentsByClass(classId);
+        for (ClassEnrollment enrollment : students) {
+             members.add(new ClassMemberDTO(enrollment.getStudentId(), "STUDENT", "Sinh viên (" + enrollment.getStudentId() + ")"));
+        }
+
+        return ResponseEntity.ok(members);
     }
 }
