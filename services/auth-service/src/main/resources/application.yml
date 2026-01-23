@@ -12,7 +12,7 @@ spring:
 
   datasource:
     # Kết nối đến MySQL đang chạy trong Docker (hoặc Local)
-    url: jdbc:mysql://localhost:3307/identity_db?useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/identity_db?useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
