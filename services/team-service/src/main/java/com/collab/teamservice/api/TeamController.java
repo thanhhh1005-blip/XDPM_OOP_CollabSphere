@@ -5,6 +5,8 @@ import com.collab.teamservice.Entity.Team;
 import com.collab.teamservice.security.RoleGuard;
 import com.collab.teamservice.service.TeamAppService;
 import com.collab.teamservice.repo.TeamRepository;
+import com.collab.teamservice.api.dto.CreateTeamReq;
+import com.collab.teamservice.api.dto.TeamResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,20 +21,25 @@ public class TeamController {
   private final TeamRepository teamRepository;
 
   @PostMapping
-  public Team create(
+  public TeamResponse create(
       @RequestHeader(value = "X-ROLE", required = false) String role,
-      @RequestParam("name") String name,
-      @RequestParam("classId") Long classId,
-      @RequestParam(value = "projectId", required = false) String projectId,
-      @RequestParam(value = "leaderId", required = false) String leaderId,
-      @RequestParam(value = "memberIds", required = false) List<String> memberIds
+      @RequestBody CreateTeamReq req
   ) {
     RoleGuard.require(role, "LECTURER");
-    return service.create(name, classId, projectId, leaderId, memberIds);
+
+    System.out.println(">>> DEBUG DATA NHẬN ĐƯỢC: " + req.toString());
+    System.out.println(">>> DEBUG PROJECT ID: " + req.getProjectId());
+    return service.create(
+            req.getName(), 
+            req.getClassId(), 
+            req.getProjectId(), // Lúc này ProjectId sẽ không bị null nữa
+            req.getLeaderId(), 
+            req.getMemberIds()
+        );
   }
 
   @GetMapping
-  public List<Team> getAll() {
+  public List<TeamResponse> getAll() {
     return service.getAll();
   }
 
@@ -42,7 +49,7 @@ public class TeamController {
   }
 
   @GetMapping("/{id}")
-  public Team getById(@PathVariable("id") String id) {
+  public TeamResponse getById(@PathVariable("id") String id) {
     return service.getById(id);
   }
 
@@ -55,7 +62,7 @@ public class TeamController {
 
 
   @PutMapping("/{id}")
-  public Team update(
+  public TeamResponse update(
       @RequestHeader(value = "X-ROLE", required = false) String role,
       @PathVariable("id") String id,
       @RequestParam("name") String name,
@@ -68,14 +75,14 @@ public class TeamController {
 
   // API lấy danh sách team của sinh viên cụ thể
   @GetMapping("/student/{username}")
-  public ApiResponse<List<Team>> getMyTeams(@PathVariable("username") String username) {
+  public ApiResponse<List<TeamResponse>> getMyTeams(@PathVariable("username") String username) {
       // Bọc ApiResponse cho đồng bộ
       return new ApiResponse<>(1000, "Danh sách team sinh viên", service.getTeamsByStudent(username));
   }
 
   // GET /api/v1/teams/lecturer/{username}
   @GetMapping("/lecturer/{username}")
-  public ApiResponse<List<Team>> getTeamsByLecturer(@PathVariable("username") String username) {
+  public ApiResponse<List<TeamResponse>> getTeamsByLecturer(@PathVariable("username") String username) {
       // Bọc ApiResponse cho đồng bộ
       return new ApiResponse<>(1000, "Danh sách team giảng viên", service.getTeamsByLecturer(username));
   }

@@ -2,6 +2,7 @@ package com.collab.classroom.service;
 
 import com.collab.classroom.client.IdentityClient;
 import com.collab.classroom.client.SubjectClient;
+import com.collab.classroom.client.WorkspaceServiceClient;
 import com.collab.classroom.entity.ClassEnrollment;
 import com.collab.classroom.entity.ClassRoom;
 import com.collab.classroom.repository.ClassEnrollmentRepository;
@@ -35,9 +36,11 @@ public class ClassRoomService {
     private final SubjectClient subjectClient;   
     private final IdentityClient identityClient; 
 
+    private final WorkspaceServiceClient workspaceServiceClient;
     // =========================================================================
     // 1. TẠO LỚP HỌC MỚI
     // =========================================================================
+    @Transactional
     public ClassroomDTO createClass(ClassroomDTO dto) {
         if (classRoomRepository.existsByClassCode(dto.getCode())) {
             throw new RuntimeException("Mã lớp " + dto.getCode() + " đã tồn tại!");
@@ -55,6 +58,13 @@ public class ClassRoomService {
 
         ClassRoom classRoom = mapToEntity(dto);
         ClassRoom savedClass = classRoomRepository.save(classRoom);
+        
+        try {
+             workspaceServiceClient.createClassWorkspace(savedClass.getId());
+        } catch (Exception e) {
+             // Tùy chọn: Log lỗi nhưng không chặn việc tạo lớp, hoặc throw lỗi để rollback
+             log.error("Lỗi tạo workspace cho lớp {}: {}", savedClass.getId(), e.getMessage());
+        }
         
         ClassroomDTO resultDTO = mapToDTO(savedClass);
         enrichClassroomDTO(resultDTO); 

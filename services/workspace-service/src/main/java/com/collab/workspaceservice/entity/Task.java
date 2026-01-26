@@ -46,7 +46,4 @@ public class Task {
     @JoinColumn(name = "milestone_id")
     private Milestone milestone;
 
-    // THÊM: 1 Task có nhiều Subtask nhỏ bên trong
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
-    private List<Subtask> subtasks;
 }

@@ -11,8 +11,10 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
-
+  
 server:
   port: 8091
   servlet:
     context-path: /api/v1
+
+

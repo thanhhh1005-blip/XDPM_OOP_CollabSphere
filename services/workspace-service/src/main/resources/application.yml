@@ -13,3 +13,10 @@ spring:
     hibernate:
       ddl-auto: update # Tự tạo bảng khi chạy code
     show-sql: true
+
+# Cấu hình MinIO (Copy từ Resource Service sang)
+minio:
+  url: http://localhost:9000
+  access-key: admin
+  secret-key: password123
+  bucket-name: collab-sphere

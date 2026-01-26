@@ -19,13 +19,13 @@ function buildHeaders() {
   };
 }
 
-export async function createTeam({ name, classId, projectId }) {
+// Bạn nên nhận thêm leaderId và memberIds để gửi đủ thông tin
+export async function createTeam(data) {
+  // data là object chứa: { name, classId, projectId, leaderId, memberIds }
   const headers = buildHeaders();
 
-  // Backend đang dùng @RequestParam => gửi bằng query params
-  const params = { name, classId };
-  if (projectId) params.projectId = projectId;
-
-  const res = await axios.post(API_BASE, null, { headers, params });
+  // 👇 SỬA LẠI: Gửi data vào vị trí thứ 2 (Body), không dùng 'params' nữa
+  const res = await axios.post(API_BASE, data, { headers });
+  
   return res.data;
 }

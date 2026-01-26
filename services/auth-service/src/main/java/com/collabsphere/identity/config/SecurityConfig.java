@@ -27,13 +27,13 @@ public class SecurityConfig {
 
     // 👇 CẬP NHẬT DANH SÁCH NÀY 👇
     private final String[] PUBLIC_ENDPOINTS = {
-            "/users/**",
+            // "/users/**",
             "/auth/token",
             "/auth/introspect",
             "/auth/outbound/authentication",
             
             // 👇 THÊM DÒNG NÀY ĐỂ CLASS SERVICE GỌI ĐƯỢC (QUAN TRỌNG) 👇
-            "/api/users/**", 
+            // "/api/users/**", 
             // -----------------------------------------------------------
 
             // Các đường dẫn cũ (Giữ nguyên nếu cần tương thích ngược)
@@ -49,12 +49,17 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request ->
-                request
-                        // 1. Cho phép các endpoint public (Đăng nhập, đăng ký, lấy info user)
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll() 
-                        
-                        // 2. Các endpoint còn lại bắt buộc phải có Token
-                        .anyRequest().authenticated());
+            request
+                // 1. Cho phép các endpoint hoàn toàn public (Login, Auth...)
+                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+
+                // 2. Cho phép ĐĂNG KÝ (POST /users) là public (Nếu app bạn cho phép tự đăng ký)
+                .requestMatchers(HttpMethod.GET, "/users/{userId}").permitAll()
+
+                // 3. Các API khác bắt buộc phải có Token (Authenticated)
+                // Lúc này Token sẽ được phân tích, và @PreAuthorize bên Controller mới hoạt động đúng
+                .anyRequest().authenticated()
+        );
 
         httpSecurity.oauth2ResourceServer(oauth2 ->
             oauth2.jwt(jwtConfigurer ->

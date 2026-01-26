@@ -22,6 +22,7 @@ const TeamCreate = () => {
   const [projects, setProjects] = useState([]); // [{id,title,status,assigned}]
   const [loadingProjects, setLoadingProjects] = useState(false);
 
+  // Auth
   const auth = useMemo(() => getAuthInfo() || {}, []);
   const role = auth.role;
   const userId = auth.userId;
@@ -43,29 +44,25 @@ const TeamCreate = () => {
 
   // ===== API =====
   const GW = "http://localhost:8080";
-
-  // team meta
   const META_CLASSES_API = `${GW}/api/v1/teams/meta/classes`;
   const META_STUDENTS_API = (classId) => `${GW}/api/v1/teams/meta/classes/${classId}/students`;
-
-  // projects from project-service (qua gateway)
   const PROJECTS_API = `${GW}/api/v1/projects`;
-
-  // teams from team-service (để check projectId đã gán)
   const TEAMS_API = `${GW}/api/v1/teams`;
 
   // =========================
-  // Load Classes
+  // 1. Load Classes
   // =========================
   useEffect(() => {
     const loadClasses = async () => {
       try {
         setLoadingClasses(true);
         const res = await axios.get(META_CLASSES_API, { headers });
-        setClasses(Array.isArray(res.data) ? res.data : []);
+        // Xử lý an toàn dù API trả về mảng hay object
+        const data = Array.isArray(res.data) ? res.data : (res.data?.result || []);
+        setClasses(data);
       } catch (e) {
         console.error(e);
-        message.error("Không tải được danh sách lớp (class-service)");
+        message.error("Không tải được danh sách lớp");
       } finally {
         setLoadingClasses(false);
       }
@@ -75,45 +72,54 @@ const TeamCreate = () => {
   }, []);
 
   // =========================
-  // Load Projects + mark assigned
+  // 2. Load Projects (Chuẩn hóa logic)
   // =========================
   useEffect(() => {
-    const loadProjects = async () => {
+    const loadProjectsAndCheckAssigned = async () => {
       try {
         setLoadingProjects(true);
 
-        // 1) lấy projects
-        const prRes = await axios.get(PROJECTS_API, { headers });
-        const allProjects = Array.isArray(prRes.data) ? prRes.data : [];
+        // BƯỚC 1: Lấy tất cả các Team hiện có để xem Project nào đã bị xí phần
+        let assignedProjectIds = new Set();
+        try {
+            const teamRes = await axios.get(TEAMS_API, { headers });
+            const teams = Array.isArray(teamRes.data) ? teamRes.data : (teamRes.data?.result || []);
+            
+            teams.forEach(t => {
+                if (t.projectId) {
+                    assignedProjectIds.add(String(t.projectId));
+                }
+            });
+        } catch (err) {
+            console.warn("Không tải được danh sách Team để check trùng project:", err);
+        }
 
-        // 2) lấy teams để check projectId đã gán
-        const tRes = await axios.get(TEAMS_API, { headers });
-        const allTeams = Array.isArray(tRes.data) ? tRes.data : [];
+        // BƯỚC 2: Gọi API lấy Project với tham số lọc status=APPROVED
+        // 🔥 QUAN TRỌNG: Chỉ lấy dự án đã duyệt, Server sẽ lọc giùm ta
+        const projectRes = await axios.get(PROJECTS_API, { 
+            headers,
+            params: { status: 'APPROVED' } 
+        });
 
-        const assignedSet = new Set(
-          allTeams
-            .map((t) => (t?.projectId ? String(t.projectId) : null))
-            .filter(Boolean)
-        );
+        const rawProjects = Array.isArray(projectRes.data) ? projectRes.data : (projectRes.data?.result || []);
 
-        // 3) chỉ show APPROVED (tuỳ bạn muốn show tất cả thì bỏ filter)
-        const mapped = allProjects
-          .filter((p) => !p?.status || p.status === "APPROVED")
-          .map((p) => ({
+        // BƯỚC 3: Map dữ liệu và đánh dấu "Đã gán"
+        const mappedProjects = rawProjects.map(p => ({
             ...p,
-            assigned: assignedSet.has(String(p.id)),
-          }));
+            assigned: assignedProjectIds.has(String(p.id)) // True nếu ID này đã nằm trong danh sách team
+        }));
 
-        setProjects(mapped);
+        setProjects(mappedProjects);
+
       } catch (e) {
         console.error(e);
-        message.error("Không tải được danh sách project (project-service) hoặc teams (team-service)");
+        // message.error("Lỗi khi tải dữ liệu dự án");
       } finally {
         setLoadingProjects(false);
       }
     };
 
-    loadProjects();
+    loadProjectsAndCheckAssigned();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -121,7 +127,6 @@ const TeamCreate = () => {
   // When choose class -> load students
   // =========================
   const onChangeClass = async (classId) => {
-    // reset leader/members
     form.setFieldsValue({ leaderId: undefined, memberIds: [] });
     setStudents([]);
 
@@ -130,10 +135,11 @@ const TeamCreate = () => {
     try {
       setLoadingStudents(true);
       const res = await axios.get(META_STUDENTS_API(classId), { headers });
-      setStudents(Array.isArray(res.data) ? res.data : []);
+      const data = Array.isArray(res.data) ? res.data : (res.data?.result || []);
+      setStudents(data);
     } catch (e) {
       console.error(e);
-      message.error("Không tải được danh sách sinh viên của lớp");
+      message.error("Không tải được danh sách sinh viên");
     } finally {
       setLoadingStudents(false);
     }
@@ -146,22 +152,20 @@ const TeamCreate = () => {
     try {
       setSubmitting(true);
 
-      const params = new URLSearchParams();
-      params.append("name", values.name?.trim());
-      params.append("classId", String(values.classId));
+      // 1. Chuẩn bị dữ liệu (Payload) chuẩn JSON
+      const payload = {
+        name: values.name?.trim(),
+        classId: values.classId, // Số nguyên hoặc chuỗi đều OK
+        projectId: values.projectId ? String(values.projectId).trim() : null, // Gửi null nếu không chọn
+        leaderId: values.leaderId ? String(values.leaderId).trim() : null,
+        memberIds: Array.isArray(values.memberIds) ? values.memberIds : [] // Gửi mảng trực tiếp
+      };
 
-      const projectId = values.projectId ? String(values.projectId).trim() : "";
-      if (projectId) params.append("projectId", projectId);
-
-      const leaderId = values.leaderId?.trim();
-      if (leaderId) params.append("leaderId", leaderId);
-
-      const memberIds = Array.isArray(values.memberIds) ? values.memberIds : [];
-      memberIds.forEach((m) => params.append("memberIds", m));
-
-      await axios.post(`${GW}/api/v1/teams`, null, {
-        headers,
-        params, // memberIds=...&memberIds=...
+      // 2. Gửi Request POST
+      // Cú pháp: axios.post(URL, BODY, CONFIG)
+      await axios.post(`${GW}/api/v1/teams`, payload, {
+        headers, 
+        // ❌ KHÔNG DÙNG params NỮA
       });
 
       message.success("Tạo team thành công!");
@@ -174,17 +178,15 @@ const TeamCreate = () => {
     }
   };
 
-  // helper: render status tag
+  // Helper render status
   const renderStatusTag = (status) => {
     if (!status) return null;
-    if (status === "APPROVED") return <Tag color="green">APPROVED</Tag>;
-    if (status === "PENDING") return <Tag color="gold">PENDING</Tag>;
-    if (status === "DENIED") return <Tag color="red">DENIED</Tag>;
+    if (status === "APPROVED") return <Tag color="green">AVAILABLE</Tag>; // Hiển thị Available cho thân thiện
     return <Tag>{status}</Tag>;
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto" }}>
+    <div style={{ maxWidth: 900, margin: "0 auto", paddingBottom: 40 }}>
       <Space direction="vertical" size={16} style={{ width: "100%" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
@@ -194,16 +196,16 @@ const TeamCreate = () => {
 
           <div>
             <Title level={3} style={{ margin: 0 }}>
-              Tạo Team
+              Tạo Team Mới
             </Title>
             <Text type="secondary">
-              Chọn lớp & thành viên từ class-service, chọn project từ project-service (không hiện UUID)
+              Tạo nhóm, thêm thành viên và đăng ký đề tài (Chỉ đề tài đã được duyệt)
             </Text>
           </div>
         </div>
 
         {/* Form Card */}
-        <Card style={{ borderRadius: 12 }} bodyStyle={{ padding: 24 }}>
+        <Card style={{ borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }} bodyStyle={{ padding: 24 }}>
           <Form
             form={form}
             layout="vertical"
@@ -211,32 +213,27 @@ const TeamCreate = () => {
             requiredMark={false}
             autoComplete="off"
           >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-              }}
-            >
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <Form.Item
-                label="Tên team"
+                label={<span style={{ fontWeight: 600 }}>Tên team</span>}
                 name="name"
                 rules={[
                   { required: true, message: "Vui lòng nhập tên team" },
-                  { min: 2, message: "Tên team tối thiểu 2 ký tự" },
+                  { min: 2, message: "Tên team quá ngắn" },
                 ]}
               >
-                <Input placeholder="VD: Team 1" />
+                <Input placeholder="Ví dụ: Nhóm 1 - KTPM" size="large" />
               </Form.Item>
 
               {/* Class */}
               <Form.Item
-                label="Mã lớp"
+                label={<span style={{ fontWeight: 600 }}>Lớp học phần</span>}
                 name="classId"
                 rules={[{ required: true, message: "Vui lòng chọn lớp" }]}
               >
                 <Select
-                  placeholder="Chọn lớp"
+                  placeholder="Chọn lớp..."
+                  size="large"
                   loading={loadingClasses}
                   showSearch
                   optionFilterProp="label"
@@ -249,9 +246,10 @@ const TeamCreate = () => {
               </Form.Item>
 
               {/* Leader */}
-              <Form.Item label="Trưởng nhóm (tuỳ chọn)" name="leaderId">
+              <Form.Item label={<span style={{ fontWeight: 600 }}>Trưởng nhóm (Leader)</span>} name="leaderId">
                 <Select
-                  placeholder="Chọn sinh viên làm trưởng nhóm"
+                  placeholder="Chọn trưởng nhóm..."
+                  size="large"
                   loading={loadingStudents}
                   disabled={!form.getFieldValue("classId")}
                   showSearch
@@ -266,14 +264,14 @@ const TeamCreate = () => {
 
               {/* Members */}
               <Form.Item
-                label="Thành viên nhóm"
+                label={<span style={{ fontWeight: 600 }}>Thành viên</span>}
                 name="memberIds"
-                rules={[{ required: true, message: "Vui lòng chọn ít nhất 1 thành viên" }]}
+                rules={[{ required: true, message: "Chọn ít nhất 1 thành viên" }]}
               >
                 <Select
                   mode="multiple"
-                  allowClear
-                  placeholder="Chọn thành viên trong lớp"
+                  placeholder="Chọn các thành viên..."
+                  size="large"
                   loading={loadingStudents}
                   disabled={!form.getFieldValue("classId")}
                   showSearch
@@ -285,30 +283,43 @@ const TeamCreate = () => {
                 />
               </Form.Item>
 
-              {/* ✅ Project Select (NO UUID DISPLAY) */}
-              <Form.Item label="Project (tuỳ chọn)" name="projectId">
+              {/* ✅ PROJECT SELECT (ĐÃ LỌC CHUẨN) */}
+              <Form.Item 
+                label={<span style={{ fontWeight: 600 }}>Đề tài / Dự án (Project)</span>} 
+                name="projectId" 
+                style={{ gridColumn: "1 / -1" }}
+                // 👇 ĐƯA DÒNG CHÚ THÍCH VÀO ĐÂY
+                extra={<span style={{ fontSize: 12, color: '#666' }}>* Chỉ hiển thị các đề tài đã được Trưởng bộ môn phê duyệt (APPROVED).</span>}
+              >
+                {/* 👇 BÊN TRONG CHỈ ĐƯỢC ĐỂ DUY NHẤT 1 CÁI SELECT */}
                 <Select
-                  placeholder="Chọn project từ Project Service"
+                  placeholder="Chọn đề tài đã được phê duyệt..."
+                  size="large"
                   loading={loadingProjects}
                   allowClear
                   showSearch
                   optionFilterProp="label"
                   options={projects.map((p) => ({
-                    value: p.id, // ✅ vẫn là UUID để lưu
-                    label: `${p.title} • ${p.status}`, // ✅ KHÔNG hiện id
-                    disabled: !!p.assigned, // ✅ đã gán thì disable
+                    value: p.id,
+                    label: `${p.title} (${p.projectCode || 'Mới'})`,
+                    disabled: !!p.assigned,
                   }))}
                   optionRender={(option) => {
                     const p = projects.find((x) => String(x.id) === String(option.value));
                     if (!p) return option.label;
 
                     return (
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                        <div style={{ fontWeight: 800 }}>{p.title}</div>
-                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          {renderStatusTag(p.status)}
-                          {p.assigned && (
-                            <span style={{ color: "red", fontWeight: 800 }}>Đã gán</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
+                        <div style={{ display:"flex", flexDirection:"column" }}>
+                            <span style={{ fontWeight: 600, color: p.assigned ? "#999" : "#000" }}>{p.title}</span>
+                            <span style={{ fontSize: 12, color: "#666" }}>{p.projectCode}</span>
+                        </div>
+                        
+                        <div>
+                          {p.assigned ? (
+                             <Tag color="error">ĐÃ CÓ NHÓM</Tag>
+                          ) : (
+                             <Tag color="success">KHẢ DỤNG</Tag>
                           )}
                         </div>
                       </div>
@@ -318,22 +329,23 @@ const TeamCreate = () => {
               </Form.Item>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-              <Button onClick={() => navigate("/teams")}>Hủy</Button>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 24 }}>
+              <Button size="large" onClick={() => navigate("/teams")}>Hủy bỏ</Button>
               <Button
                 type="primary"
                 htmlType="submit"
+                size="large"
                 loading={submitting}
                 disabled={role !== "LECTURER"}
               >
-                Tạo
+                Tạo Team
               </Button>
             </div>
 
             {role !== "LECTURER" && (
-              <div style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 16, textAlign: 'center' }}>
                 <Text type="danger">
-                  Bạn đang đăng nhập role {role || "?"}. Chỉ LECTURER mới tạo được team.
+                  Bạn đang đăng nhập với quyền <b>{role}</b>. Chỉ <b>LECTURER</b> mới có quyền tạo nhóm.
                 </Text>
               </div>
             )}

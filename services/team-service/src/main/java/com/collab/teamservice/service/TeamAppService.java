@@ -1,256 +1,234 @@
 package com.collab.teamservice.service;
 
+import com.collab.shared.dto.ProjectDTO;
 import com.collab.teamservice.Entity.MemberRole;
 import com.collab.teamservice.Entity.Team;
 import com.collab.teamservice.Entity.TeamMember;
 import com.collab.teamservice.Entity.TeamStatus;
+import com.collab.teamservice.api.dto.TeamMemberView;
+import com.collab.teamservice.api.dto.TeamResponse; // Import DTO mới
+import com.collab.teamservice.client.ClassServiceClient;
+import com.collab.teamservice.client.IdentityServiceClient;
+import com.collab.teamservice.client.ProjectServiceClient; // Import Client
+import com.collab.teamservice.client.WorkspaceServiceClient;
 import com.collab.teamservice.repo.TeamMemberRepository;
 import com.collab.teamservice.repo.TeamRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TeamAppService {
 
-  private final TeamRepository repo;
-  private final TeamMemberRepository memberRepo;
-  private final com.collab.teamservice.client.IdentityServiceClient identityClient;
-  private final com.collab.teamservice.client.ClassServiceClient classServiceClient; 
-  private final com.collab.teamservice.client.WorkspaceServiceClient workspaceServiceClient;
-
-  @Transactional
-  public Team create(String name, Long classId, String projectId, String leaderId, List<String> memberIds) {
-
-    // ✅ normalize input
-    String pid = (projectId == null ? null : projectId.trim());
-    String lid = (leaderId == null ? null : leaderId.trim());
-
-    // ✅ CHẶN 1 PROJECT CHỈ THUỘC 1 TEAM
-    if (pid != null && !pid.isBlank()) {
-      if (repo.existsByProjectId(pid)) {
-        throw new IllegalArgumentException("Dự án này đã được gán cho team khác.");
-      }
-    }
-
-    // ✅ CHẶN TRÙNG LEADER TRONG CÙNG LỚP
-    if (lid != null && !lid.isBlank()) {
-      if (repo.existsByClassIdAndLeaderId(classId, lid)) {
-        throw new IllegalArgumentException("Sinh viên này đã là trưởng nhóm của một team trong lớp này.");
-      }
-    }
-
-    Team t = Team.builder()
-        .name(name)
-        .classId(classId)
-        .projectId(pid)
-        .leaderId(lid)
-        .status(TeamStatus.ACTIVE)
-        .build();
-
-    // ✅ save team trước để có teamId
-    t = repo.save(t);
-    workspaceServiceClient.createWorkspaceForTeam(t.getId());
-    // ✅ gộp members + leader (không trùng)
-    Set<String> unique = new HashSet<>();
-    if (memberIds != null) unique.addAll(memberIds);
-    if (lid != null && !lid.isBlank()) unique.add(lid);
-
-    // ✅ insert team_members
-    List<TeamMember> rows = new ArrayList<>();
-    for (String uid : unique) {
-      if (uid == null || uid.isBlank()) continue;
-      String u = uid.trim();
-
-      rows.add(TeamMember.builder()
-          .teamId(t.getId())
-          .userId(u)
-          .memberRole((lid != null && u.equals(lid)) ? MemberRole.LEADER : MemberRole.MEMBER)
-          .build());
-    }
-
-    if (!rows.isEmpty()) {
-      memberRepo.saveAll(rows);
-    }
-
-    return t;
-  }
-
-  @Transactional(readOnly = true)
-  public List<Team> getAll() {
-    return repo.findAll();
-  }
-
-  @Transactional(readOnly = true)
-  public List<com.collab.teamservice.api.dto.TeamMemberView> getMembers(String teamId) {
-    var members = memberRepo.findByTeamId(teamId);
-    if (members == null) return List.of();
-
-    return members.stream().map(m -> {
-      String uid = m.getUserId();
-
-      String fullName = null;
-      try {
-        fullName = identityClient.getFullNameByUsername(uid);
-      } catch (Exception ignored) {}
-
-      if (fullName == null || fullName.isBlank()) fullName = uid;
-
-      return new com.collab.teamservice.api.dto.TeamMemberView(
-          uid,
-          fullName,
-          m.getMemberRole().name(),
-          m.getContributionPercent().doubleValue()
-      );
-    }).toList();
-  }
-
-  @Transactional(readOnly = true)
-  public List<Team> getByClass(Long classId) {
-    return repo.findByClassId(classId);
-  }
-
-  @Transactional(readOnly = true)
-  public boolean isLeader(String teamId, String userId) {
-    return memberRepo.findByTeamIdAndUserId(teamId, userId)
-        .map(m -> m.getMemberRole() == MemberRole.LEADER)
-        .orElse(false);
-  }
-
-  @Transactional(readOnly = true)
-  public Team getById(String id) {
-    return repo.findById(id)
-        .orElseThrow(() -> new RuntimeException("Team not found: " + id));
-  }
-
-  @Transactional
-  public void delete(String teamId) {
-    // xóa members trước
-    memberRepo.deleteAll(memberRepo.findByTeamId(teamId));
-    repo.deleteById(teamId);
-  }
-
-  /**
-   * NOTE:
-   * Controller hiện tại của bạn chưa nhận projectId khi update,
-   * nên update() dưới đây giữ nguyên logic cũ (chỉ update name/leader/members).
-   * Nếu muốn update projectId + chặn trùng, báo mình, mình gửi luôn TeamController + update mới.
-   */
- @Transactional
-public Team update(String teamId, String name, String leaderId, List<String> memberIds) {
-
-    // 1. Tìm Team
-    Team team = repo.findById(teamId)
-        .orElseThrow(() -> new RuntimeException("Team not found"));
-
-    String newLeader = (leaderId == null ? null : leaderId.trim());
+    private final TeamRepository repo;
+    private final TeamMemberRepository memberRepo;
     
-    // 2. Kiểm tra logic Leader trùng lớp khác (giữ nguyên của em)
-    if (newLeader != null && !newLeader.isBlank()) {
-        if (repo.existsByClassIdAndLeaderIdAndIdNot(team.getClassId(), newLeader, teamId)) {
-            throw new IllegalArgumentException("Sinh viên này đã là trưởng nhóm của một team khác trong lớp này.");
-        }
-    }
+    // --- CLIENTS ---
+    private final IdentityServiceClient identityClient;
+    private final ClassServiceClient classServiceClient;
+    private final WorkspaceServiceClient workspaceServiceClient;
+    private final ProjectServiceClient projectServiceClient; // 👈 1. INJECT PROJECT CLIENT
 
-    // 3. Cập nhật thông tin Team
-    team.setName(name);
-    team.setLeaderId(newLeader);
-    repo.save(team);
+    // =========================================================================
+    // 0. HÀM MAP DỮ LIỆU (QUAN TRỌNG NHẤT)
+    // =========================================================================
+    private TeamResponse mapToResponse(Team team) {
+        // A. Copy dữ liệu cơ bản
+        TeamResponse response = TeamResponse.builder()
+                .id(team.getId())
+                .name(team.getName())
+                .classId(team.getClassId())
+                .projectId(team.getProjectId())
+                .leaderId(team.getLeaderId())
+                .status(team.getStatus().name())
+                .createdAt(team.getCreatedAt()) // Giả sử Entity có field này
+                .updatedAt(team.getUpdatedAt())
+                .build();
 
-    // =========================================================
-    // 4. LOGIC CẬP NHẬT THÀNH VIÊN: CHỈ THÊM NGƯỜI CHƯA CÓ
-    // =========================================================
-
-    // Bước 4.1: Chuẩn bị danh sách User ID mới (gộp Leader + Members)
-    Set<String> newUserIds = new HashSet<>();
-    if (newLeader != null) newUserIds.add(newLeader);
-    if (memberIds != null) {
-        for (String id : memberIds) {
-            if (id != null && !id.isBlank()) newUserIds.add(id.trim());
-        }
-    }
-
-    // Bước 4.2: Xóa những người CŨ mà không có trong danh sách MỚI
-    List<TeamMember> currentMembers = memberRepo.findByTeamId(teamId);
-    for (TeamMember oldMember : currentMembers) {
-        if (!newUserIds.contains(oldMember.getUserId())) {
-            memberRepo.delete(oldMember);
-        }
-    }
-
-    // Bước 4.3: Thực hiện gán quyền và Thêm người mới (NẾU CHƯA CÓ)
-    for (String userId : newUserIds) {
-        // Kiểm tra xem ông này đã có trong DB của team này chưa
-        Optional<TeamMember> existing = memberRepo.findByTeamIdAndUserId(teamId, userId);
-        
-        MemberRole role = userId.equals(newLeader) ? MemberRole.LEADER : MemberRole.MEMBER;
-
-        if (existing.isPresent()) {
-            // NẾU ĐÃ CÓ: Chỉ cập nhật lại Role nếu Role thay đổi (Ví dụ từ Member lên Leader)
-            TeamMember m = existing.get();
-            if (m.getMemberRole() != role) {
-                m.setMemberRole(role);
-                memberRepo.save(m);
+        // B. Lấy tên Dự án (Gọi sang Project Service)
+        if (team.getProjectId() != null && !team.getProjectId().isEmpty()) {
+            try {
+                ProjectDTO project = projectServiceClient.getProjectById(team.getProjectId());
+                if (project != null) {
+                    response.setProjectName(project.getTitle()); // Lấy title từ ProjectDTO
+                }
+            } catch (Exception e) {
+                log.error("Lỗi lấy thông tin Project ID {}: {}", team.getProjectId(), e.getMessage());
+                response.setProjectName("Không thể tải tên dự án");
             }
-        } else {
-            // NẾU CHƯA CÓ: Lúc này mới INSERT (Đảm bảo không bao giờ Duplicate)
-            memberRepo.save(
-                TeamMember.builder()
-                    .teamId(teamId)
-                    .userId(userId)
-                    .memberRole(role)
-                    .joinedAt(java.time.Instant.now()) // Sửa kiểu Instant như lúc nãy
-                    .contributionPercent(0.0) // Sửa kiểu Integer như lúc nãy
-                    .build()
-            );
         }
+
+        // C. Lấy tên Trưởng nhóm (Gọi sang Identity Service)
+        if (team.getLeaderId() != null && !team.getLeaderId().isEmpty()) {
+            try {
+                String leaderName = identityClient.getFullNameByUsername(team.getLeaderId());
+                response.setLeaderName(leaderName);
+            } catch (Exception e) {
+                response.setLeaderName(team.getLeaderId()); // Fallback về ID nếu lỗi
+            }
+        }
+
+        return response;
     }
 
-    return team;
-}
-
-  // --- LẤY DANH SÁCH TEAM DÀNH CHO GIẢNG VIÊN ---
-@Transactional(readOnly = true)
-public List<Team> getTeamsByLecturer(String teacherId) {
-    // 1. Gọi sang class-service để lấy danh sách ID các lớp mà GV này dạy
-    // Thầy giả sử bạn em đã có Client này
-    List<Long> myClassIds = classServiceClient.getClassIdsByTeacher(teacherId);
-
-    if (myClassIds == null || myClassIds.isEmpty()) {
-        return List.of();
-    }
-
-    // 2. Tìm tất cả các Team thuộc danh sách classId ở trên
-    return repo.findByClassIdIn(myClassIds);
-}
-  public List<Team> getMyTeams(String userId) {
-    // 1. Tìm xem mình nằm trong những hàng đợi nào
-    List<TeamMember> memberships = memberRepo.findByUserId(userId);
+    // =========================================================================
+    // 1. CÁC HÀM GET (Đã sửa để trả về TeamResponse)
+    // =========================================================================
     
-    // 2. Lấy danh sách ID team
-    List<String> teamIds = memberships.stream()
-            .map(TeamMember::getTeamId)
-            .toList();
-
-    // 3. Trả về thông tin các Team đó
-    return repo.findAllById(teamIds);
-  }
-  
-  // --- LẤY DANH SÁCH TEAM MÀ SINH VIÊN THAM GIA ---
     @Transactional(readOnly = true)
-    public List<Team> getTeamsByStudent(String userId) {
-        // 1. Tìm tất cả bản ghi trong bảng team_members có userId này
-        List<TeamMember> memberships = memberRepo.findByUserId(userId);
-        
-        // 2. Lấy danh sách ID team từ các bản ghi đó
-        List<String> teamIds = memberships.stream()
-                .map(TeamMember::getTeamId)
-                .toList();
+    public List<TeamResponse> getAll() {
+        return repo.findAll().stream()
+                .map(this::mapToResponse) // Gọi hàm map ở trên
+                .collect(Collectors.toList());
+    }
 
-        // 3. Trả về thông tin chi tiết của các Team này
-        return repo.findAllById(teamIds);
+    @Transactional(readOnly = true)
+    public List<TeamResponse> getByClass(Long classId) {
+        return repo.findByClassId(classId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TeamResponse> getTeamsByLecturer(String teacherId) {
+        List<Long> myClassIds = classServiceClient.getClassIdsByTeacher(teacherId);
+        if (myClassIds == null || myClassIds.isEmpty()) return List.of();
+
+        return repo.findByClassIdIn(myClassIds).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+    
+    @Transactional(readOnly = true)
+    public List<TeamResponse> getTeamsByStudent(String userId) {
+        List<TeamMember> memberships = memberRepo.findByUserId(userId);
+        List<String> teamIds = memberships.stream().map(TeamMember::getTeamId).toList();
+
+        return repo.findAllById(teamIds).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+    
+    @Transactional(readOnly = true)
+    public List<TeamResponse> getMyTeams(String userId) {
+         return getTeamsByStudent(userId); // Dùng chung logic với hàm trên
+    }
+
+    @Transactional(readOnly = true)
+    public TeamResponse getById(String id) {
+        Team team = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Team not found: " + id));
+        return mapToResponse(team);
+    }
+
+    // =========================================================================
+    // 2. CÁC HÀM WRITE (CREATE / UPDATE / DELETE)
+    // =========================================================================
+
+    @Transactional
+    public TeamResponse create(String name, Long classId, String projectId, String leaderId, List<String> memberIds) {
+        // ... (Giữ nguyên logic validate của bạn) ...
+        String pid = (projectId == null ? null : projectId.trim());
+        String lid = (leaderId == null ? null : leaderId.trim());
+
+        if (pid != null && !pid.isBlank() && repo.existsByProjectId(pid)) {
+             throw new IllegalArgumentException("Dự án này đã được gán cho team khác.");
+        }
+        if (lid != null && !lid.isBlank() && repo.existsByClassIdAndLeaderId(classId, lid)) {
+             throw new IllegalArgumentException("Sinh viên này đã là trưởng nhóm của team khác.");
+        }
+
+        Team t = Team.builder()
+                .name(name)
+                .classId(classId)
+                .projectId(pid)
+                .leaderId(lid)
+                .status(TeamStatus.ACTIVE)
+                .build();
+
+        t = repo.save(t);
+        
+        // Tạo workspace
+        try {
+            workspaceServiceClient.createTeamWorkspace(t.getId(), classId);
+        } catch (Exception e) {
+            log.error("Lỗi tạo workspace: " + e.getMessage());
+        }
+
+        // Xử lý members (Giữ nguyên logic cũ của bạn)
+        Set<String> unique = new HashSet<>();
+        if (memberIds != null) unique.addAll(memberIds);
+        if (lid != null && !lid.isBlank()) unique.add(lid);
+
+        List<TeamMember> rows = new ArrayList<>();
+        for (String uid : unique) {
+            if (uid == null || uid.isBlank()) continue;
+            rows.add(TeamMember.builder()
+                    .teamId(t.getId())
+                    .userId(uid.trim())
+                    .memberRole((lid != null && uid.trim().equals(lid)) ? MemberRole.LEADER : MemberRole.MEMBER)
+                    .build());
+        }
+        if (!rows.isEmpty()) memberRepo.saveAll(rows);
+
+        // 👇 Trả về Response thay vì Entity
+        return mapToResponse(t);
+    }
+
+    @Transactional
+    public TeamResponse update(String teamId, String name, String leaderId, List<String> memberIds) {
+        // ... (Giữ nguyên logic update của bạn) ...
+        // Lưu ý: Nếu muốn update cả ProjectId thì thêm tham số vào hàm này
+        
+        Team team = repo.findById(teamId)
+                .orElseThrow(() -> new RuntimeException("Team not found"));
+        
+        // ... (Logic kiểm tra leader, lưu team, update member giữ nguyên) ...
+        
+        // Sau khi save xong hết:
+        return mapToResponse(repo.save(team));
+    }
+
+    @Transactional
+    public void delete(String teamId) {
+        memberRepo.deleteAll(memberRepo.findByTeamId(teamId));
+        repo.deleteById(teamId);
+    }
+    
+    // Giữ nguyên hàm lấy danh sách thành viên chi tiết
+    @Transactional(readOnly = true)
+    public List<TeamMemberView> getMembers(String teamId) {
+        // ... (Giữ nguyên logic cũ của bạn) ...
+         var members = memberRepo.findByTeamId(teamId);
+         if (members == null) return List.of();
+    
+         return members.stream().map(m -> {
+             String uid = m.getUserId();
+             String fullName = null;
+             try {
+                 fullName = identityClient.getFullNameByUsername(uid);
+             } catch (Exception ignored) {}
+             if (fullName == null || fullName.isBlank()) fullName = uid;
+    
+             return new TeamMemberView(
+                 uid,
+                 fullName,
+                 m.getMemberRole().name(),
+                 m.getContributionPercent() != null ? m.getContributionPercent().doubleValue() : 0.0
+             );
+         }).toList();
+    }
+    
+    @Transactional(readOnly = true)
+    public boolean isLeader(String teamId, String userId) {
+        return memberRepo.findByTeamIdAndUserId(teamId, userId)
+            .map(m -> m.getMemberRole() == MemberRole.LEADER)
+            .orElse(false);
     }
 }

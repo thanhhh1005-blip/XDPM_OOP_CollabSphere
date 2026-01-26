@@ -1,22 +1,27 @@
 package com.collab.projectservice.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.ToString;
 
 @Entity
 @Table(name = "syllabuses")
-@Getter @Setter 
-@NoArgsConstructor @AllArgsConstructor 
-@Builder
+@Data
 public class Syllabus {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(name = "subject_id")
-    private String subjectId; //
+    @Column(columnDefinition = "TEXT") // Để lưu văn bản dài
+    private String content; // Nội dung chính của đề cương (cái mà bạn nhập vào AI)
 
-    @Column(columnDefinition = "TEXT")
-    private String content; //
+    private String objectives; // Mục tiêu môn học (tùy chọn)
 
-    private String version;
+    // Liên kết ngược về Project (OneToOne)
+    @OneToOne(mappedBy = "syllabus")
+    @JsonIgnore
+    @ToString.Exclude
+    private Project project;
 }

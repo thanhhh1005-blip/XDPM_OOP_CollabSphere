@@ -83,6 +83,7 @@ public class UserController {
 
     // --- 8. LẤY DANH SÁCH USER THEO ROLE (API MỚI) ---
     // Sửa lỗi: Gọi qua Service chứ không gọi trực tiếp Repository
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @GetMapping("/role/{roleName}")
     public ApiResponse<List<User>> getUsersByRole(@PathVariable String roleName) {
         return ApiResponse.<List<User>>builder()

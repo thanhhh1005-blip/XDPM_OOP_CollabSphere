@@ -1,67 +1,125 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 export default function ProjectForm() {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
-  // ✅ gọi thẳng Gateway
+  // 🔗 CẤU HÌNH API GATEWAY
   const API_BASE_URL = "http://localhost:8080/api/v1/projects";
 
+  // --- STATE QUẢN LÝ DỮ LIỆU ---
   const [title, setTitle] = useState("");
-  const [syllabusId, setSyllabusId] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(""); // Mô tả ngắn
+  const [syllabusContent, setSyllabusContent] = useState(""); // Nội dung đề cương
+
+  // --- STATE QUẢN LÝ LỖI (VALIDATION) ---
+  const [errors, setErrors] = useState({
+    title: "",
+    description: "",
+    syllabusContent: ""
+  });
+
+  // --- STATE UI ---
   const [submitting, setSubmitting] = useState(false);
+  const [importing, setImporting] = useState(false);
 
-  // ✅ Lấy user/token theo chuẩn hiện tại (localStorage.user đang có id, role)
+  // --- AUTH LOGIC (Lấy Token & Role từ LocalStorage) ---
   const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-
-  // token có thể lưu nhiều key khác nhau (tùy dự án)
   const token =
     localStorage.getItem("accessToken") ||
-    localStorage.getItem("access_token") ||
     localStorage.getItem("token") ||
-    savedUser?.accessToken ||
     savedUser?.token;
+  const role = savedUser?.role || localStorage.getItem("role");
+  const userId = savedUser?.id || localStorage.getItem("userId");
 
-  // role/userId: ưu tiên từ localStorage.user
-  const role =
-    savedUser?.role ||
-    localStorage.getItem("user_role") ||
-    localStorage.getItem("role");
+  // Hàm tạo Header cho Request
+  const getHeaders = (isMultipart = false) => ({
+    "Content-Type": isMultipart ? "multipart/form-data" : "application/json",
+    ...(role ? { "X-ROLE": role } : {}),
+    ...(userId ? { "X-USER-ID": String(userId) } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  });
 
-  const userId =
-    savedUser?.id ||
-    savedUser?.userId ||
-    localStorage.getItem("user_id") ||
-    localStorage.getItem("userId");
+  // --- HÀM KIỂM TRA DỮ LIỆU (VALIDATE) ---
+  const validate = () => {
+    let isValid = true;
+    const newErrors = { title: "", description: "", syllabusContent: "" };
 
+    if (!title.trim()) {
+      newErrors.title = "Vui lòng nhập tiêu đề dự án.";
+      isValid = false;
+    }
+    if (!description.trim()) {
+      newErrors.description = "Vui lòng nhập mô tả ngắn.";
+      isValid = false;
+    }
+    if (!syllabusContent.trim()) {
+      newErrors.syllabusContent = "Vui lòng nhập nội dung đề cương hoặc import từ Excel.";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  // --- XỬ LÝ IMPORT FILE (GỌI QUA NIFI) ---
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Reset input để chọn lại file cùng tên vẫn trigger sự kiện change
+    e.target.value = null;
+
+    try {
+      setImporting(true);
+      // Xóa lỗi cũ của ô syllabus nếu có
+      setErrors((prev) => ({ ...prev, syllabusContent: "" }));
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // Gọi API Backend -> Backend gọi NiFi -> Trả về Text
+      const res = await axios.post(
+        `${API_BASE_URL}/import-syllabus`, 
+        formData, 
+        { headers: getHeaders(true) }
+      );
+
+      if (res.data) {
+        setSyllabusContent(res.data);
+        alert("Đã import nội dung từ Excel thành công!");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Lỗi import: " + (error.response?.data?.message || error.message));
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // --- XỬ LÝ SUBMIT FORM ---
   const onSubmit = async (e) => {
     e.preventDefault();
 
-    if (!title.trim()) {
-      alert("Vui lòng nhập tiêu đề dự án.");
+    // 1. Validate trước khi gửi
+    if (!validate()) {
       return;
     }
 
     try {
       setSubmitting(true);
-
+      
+      // 2. Gọi API tạo dự án
       await axios.post(
         API_BASE_URL,
         {
           title: title.trim(),
-          syllabusId: syllabusId.trim() || null,
-          description: description?.trim() || "",
+          description: description.trim(),
+          syllabusContent: syllabusContent.trim(),
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            ...(role ? { "X-ROLE": role } : {}),
-            ...(userId ? { "X-USER-ID": String(userId) } : {}),
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
+        { headers: getHeaders(false) }
       );
 
       alert("Tạo dự án thành công!");
@@ -73,12 +131,13 @@ export default function ProjectForm() {
     }
   };
 
+  // --- GIAO DIỆN ---
   return (
     <div style={styles.page}>
       <div style={styles.container}>
+        {/* Header Page */}
         <div style={styles.headerRow}>
           <h1 style={styles.title}>Tạo dự án mẫu mới</h1>
-
           <button
             type="button"
             onClick={() => navigate("/projects")}
@@ -88,49 +147,109 @@ export default function ProjectForm() {
           </button>
         </div>
 
+        {/* Card Form */}
         <div style={styles.card}>
           <form onSubmit={onSubmit} style={styles.form}>
+            
+            {/* 1. TIÊU ĐỀ */}
             <div style={styles.field}>
               <label style={styles.label}>
                 Tiêu đề dự án <span style={styles.required}>*</span>
               </label>
               <input
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                   setTitle(e.target.value);
+                   setErrors((prev) => ({...prev, title: ""})); // Xóa lỗi khi nhập
+                }}
                 placeholder="Ví dụ: Hệ thống quản lý lớp học PBL"
-                style={styles.input}
+                style={{
+                    ...styles.input,
+                    borderColor: errors.title ? "#ef4444" : "#d1d5db" // Viền đỏ nếu lỗi
+                }}
               />
+              {errors.title && <span style={styles.errorText}>{errors.title}</span>}
               <div style={styles.hint}>
                 Tên ngắn gọn, dễ hiểu để hiển thị trong danh sách.
               </div>
             </div>
 
+            {/* 2. MÔ TẢ NGẮN */}
             <div style={styles.field}>
-              <label style={styles.label}>Mã đề cương (Syllabus ID)</label>
+              <label style={styles.label}>
+                  Mô tả ngắn <span style={styles.required}>*</span>
+              </label>
               <input
-                value={syllabusId}
-                onChange={(e) => setSyllabusId(e.target.value)}
-                placeholder="Ví dụ: SYL-SE101"
-                style={styles.input}
-              />
-              <div style={styles.hint}>
-                Có thể để trống nếu chưa liên kết đề cương.
-              </div>
-            </div>
-
-            <div style={styles.field}>
-              <label style={styles.label}>Mô tả chi tiết</label>
-              <textarea
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Mô tả mục tiêu, phạm vi, yêu cầu, milestone..."
-                style={styles.textarea}
+                onChange={(e) => {
+                    setDescription(e.target.value);
+                    setErrors((prev) => ({...prev, description: ""}));
+                }}
+                placeholder="Mô tả tóm tắt về dự án..."
+                style={{
+                    ...styles.input,
+                    borderColor: errors.description ? "#ef4444" : "#d1d5db"
+                }}
               />
+              {errors.description && <span style={styles.errorText}>{errors.description}</span>}
+            </div>
+
+            {/* 3. NỘI DUNG SYLLABUS + IMPORT EXCEL */}
+            <div style={styles.field}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={styles.label}>
+                    Nội dung Đề cương / Syllabus <span style={styles.required}>*</span>
+                </label>
+                
+                {/* NÚT IMPORT EXCEL */}
+                <div>
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    ref={fileInputRef}
+                    style={{ display: "none" }}
+                    onChange={handleFileChange}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current.click()}
+                    disabled={importing}
+                    style={{
+                      ...styles.secondaryBtn,
+                      fontSize: 12,
+                      padding: "6px 12px",
+                      background: importing ? "#e5e7eb" : "#ecfdf5",
+                      color: importing ? "#9ca3af" : "#059669",
+                      borderColor: "#10b981",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6
+                    }}
+                  >
+                    {importing ? "⏳ Đang xử lý qua NiFi..." : "📂 Import từ Excel"}
+                  </button>
+                </div>
+              </div>
+
+              <textarea
+                value={syllabusContent}
+                onChange={(e) => {
+                    setSyllabusContent(e.target.value);
+                    setErrors((prev) => ({...prev, syllabusContent: ""}));
+                }}
+                placeholder="Nhập chi tiết các tuần học, yêu cầu kỹ thuật... (Hoặc import từ file Excel)"
+                style={{
+                    ...styles.textarea,
+                    borderColor: errors.syllabusContent ? "#ef4444" : "#d1d5db"
+                }}
+              />
+              {errors.syllabusContent && <span style={styles.errorText}>{errors.syllabusContent}</span>}
               <div style={styles.hint}>
-                Bạn có thể dán đề cương dài, phần danh sách sẽ chỉ hiện rút gọn.
+                Nội dung này sẽ được AI sử dụng để tạo cột mốc.
               </div>
             </div>
 
+            {/* ACTIONS BUTTONS */}
             <div style={styles.actions}>
               <button
                 type="submit"
@@ -155,13 +274,12 @@ export default function ProjectForm() {
             </div>
           </form>
         </div>
-
-        {/* ✅ ĐÃ XÓA dòng hiển thị API ở đây */}
       </div>
     </div>
   );
 }
 
+// --- STYLES ---
 const styles = {
   page: {
     minHeight: "100vh",
@@ -184,6 +302,7 @@ const styles = {
     fontSize: 36,
     fontWeight: 900,
     letterSpacing: "-0.02em",
+    color: "#111827",
   },
   backBtn: {
     border: "1px solid #d1d5db",
@@ -192,17 +311,18 @@ const styles = {
     padding: "10px 12px",
     cursor: "pointer",
     fontWeight: 700,
+    color: "#374151",
   },
   card: {
     background: "#fff",
     border: "1px solid #e5e7eb",
     borderRadius: 14,
-    padding: 18,
+    padding: 24,
     boxShadow: "0 10px 24px rgba(0,0,0,0.06)",
   },
   form: {
     display: "grid",
-    gap: 14,
+    gap: 20,
   },
   field: {
     display: "grid",
@@ -211,54 +331,69 @@ const styles = {
   label: {
     fontWeight: 800,
     color: "#111827",
+    fontSize: "14px",
   },
   required: {
     color: "#ef4444",
+    marginLeft: 4,
   },
   input: {
     width: "100%",
-    padding: "12px 12px",
+    padding: "12px",
     borderRadius: 10,
     border: "1px solid #d1d5db",
     outline: "none",
     fontSize: 14,
     background: "#fff",
+    transition: "border-color 0.2s",
   },
   textarea: {
     width: "100%",
-    minHeight: 170,
+    minHeight: 200,
     resize: "vertical",
-    padding: "12px 12px",
+    padding: "12px",
     borderRadius: 10,
     border: "1px solid #d1d5db",
     outline: "none",
     fontSize: 14,
     background: "#fff",
-    lineHeight: 1.4,
+    lineHeight: 1.5,
+    fontFamily: "inherit",
+    transition: "border-color 0.2s",
   },
   hint: {
     fontSize: 12,
     color: "#6b7280",
+    marginTop: 4,
+  },
+  errorText: {
+    fontSize: 12,
+    color: "#ef4444",
+    fontWeight: 600,
   },
   actions: {
     display: "flex",
-    gap: 10,
-    marginTop: 6,
+    gap: 12,
+    marginTop: 10,
   },
   primaryBtn: {
     border: "none",
     background: "#2563eb",
     color: "#fff",
     borderRadius: 10,
-    padding: "10px 14px",
+    padding: "12px 20px",
     fontWeight: 800,
+    fontSize: 14,
+    transition: "opacity 0.2s",
   },
   secondaryBtn: {
     border: "1px solid #d1d5db",
     background: "#fff",
     borderRadius: 10,
-    padding: "10px 14px",
+    padding: "12px 20px",
     cursor: "pointer",
     fontWeight: 800,
+    fontSize: 14,
+    color: "#374151",
   },
 };

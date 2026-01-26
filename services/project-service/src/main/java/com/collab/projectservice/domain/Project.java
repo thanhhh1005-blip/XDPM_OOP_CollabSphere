@@ -10,10 +10,11 @@ import java.time.Instant;
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
+@Data
 public class Project {
   @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
-  private String id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
   // ✅ ADD: mã đẹp để hiển thị (PR0001...)
   @Column(name = "project_code", nullable = false, unique = true, length = 20)
@@ -26,7 +27,9 @@ public class Project {
   @Column(columnDefinition = "LONGTEXT")
   private String description;
 
-  private String syllabusId;
+  @OneToOne(cascade = CascadeType.ALL) // Cascade ALL để khi lưu Project thì lưu luôn Syllabus
+  @JoinColumn(name = "syllabus_id", referencedColumnName = "id")
+  private Syllabus syllabus;
   private String classId;
   private String ownerId;
 

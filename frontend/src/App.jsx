@@ -55,7 +55,8 @@ function App() {
             <Route path="/workspace/:id/class/:classId/board" element={<TaskBoard />} />
             <Route path="/collaboration" element={<CollabList />} />
             <Route path="/collaboration/:roomId" element={<CollabPage />} />
-            <Route path="/milestones" element={<MilestonePage />} />
+            <Route path="milestones" element={<MilestonePage />} />          {/* Dòng 1: Cho phép vào trang trắng */}
+            <Route path="milestones/:classId" element={<MilestonePage />} />   {/* Dòng 2: Cho phép vào trang với classId */}
             <Route path="/ai-planning" element={<AiPlanning />} />
             <Route path="/classes" element={<ClassManager />} />
             <Route path="/subjects" element={<SubjectManager />} />

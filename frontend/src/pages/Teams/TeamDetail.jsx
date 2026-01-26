@@ -40,7 +40,7 @@ export default function TeamDetail() {
   const [loadingMembers, setLoadingMembers] = useState(false); 
   const [projectTitle, setProjectTitle] = useState("—");
   const [loadingProject, setLoadingProject] = useState(false);
-
+  const CONTRIBUTION_API = `http://localhost:8080/api/workspace/subtasks/contribution/${id}`;
   // --- 👇 THÊM LOGIC PHÂN ROLE LINH HOẠT TẠI ĐÂY ---
   const [myRoleInTeam, setMyRoleInTeam] = useState(null); 
   const auth = getAuthInfo() || {};
@@ -69,16 +69,35 @@ export default function TeamDetail() {
   const fetchMembers = async () => {
     try {
       setLoadingMembers(true);
-      const res = await axios.get(TEAM_MEMBERS_API, { headers });
-      const data = res.data?.result ?? res.data ?? [];
-      const memberList = Array.isArray(data) ? data : [];
+
+      // 1. Gọi Team Service để lấy danh sách người
+      const memberRes = await axios.get(TEAM_MEMBERS_API, { headers });
+      const rawMembers = memberRes.data?.result ?? memberRes.data ?? [];
+      let memberList = Array.isArray(rawMembers) ? rawMembers : [];
+
+      // 2. Gọi Workspace Service để lấy Map % đóng góp: {"student1": 50.0, "student2": 100.0}
+      let contributionMap = {};
+      try {
+        const contribRes = await axios.get(CONTRIBUTION_API, { headers });
+        contributionMap = contribRes.data?.result || {};
+      } catch (err) {
+        console.warn("Không tải được dữ liệu đóng góp (Có thể do chưa có task nào)", err);
+        // Không throw lỗi ở đây để vẫn hiện danh sách thành viên dù chưa có task
+      }
+
+      // 3. Gộp dữ liệu: Map % vào từng member dựa trên userId
+      memberList = memberList.map(member => ({
+        ...member,
+        // Lấy % từ map, nếu không có thì mặc định là 0
+        contributionPercent: contributionMap[member.userId] || 0 
+      }));
+
       setMembers(memberList);
 
-      // 👇 SỬA DÒNG NÀY: Lấy username từ localStorage để so sánh
+      // --- Logic check Role hiện tại (Giữ nguyên) ---
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      const myUsername = currentUser.username; 
+      const myUsername = currentUser.username || currentUser.sub; // Fallback nếu lưu khác key
 
-      // So sánh m.userId (là chữ "Thanh" từ DB) với myUsername (cũng là "Thanh")
       const me = memberList.find(m => 
         String(m.userId).toLowerCase() === String(myUsername).toLowerCase()
       );
@@ -175,7 +194,23 @@ export default function TeamDetail() {
       width: 140,
       render: (v) => v === "LEADER" ? <Tag color="gold" icon={<StarFilled />}>LEADER</Tag> : <Tag>MEMBER</Tag>
     },
-    { title: "% đóng góp", dataIndex: "contributionPercent", key: "contributionPercent", width: 140, render: (v) => v || 0 },
+    { 
+      title: "% đóng góp", 
+      dataIndex: "contributionPercent", 
+      key: "contributionPercent", 
+      width: 180, 
+      render: (v) => {
+        // Render thanh Progress hoặc Tag màu
+        let color = v >= 80 ? "success" : v >= 50 ? "warning" : "error";
+        return (
+            <div style={{ width: 100 }}>
+                <span style={{ marginRight: 8 }}>{v}%</span>
+                {/* Nếu muốn hiện thanh bar nhỏ: */}
+                {/* <Progress percent={v} size="small" showInfo={false} status={color === 'error' ? 'exception' : 'success'} /> */}
+            </div>
+        );
+      } 
+    },
   ];
 
   return (

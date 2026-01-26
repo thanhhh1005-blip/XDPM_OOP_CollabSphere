@@ -87,6 +87,7 @@ const MainLayout = () => {
     { key: '/teams', icon: <TeamOutlined />, label: 'Team', roles: ['LECTURER', 'STUDENT'] },
     { key: '/milestones', icon: <ReadOutlined />, label: 'Lộ trình & Cột mốc', roles: ['STUDENT', 'LECTURER'] },
     { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['STAFF', 'ADMIN','LECTURER'] },
+    {key: '/ai-planning', icon: <BulbOutlined />, label: 'AI Lập kế hoạch', roles: ['LECTURER'] },
     { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN', 'STAFF'] },
     { key: '/users', icon: <UserOutlined />, label: 'Quản lý Người dùng', roles: ['ADMIN'] },
     { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },

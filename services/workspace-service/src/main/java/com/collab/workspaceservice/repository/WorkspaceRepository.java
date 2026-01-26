@@ -7,12 +7,15 @@ import java.util.Optional;
 
 @Repository
 public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
-    // Tìm workspace theo mã nhóm
-    Optional<Workspace> findByTeamId(String teamId);
     
-    // Kiểm tra xem nhóm đã có workspace chưa
+    // 1. Dành cho Team: Tìm theo ID nhóm
+    Optional<Workspace> findByTeamId(String teamId);
     boolean existsByTeamId(String teamId);
 
-    Optional<Workspace> findByClassId(Long classId);
-    boolean existsByClassId(Long classId);
+    // 2. Dành cho Lớp (QUAN TRỌNG): 
+    // Tìm Workspace chung của lớp (Phải đảm bảo teamId là NULL)
+    // Nếu dùng findByClassId khơi khơi, nó có thể lấy nhầm workspace của 1 team trong lớp đó.
+    Optional<Workspace> findByClassIdAndTeamIdIsNull(Long classId);
+    
+    boolean existsByClassIdAndTeamIdIsNull(Long classId);
 }
