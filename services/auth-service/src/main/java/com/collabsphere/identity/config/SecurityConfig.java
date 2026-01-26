@@ -34,6 +34,7 @@ public class SecurityConfig {
             
             // 👇 THÊM DÒNG NÀY ĐỂ CLASS SERVICE GỌI ĐƯỢC (QUAN TRỌNG) 👇
             "/api/users/**", 
+            "/actuator/**",
             // -----------------------------------------------------------
 
             // Các đường dẫn cũ (Giữ nguyên nếu cần tương thích ngược)

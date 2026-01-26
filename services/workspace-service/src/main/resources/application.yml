@@ -13,3 +13,14 @@ spring:
     hibernate:
       ddl-auto: update # Tự tạo bảng khi chạy code
     show-sql: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: workspace-service   # đổi theo từng service

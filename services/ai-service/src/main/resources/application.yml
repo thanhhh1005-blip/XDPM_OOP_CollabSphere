@@ -22,3 +22,14 @@ gemini:
   api-key: AIzaSyCeRqkcQzf2I2sMAdnFo1vdok_xwGxF6yM
   # URL chuẩn cho model 1.5 Flash (Nhanh và Rẻ hơn), bỏ đoạn ?key= đi để code tự xử lý
   url: https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ai-service   # đổi theo từng service

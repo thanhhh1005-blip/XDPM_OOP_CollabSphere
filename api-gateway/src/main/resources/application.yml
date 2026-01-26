@@ -101,4 +101,15 @@ spring:
           uri: http://localhost:8091
           predicates:
             - Path=/api/v1/teams/**
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: api-gateway
 

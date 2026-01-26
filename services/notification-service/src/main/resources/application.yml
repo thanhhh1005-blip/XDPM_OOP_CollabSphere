@@ -67,3 +67,14 @@ logging:
     com.collab.notificationservice: DEBUG
     org.springframework.amqp: INFO
     org.hibernate.SQL: DEBUG
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: notification-service   # đổi theo từng service
