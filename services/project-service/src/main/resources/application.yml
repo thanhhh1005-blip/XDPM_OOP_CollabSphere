@@ -40,4 +40,4 @@ management:
       show-details: always
   metrics:
     tags:
-      application: project-server   # đổi theo từng service
+      application: project-service   # đổi theo từng service
