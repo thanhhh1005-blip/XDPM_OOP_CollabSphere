@@ -16,3 +16,14 @@ server:
   port: 8091
   servlet:
     context-path: /api/v1
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: team-service   # đổi theo từng service

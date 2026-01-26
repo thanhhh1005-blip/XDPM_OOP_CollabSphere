@@ -18,3 +18,14 @@ spring:
     port: 5672
     username: guest
     password: guest
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: communication-service   # đổi theo từng service

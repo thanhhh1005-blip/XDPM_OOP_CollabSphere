@@ -34,3 +34,14 @@ logging:
   level:
     root: INFO
     com.collab: DEBUG
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: evaluation-service   # đổi theo từng service
