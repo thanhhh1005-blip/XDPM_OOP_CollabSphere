@@ -5,24 +5,21 @@ import com.collab.subject.entity.Subject;
 import com.collab.subject.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j // Giúp ghi log lỗi ra màn hình console
+@Slf4j 
 public class SubjectService {
 
     private final SubjectRepository repository;
+    
+    // 👇 1. INJECT NIFI CLIENT
+    private final NifiClient nifiClient;
 
     // --- 1. TẠO MÔN HỌC ---
     public SubjectDTO createSubject(SubjectDTO dto) {
@@ -58,19 +55,15 @@ public class SubjectService {
 
     // --- 5. CẬP NHẬT MÔN HỌC ---
     public SubjectDTO updateSubject(Long id, SubjectDTO dto) {
-        // 1. Tìm môn học cũ
         Subject existingSubject = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy môn học ID: " + id));
 
-        // 2. Cập nhật thông tin
         existingSubject.setName(dto.getName());
         
-        // Kiểm tra null để tránh lỗi
         if (dto.getCredits() != null) { 
              existingSubject.setCredits(dto.getCredits());
         }
 
-        // --- CẬP NHẬT MÔ TẢ (NẾU CÓ) ---
         if (dto.getDescription() != null) {
             existingSubject.setDescription(dto.getDescription());
         }
@@ -79,7 +72,6 @@ public class SubjectService {
             existingSubject.setIsActive(dto.getIsActive());
         }
 
-        // 3. Lưu lại
         return mapToDTO(repository.save(existingSubject));
     }
 
@@ -91,65 +83,18 @@ public class SubjectService {
         repository.deleteById(id);
     }
 
-    // --- 7. IMPORT EXCEL (ĐÃ CẬP NHẬT ĐỂ ĐỌC MÔ TẢ) ---
-    @Transactional
+    // --- 7. IMPORT EXCEL (ĐÃ RÚT GỌN VỚI NIFI) 🚀 ---
     public void importSubjects(MultipartFile file) {
         if (file.isEmpty()) throw new RuntimeException("File không được rỗng");
 
-        try (InputStream inputStream = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(inputStream)) {
-
-            Sheet sheet = workbook.getSheetAt(0);
-            List<Subject> subjectsToSave = new ArrayList<>();
-
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // Bỏ qua dòng tiêu đề
-
-                String code = getCellValue(row.getCell(0));
-                String name = getCellValue(row.getCell(1));
-                String creditsStr = getCellValue(row.getCell(2));
-                
-                // --- ĐỌC CỘT THỨ 4: MÔ TẢ / ĐỀ CƯƠNG ---
-                String description = getCellValue(row.getCell(3));
-
-                if (code == null || code.trim().isEmpty()) continue;
-                if (repository.existsByCode(code)) continue;
-
-                int credits = 0;
-                try {
-                    credits = (int) Double.parseDouble(creditsStr);
-                } catch (Exception e) { credits = 0; }
-
-                Subject subject = Subject.builder()
-                        .code(code)
-                        .name(name)
-                        .credits(credits)
-                        .description(description) // --- LƯU VÀO DATABASE ---
-                        .isActive(true)
-                        .build();
-
-                subjectsToSave.add(subject);
-            }
-
-            if (!subjectsToSave.isEmpty()) {
-                repository.saveAll(subjectsToSave);
-                log.info("Đã import thành công {} môn học", subjectsToSave.size());
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException("Lỗi đọc file Excel: " + e.getMessage());
-        }
+        // Gọi sang NiFi Client, bắn vào endpoint "subjects"
+        nifiClient.sendFile(file, "subjects");
+        
+        log.info("Đã chuyển file Subject sang NiFi xử lý thành công!");
     }
 
     // --- HELPER METHODS ---
-    private String getCellValue(Cell cell) {
-        if (cell == null) return "";
-        switch (cell.getCellType()) {
-            case STRING: return cell.getStringCellValue();
-            case NUMERIC: return String.valueOf(cell.getNumericCellValue());
-            default: return "";
-        }
-    }
+    // (Đã xóa hàm getCellValue vì không còn dùng nữa)
 
     private SubjectDTO mapToDTO(Subject s) {
         return SubjectDTO.builder()
@@ -157,7 +102,7 @@ public class SubjectService {
                 .code(s.getCode())
                 .name(s.getName())
                 .credits(s.getCredits())
-                .description(s.getDescription()) // --- MAP RA DTO ---
+                .description(s.getDescription())
                 .isActive(s.getIsActive())
                 .build();
     }
@@ -167,7 +112,7 @@ public class SubjectService {
                 .code(d.getCode())
                 .name(d.getName())
                 .credits(d.getCredits())
-                .description(d.getDescription()) // --- MAP VÀO ENTITY ---
+                .description(d.getDescription())
                 .isActive(d.getIsActive() != null ? d.getIsActive() : true)
                 .build();
     }

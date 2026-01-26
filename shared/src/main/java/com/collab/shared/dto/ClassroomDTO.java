@@ -17,7 +17,7 @@ public class ClassroomDTO {
     
     private Long subjectId;     // ID môn học
     private String teacherId;   // Username giảng viên (Ví dụ: "giangvien")
-    
+    private String subjectCode;  // Mã môn học (Ví dụ: "SE104")
     // --- THÔNG TIN CHI TIẾT (Để hiển thị ra Frontend) ---
     private SubjectDTO subject; // Tên môn, số tín chỉ...
     
