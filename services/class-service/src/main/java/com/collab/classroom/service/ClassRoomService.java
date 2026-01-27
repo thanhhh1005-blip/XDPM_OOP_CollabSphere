@@ -12,14 +12,10 @@ import com.collab.shared.dto.SubjectDTO;
 import com.collab.shared.dto.UserDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,6 +31,9 @@ public class ClassRoomService {
     // --- CLIENTS ---
     private final SubjectClient subjectClient;   
     private final IdentityClient identityClient; 
+    
+    // 👇 1. INJECT NIFI CLIENT (MỚI THÊM)
+    private final NifiClient nifiClient;
 
     private final WorkspaceServiceClient workspaceServiceClient;
     // =========================================================================
@@ -42,20 +41,51 @@ public class ClassRoomService {
     // =========================================================================
     @Transactional
     public ClassroomDTO createClass(ClassroomDTO dto) {
+
+        // 🛡️ 1. CHẶN DÒNG TIÊU ĐỀ (HEADER) CỦA EXCEL
+        // Nếu mã lớp có chữ "Code" hoặc Mã môn có chữ "ID" thì bỏ qua luôn
+        if ((dto.getCode() != null && dto.getCode().toLowerCase().contains("code")) ||
+            (dto.getSubjectCode() != null && dto.getSubjectCode().toUpperCase().contains("ID"))) {
+            log.warn("Bỏ qua dòng tiêu đề Excel.");
+            return null; // Trả về null -> Controller trả về 200 OK -> NiFi đi tiếp
+        }
+
+        // 🛡️ 2. XỬ LÝ TRÙNG LẶP (QUAN TRỌNG)
+        // Nếu lớp đã tồn tại -> Chỉ Log cảnh báo và Return null (KHÔNG NÉM LỖI NỮA)
         if (classRoomRepository.existsByClassCode(dto.getCode())) {
-            throw new RuntimeException("Mã lớp " + dto.getCode() + " đã tồn tại!");
+            log.warn("Mã lớp {} đã tồn tại -> Bỏ qua import dòng này.", dto.getCode());
+            return null; // <--- Chìa khóa để NiFi không báo đỏ là đây!
         }
 
         try {
-            SubjectDTO subject = subjectClient.getSubjectById(dto.getSubjectId());
-            if (subject == null) {
-                throw new RuntimeException("Không tìm thấy môn học ID: " + dto.getSubjectId());
+            // 👇 LOGIC MỚI: Xử lý trường hợp Import từ NiFi (chỉ có Code, chưa có ID)
+            if (dto.getSubjectId() == null && dto.getSubjectCode() != null) {
+                // Gọi Subject Service tìm ID dựa trên Code
+                SubjectDTO subject = subjectClient.getSubjectByCode(dto.getSubjectCode());
+                if (subject != null) {
+                    dto.setSubjectId(subject.getId()); // Gán ID tìm được vào DTO
+                } else {
+                    // Nếu không tìm thấy môn thì cũng chỉ Log và bỏ qua (để không chết cả dây chuyền)
+                    log.error("Không tìm thấy môn học mã: {} -> Bỏ qua lớp {}", dto.getSubjectCode(), dto.getCode());
+                    return null; 
+                }
             }
+            
+            // 👇 LOGIC CŨ: Check lại ID (để đảm bảo an toàn cho Frontend gọi)
+            if (dto.getSubjectId() != null) {
+                SubjectDTO subject = subjectClient.getSubjectById(dto.getSubjectId());
+                if (subject == null) {
+                    throw new RuntimeException("Không tìm thấy môn học ID: " + dto.getSubjectId());
+                }
+            }
+
         } catch (Exception e) {
-            log.error("Lỗi kết nối Subject Service: " + e.getMessage());
-            throw new RuntimeException("Lỗi xác thực môn học: " + e.getMessage());
+            // Bắt lỗi kết nối nhưng không ném 500 ra ngoài khi đang import
+            log.error("Lỗi xử lý môn học: " + e.getMessage());
+            return null; // Bỏ qua dòng lỗi này
         }
 
+        // Lưu vào DB
         ClassRoom classRoom = mapToEntity(dto);
         ClassRoom savedClass = classRoomRepository.save(classRoom);
         
@@ -107,65 +137,20 @@ public class ClassRoomService {
         return dtos;
     }
     
-    // 👇 ĐÂY LÀ HÀM BẠN BỊ THIẾU (Gây lỗi undefined ở Controller) 👇
     public List<ClassEnrollment> getStudentsByClass(Long classId) {
         return classEnrollmentRepository.findByClassId(classId);
     }
 
     // =========================================================================
-    // 3. IMPORT EXCEL
+    // 3. IMPORT EXCEL (ĐÃ SỬA ĐỂ DÙNG NIFI) 🚀
     // =========================================================================
-    @Transactional
     public void importClasses(MultipartFile file) {
         if (file.isEmpty()) throw new RuntimeException("File excel rỗng!");
-
-        try (InputStream inputStream = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(inputStream)) {
-
-            Sheet sheet = workbook.getSheetAt(0);
-            List<ClassRoom> classesToSave = new ArrayList<>();
-            DataFormatter dataFormatter = new DataFormatter(); 
-
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; 
-
-                String classCode = dataFormatter.formatCellValue(row.getCell(0)).trim();
-                String subjectCode = dataFormatter.formatCellValue(row.getCell(1)).trim(); 
-                String teacherUsername = dataFormatter.formatCellValue(row.getCell(2)).trim(); 
-                String room = dataFormatter.formatCellValue(row.getCell(3)).trim();
-                String semester = dataFormatter.formatCellValue(row.getCell(4)).trim();
-
-                if (classCode.isEmpty() || subjectCode.isEmpty() || teacherUsername.isEmpty()) continue;
-                if (classRoomRepository.existsByClassCode(classCode)) continue;
-
-                try {
-                    SubjectDTO subject = subjectClient.getSubjectByCode(subjectCode);
-                    
-                    if (subject != null) {
-                        ClassRoom classRoom = ClassRoom.builder()
-                                .classCode(classCode)
-                                .subjectId(subject.getId())
-                                .teacherId(teacherUsername)
-                                .semester(semester)
-                                .room(room)
-                                .isActive(true)
-                                .build();
-                        classesToSave.add(classRoom);
-                    } else {
-                        log.warn("Import bỏ qua: Không tìm thấy môn học mã " + subjectCode);
-                    }
-                } catch (Exception e) {
-                    log.error("Lỗi dòng {}: {}", row.getRowNum(), e.getMessage());
-                }
-            }
-
-            if (!classesToSave.isEmpty()) {
-                classRoomRepository.saveAll(classesToSave);
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException("Lỗi đọc file Excel: " + e.getMessage());
-        }
+        
+        // Gọi sang NiFi Client, bắn vào endpoint "classes"
+        nifiClient.sendFile(file, "classes");
+        
+        log.info("Đã chuyển file Excel sang NiFi xử lý thành công!");
     }
 
     // =========================================================================
@@ -196,13 +181,10 @@ public class ClassRoomService {
         classEnrollmentRepository.save(enrollment);
     }
 
-    // 👇 HÀM XÓA "BẤT TỬ" (KHÔNG SỬA, CHỈ BẢO ĐẢM Repository CÓ HÀM findByClassIdAndStudentId)
     public void removeStudentFromClass(Long classId, String studentId) {
-        // 1. Tìm bản ghi
         ClassEnrollment enrollment = classEnrollmentRepository.findByClassIdAndStudentId(classId, studentId)
                 .orElseThrow(() -> new RuntimeException("Sinh viên " + studentId + " không có trong lớp này!"));
 
-        // 2. Xóa bản ghi (Dùng hàm delete chuẩn của JPA -> Tránh lỗi Transaction 500)
         classEnrollmentRepository.delete(enrollment);
     }
 
@@ -264,20 +246,17 @@ public class ClassRoomService {
     }
 
     public List<ClassroomDTO> getClassesForStudent(String studentId) {
-    // 1. Tìm tất cả bản ghi ghi danh của sinh viên này
-    List<ClassEnrollment> enrollments = classEnrollmentRepository.findByStudentId(studentId);
-    
-    // 2. Lấy danh sách ID lớp từ các bản ghi ghi danh đó
-    List<Long> classIds = enrollments.stream()
-            .map(ClassEnrollment::getClassId)
-            .collect(Collectors.toList());
+        List<ClassEnrollment> enrollments = classEnrollmentRepository.findByStudentId(studentId);
+        
+        List<Long> classIds = enrollments.stream()
+                .map(ClassEnrollment::getClassId)
+                .collect(Collectors.toList());
 
-    // 3. Tìm các lớp tương ứng và đổi sang DTO
-    List<ClassRoom> entities = classRoomRepository.findAllById(classIds);
-    List<ClassroomDTO> dtos = entities.stream().map(this::mapToDTO).collect(Collectors.toList());
-    
-    dtos.forEach(this::enrichClassroomDTO); // Điền thêm tên môn, tên GV cho đẹp
-    return dtos;
+        List<ClassRoom> entities = classRoomRepository.findAllById(classIds);
+        List<ClassroomDTO> dtos = entities.stream().map(this::mapToDTO).collect(Collectors.toList());
+        
+        dtos.forEach(this::enrichClassroomDTO); 
+        return dtos;
     }
 
     private ClassroomDTO mapToDTO(ClassRoom entity) {
@@ -302,10 +281,7 @@ public class ClassRoomService {
                 .build();
     }
 
-        // =========================================================================
-    // THÊM NHIỀU SINH VIÊN CÙNG LÚC
-    // =========================================================================
-    @Transactional // Quan trọng: Đảm bảo nếu lỗi 1 người thì sẽ không lưu tất cả
+    @Transactional 
     public void addStudentsToClass(Long classId, List<String> studentIds) {
         if (!classRoomRepository.existsById(classId)) {
             throw new RuntimeException("Lớp học không tồn tại!");
@@ -314,7 +290,6 @@ public class ClassRoomService {
         List<ClassEnrollment> newEnrollments = new ArrayList<>();
 
         for (String studentId : studentIds) {
-            // Nếu sinh viên chưa có trong lớp thì mới thêm
             if (!classEnrollmentRepository.existsByClassIdAndStudentId(classId, studentId)) {
                 ClassEnrollment enrollment = new ClassEnrollment();
                 enrollment.setClassId(classId);

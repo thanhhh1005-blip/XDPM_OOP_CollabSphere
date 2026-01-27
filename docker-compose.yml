@@ -1,7 +1,14 @@
 ﻿version: '3.8'
 
+# 👇 1. KHAI BÁO MẠNG CHUNG (Để các Service nhìn thấy nhau)
+networks:
+  collab-network:
+    driver: bridge
+
 services:
+  # --------------------------------------------------------
   # 1. Database MySQL
+  # --------------------------------------------------------
   mysql:
     image: mysql:8.0
     container_name: collab-mysql
@@ -12,35 +19,66 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:          # 👈 Thêm dòng này
+      - collab-network
 
+  # --------------------------------------------------------
   # 2. RabbitMQ (Message Broker)
+  # --------------------------------------------------------
   rabbitmq:
     image: rabbitmq:3-management
     container_name: collab-rabbitmq
     ports:
-      - "5672:5672"    # Port cho application kết nối
-      - "15672:15672"  # Port cho RabbitMQ Management UI
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    networks:          # 👈 Thêm dòng này
+      - collab-network
 
-  # 3. MinIO (Giả lập AWS S3 - MỚI THÊM)
+  # --------------------------------------------------------
+  # 3. MinIO (Lưu trữ file)
+  # --------------------------------------------------------
   minio:
     image: minio/minio
     container_name: collab-minio
     ports:
-      - "9000:9000"  # Cổng API (Code Java gọi vào đây)
-      - "9001:9001"  # Cổng Web UI (Bạn vào đây để tạo Bucket)
+      - "9000:9000"
+      - "9001:9001"
     environment:
-      MINIO_ROOT_USER: admin           # Access Key
-      MINIO_ROOT_PASSWORD: password123 # Secret Key
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
     command: server /data --console-address ":9001"
     volumes:
-      - minio_data:/data # Lưu dữ liệu upload ra ổ cứng
+      - minio_data:/data
+    networks:          # 👈 Thêm dòng này
+      - collab-network
+
+  # --------------------------------------------------------
+  # 4. APACHE NIFI (MỚI THÊM) 🚀
+  # --------------------------------------------------------
+  nifi:
+    image: apache/nifi:1.25.0
+    container_name: collab-nifi
+    ports:
+      - "8443:8443" # Cổng Web UI (HTTPS)
+      - "8091:8091" # Cổng nhận file từ Spring Boot (HTTP)
+    environment:
+      - NIFI_WEB_HTTP_PORT=
+      - NIFI_WEB_HTTPS_PORT=8443
+      - SINGLE_USER_CREDENTIALS_USERNAME=admin
+      - SINGLE_USER_CREDENTIALS_PASSWORD=password12345678 # Pass >= 12 ký tự
+      - NIFI_SENSITIVE_PROPS_KEY=12345678901234567890123456789012
+    networks:          # 👈 Quan trọng: Phải chung mạng với MySQL
+      - collab-network
+    volumes:
+      - nifi_data:/opt/nifi/nifi-current/conf # (Optional) Lưu cấu hình để không mất khi restart
 
 volumes:
   mysql_data:
-  minio_data: # Volume mới cho MinIO
+  minio_data:
+  nifi_data: # Volume mới cho NiFi
  # 3. Resource Service (Quản lý tài nguyên)
   # resource-service:
   #   build:

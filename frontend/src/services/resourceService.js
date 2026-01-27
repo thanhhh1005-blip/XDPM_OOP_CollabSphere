@@ -23,14 +23,26 @@ const ResourceService = {
         }
     },
 
+
     // 2. Upload file
     uploadFile: async (file, scope, scopeId) => {
+        // 👇 BƯỚC 1: Lấy user thật từ LocalStorage (hoặc Session)
+        // (Tùy project bạn lưu key là 'user', 'account' hay 'auth')
+        const storedUser = localStorage.getItem('user'); 
+        const currentUser = storedUser ? JSON.parse(storedUser) : null;
+
+        // Nếu không tìm thấy user (chưa đăng nhập), thì gán mặc định hoặc báo lỗi
+        const uploaderId = currentUser ? currentUser.username : 'Anonymous'; // Dùng username hoặc id tùy database của bạn
+        const userRole = currentUser ? currentUser.role : 'GUEST';
+
         const formData = new FormData();
         formData.append("file", file);
         formData.append("scope", scope);
         formData.append("scopeId", scopeId);
-        formData.append("uploaderId", CURRENT_USER.id);
-        formData.append("role", CURRENT_USER.role);
+        
+        // 👇 BƯỚC 2: Dùng biến động vừa lấy được
+        formData.append("uploaderId", uploaderId); 
+        formData.append("role", userRole);       
 
         try {
             const response = await axios.post(API_URL, formData, {
@@ -42,6 +54,7 @@ const ResourceService = {
             throw error;
         }
     },
+
 
     // 3. Download file
     downloadFile: async (resourceId, fileName) => {

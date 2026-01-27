@@ -48,3 +48,14 @@ aws:
     region: us-east-1
     bucket-name: collab-sphere
     endpoint: http://localhost:9000
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: resource-service   # đổi theo từng service

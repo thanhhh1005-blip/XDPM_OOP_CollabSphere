@@ -7,6 +7,7 @@ import com.collab.resourceservice.enums.ResourceType;
 import com.collab.resourceservice.enums.UserRole;
 import com.collab.resourceservice.repository.ResourceRepository;
 import com.collab.resourceservice.service.ResourceService;
+import com.collab.resourceservice.service.NifiClient; // 👈 Import NifiClient (Sửa package nếu cần)
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,9 @@ public class ResourceServiceImpl implements ResourceService {
 
     private final S3Client s3Client;
     private final ResourceRepository resourceRepository;
+    
+    // 👇 INJECT NIFI CLIENT (MỚI THÊM)
+    private final NifiClient nifiClient;
 
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
@@ -38,14 +42,15 @@ public class ResourceServiceImpl implements ResourceService {
     @Value("${aws.s3.endpoint}")
     private String endpointUrl;
 
-    // 1. UPLOAD FILE
+    // =========================================================================
+    // 1. UPLOAD FILE THƯỜNG (LÊN MINIO/S3) - GIỮ NGUYÊN
+    // =========================================================================
     @Override
     public ResourceResponse uploadFile(MultipartFile file, ResourceScope scope, String scopeId, String uploaderId, UserRole uploaderRole) {
         if (file.isEmpty()) {
             throw new RuntimeException("File cannot be empty");
         }
 
-        // Tạo tên file duy nhất (UUID)
         String originalFilename = file.getOriginalFilename();
         String extension = "";
         if (originalFilename != null && originalFilename.contains(".")) {
@@ -53,7 +58,6 @@ public class ResourceServiceImpl implements ResourceService {
         }
         String storedFileName = UUID.randomUUID().toString() + extension;
 
-        // Upload lên MinIO
         try {
             PutObjectRequest putOb = PutObjectRequest.builder()
                     .bucket(bucketName)
@@ -68,7 +72,6 @@ public class ResourceServiceImpl implements ResourceService {
             throw new RuntimeException("Failed to upload file to storage");
         }
 
-        // Lưu DB
         String fileUrl = endpointUrl + "/" + bucketName + "/" + storedFileName;
         Resource resource = Resource.builder()
                 .fileName(originalFilename)
@@ -86,23 +89,36 @@ public class ResourceServiceImpl implements ResourceService {
         Resource savedResource = resourceRepository.save(resource);
         return mapToResponse(savedResource);
     }
+    
+    // =========================================================================
+    // ✨ [MỚI] GỬI FILE QUA NIFI ĐỂ XỬ LÝ (IMPORT DATA)
+    // =========================================================================
+    // (Lưu ý: Bạn cần thêm hàm này vào Interface ResourceService nữa nhé)
+    public void importDataViaNifi(MultipartFile file) {
+        if (file.isEmpty()) throw new RuntimeException("File rỗng!");
+        
+        // Gửi sang NiFi Client, bắn vào endpoint "resources"
+        nifiClient.sendFile(file, "resources");
+        
+        log.info("Đã chuyển file Resource sang NiFi để xử lý!");
+    }
 
-    // 2. DOWNLOAD FILE (Mới thêm logic)
+    // =========================================================================
+    // 2. DOWNLOAD FILE
+    // =========================================================================
     @Override
     public byte[] downloadFile(Long resourceId) {
-        // Tìm file trong DB để lấy tên storedFileName (UUID)
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new RuntimeException("File not found with id: " + resourceId));
 
         try {
-            // Gọi MinIO để lấy nội dung file
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                     .bucket(bucketName)
                     .key(resource.getStoredFileName())
                     .build();
 
             ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(getObjectRequest);
-            return objectBytes.asByteArray(); // Trả về mảng byte dữ liệu
+            return objectBytes.asByteArray();
 
         } catch (Exception e) {
             log.error("Error downloading from S3", e);
@@ -110,7 +126,9 @@ public class ResourceServiceImpl implements ResourceService {
         }
     }
 
-    // 3. GET INFO (Mới thêm logic)
+    // =========================================================================
+    // 3. CÁC HÀM GET & DELETE (GIỮ NGUYÊN)
+    // =========================================================================
     @Override
     public ResourceResponse getResourceById(Long resourceId) {
         Resource resource = resourceRepository.findById(resourceId)
@@ -118,44 +136,30 @@ public class ResourceServiceImpl implements ResourceService {
         return mapToResponse(resource);
     }
 
-    // 4. GET LIST (ĐÃ CẬP NHẬT LOGIC)
     @Override
     public List<ResourceResponse> getResourcesByScope(ResourceScope scope, String scopeId) {
-        // 1. Gọi Repo lấy danh sách Entity
         List<Resource> resources = resourceRepository.findByScopeAndScopeIdOrderByCreatedAtDesc(scope, scopeId);
-
-        // 2. Chuyển đổi từ Entity -> DTO (ResourceResponse) để trả về
-        return resources.stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return resources.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
-    // 5. DELETE FILE (ĐÃ CẬP NHẬT LOGIC)
     @Override
     public void deleteResource(Long resourceId, String userId, UserRole role) {
-        // 1. Tìm file trong DB
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
 
-        // 2. Kiểm tra quyền xóa (Chỉ người up file hoặc GV/Admin mới được xóa)
-        // Nếu không phải người up VÀ không phải GV/Admin -> Báo lỗi
-        if (!resource.getUploadedBy().equals(userId) && 
-            role != UserRole.LECTURER && 
-            role != UserRole.ADMIN) {
+        if (!resource.getUploadedBy().equals(userId) && role != UserRole.LECTURER && role != UserRole.ADMIN) {
             throw new RuntimeException("You do not have permission to delete this file");
         }
 
-        // 3. Xóa trên MinIO
         try {
             s3Client.deleteObject(builder -> builder.bucket(bucketName).key(resource.getStoredFileName()));
         } catch (Exception e) {
             log.error("Error deleting from S3", e);
-            // Vẫn tiếp tục xóa trong DB để tránh rác dữ liệu
         }
 
-        // 4. Xóa trong Database
         resourceRepository.delete(resource);
     }
+
     // --- Helper Methods ---
 
     private ResourceResponse mapToResponse(Resource resource) {

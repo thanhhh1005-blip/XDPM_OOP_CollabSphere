@@ -27,3 +27,14 @@ spring:
 
 jwt:
   signerKey: 1234567890123456789012345678901212345678901234567890123456789012
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: identity-service   # đổi theo từng service

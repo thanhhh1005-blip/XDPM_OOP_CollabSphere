@@ -33,7 +33,8 @@ public class SecurityConfig {
             "/auth/outbound/authentication",
             
             // 👇 THÊM DÒNG NÀY ĐỂ CLASS SERVICE GỌI ĐƯỢC (QUAN TRỌNG) 👇
-            // "/api/users/**", 
+            "/api/users/**", 
+            "/actuator/**",
             // -----------------------------------------------------------
 
             // Các đường dẫn cũ (Giữ nguyên nếu cần tương thích ngược)

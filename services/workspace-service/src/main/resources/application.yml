@@ -26,3 +26,14 @@ minio:
   access-key: admin
   secret-key: password123
   bucket-name: collab-sphere
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: workspace-service   # đổi theo từng service
