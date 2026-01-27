@@ -5,21 +5,7 @@ spring:
   # ======================
   # DATABASE (H2 IN-MEMORY)
   # ======================
-  datasource:
-    url: jdbc:h2:mem:notification-db
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    open-in-view: false
-    database-platform: org.hibernate.dialect.H2Dialect
-    properties:
-      hibernate:
-        format_sql: true
 
   h2:
     console:
@@ -30,26 +16,39 @@ spring:
   # RABBITMQ
   # ======================
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    virtual-host: /#
-
-  # ======================
-  # MAIL (GIỮ NGUYÊN)
-  # ======================
+    host: localhost       # Địa chỉ RabbitMQ (nếu chạy Docker/Local)
+    port: 5672            # Cổng mặc định
+    username: guest       # User mặc định
+    password: guest       # Pass mặc định
+    listener:
+      simple:
+        auto-startup: true # Tự động lắng nghe khi bật app
+        missing-queues-fatal: false
   mail:
-    host: sandbox.smtp.mailtrap.io    # <-- Host của Mailtrap
-    port: 2525                        # <-- Port của Mailtrap
-    username: ff5d78373b7490           # <-- Copy Username từ Mailtrap dán vào đây
-    password: 9d398343111aab          # <-- Copy Password từ Mailtrap dán vào đây
+    host: smtp.gmail.com
+    port: 587
+    username: Thanhhh2005@gmail.com
+    password: sipc pxyw mcft dyfa
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+  # ======================
+  # MAIL (GIỮ NGUYÊN)
+  # ======================
+  # mail:
+  #   host: sandbox.smtp.mailtrap.io    # <-- Host của Mailtrap
+  #   port: 2525                        # <-- Port của Mailtrap
+  #   username: ff5d78373b7490           # <-- Copy Username từ Mailtrap dán vào đây
+  #   password: 9d398343111aab          # <-- Copy Password từ Mailtrap dán vào đây
+  #   properties:
+  #     mail:
+  #       smtp:
+  #         auth: true
+  #         starttls:
+  #           enable: true
 # ======================
 # SERVER
 # ======================

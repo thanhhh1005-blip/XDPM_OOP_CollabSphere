@@ -13,6 +13,12 @@ spring:
     hibernate:
       ddl-auto: update # Tự tạo bảng khi chạy code
     show-sql: true
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  
 
 # Cấu hình MinIO (Copy từ Resource Service sang)
 minio:

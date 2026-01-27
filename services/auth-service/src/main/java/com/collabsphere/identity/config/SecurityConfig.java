@@ -56,6 +56,8 @@ public class SecurityConfig {
                 // 2. Cho phép ĐĂNG KÝ (POST /users) là public (Nếu app bạn cho phép tự đăng ký)
                 .requestMatchers(HttpMethod.GET, "/users/{userId}").permitAll()
 
+                .requestMatchers(HttpMethod.GET, "/users/username/**").permitAll()
+
                 // 3. Các API khác bắt buộc phải có Token (Authenticated)
                 // Lúc này Token sẽ được phân tích, và @PreAuthorize bên Controller mới hoạt động đúng
                 .anyRequest().authenticated()

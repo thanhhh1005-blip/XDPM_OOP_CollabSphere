@@ -71,4 +71,16 @@ public class SubTaskController {
         
         return new ApiResponse<>(1000, "Tính toán thành công", contributionMap);
     }
+
+    // ✅ API: GIẢNG VIÊN CHẤM ĐIỂM SUBTASK (CHECKPOINT NHỎ)
+    @PutMapping("/{id}/grade")
+    public ApiResponse<SubTask> gradeSubTask(
+            @PathVariable("id") Long id,
+            @RequestBody SubTask gradeReq // Gửi { score: 10, comment: "Làm kỹ" }
+    ) {
+        SubTask task = subTaskRepo.findById(id).orElseThrow(() -> new RuntimeException("Task not found"));
+        task.setScore(gradeReq.getScore());
+        task.setComment(gradeReq.getComment()); // Dùng field 'comment' thay vì feedback cho subtask
+        return new ApiResponse<>(1000, "Đã chấm điểm task", subTaskRepo.save(task));
+    }
 }

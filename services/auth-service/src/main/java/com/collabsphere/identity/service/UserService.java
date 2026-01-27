@@ -243,4 +243,10 @@ public class UserService {
             throw new RuntimeException("Role không hợp lệ: " + roleName);
         }
     }
+
+    // Trong UserService.java
+    public User getUserByUsername(String username) {
+    return userRepository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+}   
 }

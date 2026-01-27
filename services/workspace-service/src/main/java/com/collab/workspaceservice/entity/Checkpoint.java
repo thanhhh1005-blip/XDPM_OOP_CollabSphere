@@ -29,4 +29,7 @@ public class Checkpoint {
     private LocalDateTime submittedAt; // Ngày nộp thực tế
     
     private Double grade; // Điểm số giảng viên chấm (nếu có)
+
+    private Double score;      // Điểm số (VD: 8.5)
+    private String feedback;
 }

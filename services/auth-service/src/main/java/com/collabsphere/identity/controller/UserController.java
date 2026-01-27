@@ -77,7 +77,7 @@ public class UserController {
     @GetMapping("/{userId}")
     public ApiResponse<User> getUser(@PathVariable("userId") String userId) {
         return ApiResponse.<User>builder()
-                .result(userService.getUser(userId))
+                .result(userService.getUser(userId)) // Hàm này tìm theo ID
                 .build();
     }
 
@@ -100,4 +100,14 @@ public class UserController {
                 .result(userService.importUsers(file))
                 .build();
     }
+
+    @GetMapping("/username/{username}")
+    public ApiResponse<User> getUserByUsername(@PathVariable("username") String username) {
+        // Bạn cần đảm bảo UserService có hàm này
+        return ApiResponse.<User>builder()
+                .result(userService.getUserByUsername(username)) 
+                .build();
+    }
+
+    
 }

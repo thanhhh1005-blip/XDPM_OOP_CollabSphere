@@ -53,35 +53,33 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            
         </dependencies>
     </dependencyManagement>
-
     <dependencies>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-mail</artifactId>
+            </dependency>
+
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <optional>true</optional>
+            </dependency>
     </dependencies>
     <build>
         <plugins>
-            <!-- Thêm/Sửa plugin này để bật chế độ lưu tên tham số -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version> <!-- Hoặc version khác -->
+                <version>3.11.0</version>
                 <configuration>
-                    <parameters>true</parameters> <!-- 👈 QUAN TRỌNG NHẤT -->
-                </configuration>
-            </plugin>
-            
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <parameters>true</parameters> 
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
 </project>

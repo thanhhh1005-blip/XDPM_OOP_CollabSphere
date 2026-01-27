@@ -3,7 +3,8 @@ package com.collab.notificationservice;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
@@ -15,10 +16,10 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * - Push WebSocket real-time
  * - Lưu Notification vào Database
  */
-@SpringBootApplication
+
 @EnableAsync
 @EntityScan(basePackages = "com.collab.notificationservice.entity")
-@EnableJpaRepositories(basePackages = "com.collab.notificationservice.repository")
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 public class NotificationServiceApplication {
 
     public static void main(String[] args) {

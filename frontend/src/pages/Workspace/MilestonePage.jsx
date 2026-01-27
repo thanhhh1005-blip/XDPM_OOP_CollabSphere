@@ -8,14 +8,14 @@ import {
 import { 
     RobotOutlined, PlusOutlined, EyeOutlined, CheckCircleOutlined, 
     LinkOutlined, UploadOutlined, UserOutlined, CrownOutlined, 
-    TeamOutlined, DeleteOutlined, DownloadOutlined, EditOutlined,
-    UnorderedListOutlined, TrophyOutlined // ✅ Icon cho nút Checkpoints
+    TeamOutlined, DeleteOutlined, EditOutlined,
+    UnorderedListOutlined, TrophyOutlined 
 } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import dayjs from 'dayjs'; 
 
-// ✅ Import các Component con
+// ✅ Import các Component con (Giữ nguyên như code của bạn)
 import AiMilestoneModal from "../../components/AiMilestoneModal";
 import CheckpointModal from "../../components/CheckpointModal"; 
 
@@ -27,12 +27,13 @@ const MilestonePage = () => {
     const navigate = useNavigate();
     
     // ========================================================================
-    // 1. KHAI BÁO STATE (TẤT CẢ PHẢI NẰM TRONG NÀY)
+    // 1. KHAI BÁO STATE
     // ========================================================================
     
     const [milestones, setMilestones] = useState([]);
     const [myClasses, setMyClasses] = useState([]);
     const [checkpoints, setCheckpoints] = useState({}); 
+    const [milestoneStats, setMilestoneStats] = useState({});
     const [loading, setLoading] = useState(false);
 
     // State Sửa Milestone
@@ -52,18 +53,23 @@ const MilestonePage = () => {
     const [isViewSubmissionsOpen, setIsViewSubmissionsOpen] = useState(false);
     const [submissionList, setSubmissionList] = useState([]); 
     
-    // ✅ STATE CHO CHECKPOINT/SUBTASK (ĐÃ CHUYỂN VÀO TRONG)
+    // Checkpoint/Subtask State
     const [isCheckpointModalOpen, setIsCheckpointModalOpen] = useState(false);
     const [selectedMilestoneForCP, setSelectedMilestoneForCP] = useState(null);
     const [teamMembers, setTeamMembers] = useState([]); 
-
+    const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
+    const [gradingTarget, setGradingTarget] = useState(null); 
+    
     // Data Actions
     const [currentMilestoneId, setCurrentMilestoneId] = useState(null);
     const [fileList, setFileList] = useState([]); 
     
+    // Forms
     const [submitForm] = Form.useForm();
     const [manualForm] = Form.useForm();
     const [editForm] = Form.useForm();
+    const [gradeForm] = Form.useForm();
+
     // Auth Info
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const role = user.role || (user.roles && user.roles[0]);
@@ -91,11 +97,47 @@ const MilestonePage = () => {
         }
     }, [classId, token]);
 
+    const fetchCheckpointStatus = useCallback(async (teamId) => {
+        if (!teamId) return;
+        try {
+            const cpRes = await axios.get(`http://localhost:8080/api/workspace/milestones/checkpoint/status?teamId=${teamId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            const rawData = cpRes.data.result || [];
+            console.log("🔥 Dữ liệu Checkpoint Raw:", rawData); // Debug xem có milestoneId không
+
+            const map = {};
+            rawData.forEach(cp => { 
+                // Phòng trường hợp milestoneId nằm lồng trong object con hoặc viết thường
+                const mId = cp.milestoneId || cp.milestone?.id;
+                if (mId) {
+                    map[mId] = cp; 
+                }
+            });
+            
+            console.log("✅ Checkpoint Map:", map); // Debug xem map có đúng key không
+            setCheckpoints(map);
+        } catch (e) { console.error(e); }
+    }, [token]);
+
+    const fetchMilestoneStats = useCallback(async () => {
+        if (!classId) return;
+        try {
+            const res = await axios.get(`http://localhost:8080/api/workspace/milestones/class/${classId}/stats`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMilestoneStats(res.data.result || {});
+        } catch (e) { 
+            console.warn("Lỗi tải stats (có thể API 404 chưa implement):", e); 
+        }
+    }, [classId, token]);
+
     useEffect(() => {
         const initWorkflow = async () => {
             setLoading(true);
             try {
-                // A. Lấy danh sách lớp
+                // 1. Load Classes
                 const classRes = await axios.get(`http://localhost:8080/api/v1/teams/meta/classes`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -107,7 +149,7 @@ const MilestonePage = () => {
                     return;
                 }
 
-                // B. LOGIC PHÂN QUYỀN
+                // 2. Logic Phân quyền & Load Team
                 let activeTeamId = null;
 
                 if (!isLecturer) {
@@ -115,21 +157,20 @@ const MilestonePage = () => {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     const myTeams = myTeamsRes.data.result || myTeamsRes.data || [];
-                    
-                    const teamInThisClass = myTeams.find(t => t.classId == classId);
+                    const teamInThisClass = myTeams.find(t => t.classId == classId); // So sánh tương đối vì ID có thể là string/number
 
                     if (teamInThisClass) {
                         setCurrentTeam(teamInThisClass);
                         setHasTeamInClass(true);
                         activeTeamId = teamInThisClass.id;
 
-                        // Check Leader & Lấy danh sách thành viên cho Checkpoint Modal
+                        // Load Members & Check Leader
                         try {
                             const memberRes = await axios.get(`http://localhost:8080/api/v1/teams/${teamInThisClass.id}/members`, {
                                 headers: { Authorization: `Bearer ${token}` }
                             });
                             const members = memberRes.data.result || memberRes.data || [];
-                            setTeamMembers(members); // ✅ Lưu members vào state
+                            setTeamMembers(members); 
 
                             const me = members.find(m => m.userId === myUsername || m.username === myUsername);
                             if (me && (me.role === 'LEADER' || me.memberRole === 'LEADER')) {
@@ -139,7 +180,7 @@ const MilestonePage = () => {
                             }
                         } catch (err) { console.error("Lỗi lấy member:", err); }
 
-                        // Lấy Syllabus
+                        // Load Syllabus
                         if (teamInThisClass.projectId) {
                             try {
                                 const projectRes = await axios.get(`http://localhost:8080/api/v1/projects/${teamInThisClass.projectId}`, {
@@ -156,15 +197,14 @@ const MilestonePage = () => {
                     }
                 }
 
+                // 3. Load Milestones
                 await fetchMilestones();
 
-                if (!isLecturer && activeTeamId) {
-                    const cpRes = await axios.get(`http://localhost:8080/api/workspace/milestones/checkpoint/status?teamId=${activeTeamId}`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    const map = {};
-                    (cpRes.data.result || []).forEach(cp => { map[cp.milestoneId] = cp; });
-                    setCheckpoints(map);
+                // 4. Load dữ liệu phụ thuộc
+                if (isLecturer) {
+                    await fetchMilestoneStats();
+                } else if (activeTeamId) {
+                    await fetchCheckpointStatus(activeTeamId);
                 }
 
             } catch (error) {
@@ -254,7 +294,7 @@ const MilestonePage = () => {
     };
 
     const handleViewSubmissions = async (mId) => {
-        setIsViewSubmissionsOpen(true);
+        setIsViewSubmissionsOpen(true); 
         setSubmissionList([]); 
         try {
             const res = await axios.get(`http://localhost:8080/api/workspace/milestones/${mId}/checkpoints`, {
@@ -279,6 +319,8 @@ const MilestonePage = () => {
         const formData = new FormData();
         formData.append('milestoneId', currentMilestoneId);
         formData.append('teamId', currentTeam.id);
+        formData.append('teamName', currentTeam.name);
+        console.log("teamName =", currentTeam.name);
         formData.append('note', values.note || '');
         if (fileList.length > 0) {
             formData.append('file', fileList[0].originFileObj || fileList[0]);
@@ -290,13 +332,11 @@ const MilestonePage = () => {
             });
             message.success("Nộp bài thành công!");
             setIsSubmitModalOpen(false);
-            window.location.reload(); 
+            // Refresh lại trạng thái thay vì reload trang
+            await fetchCheckpointStatus(currentTeam.id);
         } catch (e) { message.error("Lỗi nộp bài!"); }
     };
 
-    // Hàm gọi API hoàn thành (Dán vào bên dưới các hàm handle khác)
-    // ✅ HÀM GỌI API HOÀN THÀNH (ĐÃ SỬA ĐỂ CẬP NHẬT NGAY LẬP TỨC)
-    // ✅ HÀM TOGGLE HOÀN THÀNH (ĐÃ FIX LỖI UPDATE STATE)
     const handleCompleteMilestone = async (milestoneId) => {
         try {
             const res = await axios.post(`http://localhost:8080/api/workspace/milestones/complete/${milestoneId}`, null, {
@@ -304,23 +344,197 @@ const MilestonePage = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            const updatedCheckpoint = res.data.result; // Lấy object mới nhất từ Server
+            const updatedCheckpoint = res.data.result; 
             message.success(res.data.message);
 
-            // Cập nhật State ngay lập tức với dữ liệu chính xác từ Server
             setCheckpoints(prev => ({
                 ...prev,
                 [milestoneId]: updatedCheckpoint 
             }));
 
-            // ❌ KHÔNG gọi fetchCheckpointStatus() ở đây nữa để tránh Race Condition
-
         } catch (error) {
             message.error(error.response?.data?.message || "Lỗi xử lý trạng thái!");
         }
     };
+
+    const openGradeModal = (record) => {
+        setGradingTarget(record);
+        setIsGradeModalOpen(true);
+        gradeForm.setFieldsValue({
+            score: record.score,
+            feedback: record.feedback
+        });
+    };
+
+    const handleGradeSubmit = async (values) => {
+        try {
+            await axios.put(`http://localhost:8080/api/workspace/milestones/checkpoint/grade`, {
+                score: values.score,
+                feedback: values.feedback
+            }, {
+                params: { milestoneId: gradingTarget.milestoneId, teamId: gradingTarget.teamId },
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            message.success("Đã lưu điểm!");
+            setIsGradeModalOpen(false);
+            handleViewSubmissions(gradingTarget.milestoneId);
+        } catch (e) {
+            message.error("Lỗi chấm điểm");
+        }
+    };
+
     // ========================================================================
-    // 4. RENDER GIAO DIỆN
+    // 4. CHUẨN BỊ DỮ LIỆU RENDER TIMELINE (KHẮC PHỤC LỖI DEPRECATED)
+    // ========================================================================
+
+    const timelineItems = milestones.map((item) => {
+        // Lấy thông tin trạng thái từ API
+        const myCP = checkpoints[item.id];
+        const isSubmitted = (myCP?.status === 'SUBMITTED') || (myCP?.submissionUrl && myCP.submissionUrl.length > 0);
+        const isCompleted = myCP?.status === 'COMPLETED'; 
+
+        return {
+            key: item.id,
+            color: isCompleted ? "green" : (isSubmitted ? "blue" : "gray"),
+            children: (
+                <Card 
+                    size="small" 
+                    title={
+                        <Space>
+                            <Tag color="geekblue">Tuần {item.weekNumber}</Tag>
+                            <Text strong>{item.title}</Text>
+                        </Space>
+                    }
+                    style={{ 
+                        border: isCompleted ? '2px solid #52c41a' : (isSubmitted ? '1px solid #1890ff' : undefined),
+                        background: isCompleted ? '#f6ffed' : '#fff'
+                    }}
+                >
+                    <Paragraph>{item.description}</Paragraph>
+                    {myCP?.score != null && (
+                        <div style={{ 
+                            marginTop: 10, 
+                            marginBottom: 10, 
+                            padding: 12, 
+                            background: '#f6ffed', 
+                            border: '1px solid #b7eb8f', 
+                            borderRadius: 6 
+                        }}>
+                            <Space direction="vertical" style={{ width: '100%' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Text strong style={{ color: '#389e0d', fontSize: 15 }}>
+                                        <CheckCircleOutlined /> KẾT QUẢ ĐÁNH GIÁ GIAI ĐOẠN
+                                    </Text>
+                                    <Tag color="red" style={{ fontSize: 16, padding: '5px 10px', fontWeight: 'bold' }}>
+                                        {myCP.score} / 10
+                                    </Tag>
+                                </div>
+                                {myCP.feedback && (
+                                    <Text type="secondary">
+                                        <span style={{ fontWeight: 600 }}>Giảng viên nhận xét:</span> {myCP.feedback}
+                                    </Text>
+                                )}
+                            </Space>
+                        </div>
+                    )}
+                    {/* ✅ FIX 1: Chỉ hiển thị trạng thái cá nhân nếu KHÔNG phải Giảng viên */}
+                    {!isLecturer && (
+                        <div style={{ marginBottom: 12 }}>
+                            {isCompleted ? (
+                                <Space>
+                                    <Tag icon={<CheckCircleOutlined />} color="success" style={{ fontWeight: 'bold', padding: '5px 10px' }}>
+                                        ĐÃ HOÀN THÀNH
+                                    </Tag>
+                                    
+                                    {isLeader && (
+                                        <Button 
+                                            size="small" danger type="text"
+                                            onClick={() => handleCompleteMilestone(item.id)}
+                                        >
+                                            (Hoàn tác)
+                                        </Button>
+                                    )}
+                                </Space>
+                            ) : (
+                                <Space>
+                                    {isSubmitted ? <Tag color="processing">Đã nộp file</Tag> : <Tag color="default">Chưa nộp file</Tag>}
+                                    
+                                    {isLeader && (
+                                        <Button 
+                                            type="primary" size="small" ghost 
+                                            icon={<TrophyOutlined />}
+                                            onClick={() => handleCompleteMilestone(item.id)}
+                                        >
+                                            Đánh dấu Hoàn thành
+                                        </Button>
+                                    )}
+                                </Space>
+                            )}
+                        </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #eee', paddingTop: 8 }}>
+                        {isLecturer ? (
+                            <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                                {/* Giao diện cho GIẢNG VIÊN */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    {(milestoneStats[item.id] && milestoneStats[item.id] > 0) ? (
+                                        <Tag color="blue" icon={<CheckCircleOutlined />}>
+                                            Đã có {milestoneStats[item.id]} nhóm nộp
+                                        </Tag>
+                                    ) : (
+                                        <Tag color="default">Chưa có bài nộp</Tag>
+                                    )}
+                                </div>
+
+                                <Space>
+                                    <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewSubmissions(item.id)}>Xem bài</Button>
+                                    <Button type="text" icon={<EditOutlined />} onClick={() => openEditModal(item)} style={{ color: '#faad14' }}>Sửa</Button>
+                                    <Popconfirm title="Xóa?" onConfirm={() => handleDelete(item.id)}>
+                                        <Button type="text" danger icon={<DeleteOutlined />}>Xóa</Button>
+                                    </Popconfirm>
+                                </Space>
+                            </Space>
+                        ) : (
+                            <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                                {/* Giao diện cho SINH VIÊN */}
+                                <Space>
+                                    {myCP?.submissionUrl && (
+                                        <a href={myCP.submissionUrl} target="_blank" rel="noreferrer"><LinkOutlined /> Xem file</a>
+                                    )}
+                                    
+                                    <Button 
+                                        icon={<UnorderedListOutlined />} 
+                                        onClick={() => {
+                                            setSelectedMilestoneForCP(item);
+                                            setIsCheckpointModalOpen(true);
+                                        }}
+                                    >
+                                        Checkpoints (Việc nhỏ)
+                                    </Button>
+                                </Space>
+
+                                {isLeader && !isCompleted && (
+                                    <Button type="primary" size="small" icon={<UploadOutlined />} onClick={() => openSubmitModal(item.id)}>
+                                        {isSubmitted ? "Nộp lại" : "Nộp báo cáo"}
+                                    </Button>
+                                )}
+                                
+                                {!isLeader && (
+                                    <Tooltip title="Chỉ Nhóm trưởng mới được nộp">
+                                        <Button size="small" disabled>Nộp báo cáo</Button>
+                                    </Tooltip>
+                                )}
+                            </Space>
+                        )}
+                    </div>
+                </Card>
+            )
+        };
+    });
+
+    // ========================================================================
+    // 5. RENDER CHÍNH
     // ========================================================================
 
     if (!isLecturer && !hasTeamInClass) {
@@ -336,7 +550,7 @@ const MilestonePage = () => {
             </Layout>
         );
     }
-
+    console.log("Dữ liệu bảng:", submissionList);
     return (
         <Layout style={{ minHeight: '100vh', background: '#f5f7fa' }}>
             <Content style={{ padding: '24px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
@@ -370,125 +584,12 @@ const MilestonePage = () => {
                 {/* TIMELINE */}
                 <Spin spinning={loading}>
                     <div style={{ maxWidth: 900, margin: '0 auto' }}>
-                        <Timeline>
-                            {milestones.length === 0 && <Empty description="Chưa có lộ trình" />}
-                            {milestones.map((item) => {
-                                // Lấy thông tin trạng thái từ API
-                                const myCP = checkpoints[item.id];
-                                const isSubmitted = myCP?.status === 'SUBMITTED';
-                                const isCompleted = myCP?.status === 'COMPLETED'; // ✅ Biến kiểm tra đã hoàn thành 100% chưa
-
-                                return (
-                                    <Timeline.Item 
-                                        key={item.id} 
-                                        color={isCompleted ? "green" : (isSubmitted ? "blue" : "gray")} // ✅ Timeline xanh lá nếu xong
-                                    >
-                                        <Card 
-                                            size="small" 
-                                            title={
-                                                <Space>
-                                                    <Tag color="geekblue">Tuần {item.weekNumber}</Tag>
-                                                    <Text strong>{item.title}</Text>
-                                                </Space>
-                                            }
-                                            style={{ 
-                                                // ✅ Đổi màu viền và nền sang xanh lá nếu đã hoàn thành
-                                                border: isCompleted ? '2px solid #52c41a' : (isSubmitted ? '1px solid #1890ff' : undefined),
-                                                background: isCompleted ? '#f6ffed' : '#fff'
-                                            }}
-                                        >
-                                            <Paragraph>{item.description}</Paragraph>
-
-                                            {/* 👇 KHU VỰC TRẠNG THÁI & NÚT HOÀN THÀNH (MỚI THÊM) */}
-                                            {/* KHU VỰC TRẠNG THÁI & NÚT BẤM (ĐÃ NÂNG CẤP) */}
-                                            <div style={{ marginBottom: 12 }}>
-                                                {isCompleted ? (
-                                                    <Space>
-                                                        <Tag icon={<CheckCircleOutlined />} color="success" style={{ fontWeight: 'bold', padding: '5px 10px' }}>
-                                                            ĐÃ HOÀN THÀNH
-                                                        </Tag>
-                                                        
-                                                        {/* 👇 NÚT HỦY HOÀN THÀNH (MỚI) - Cho phép Undo */}
-                                                        {isLeader && (
-                                                            <Button 
-                                                                size="small" 
-                                                                danger 
-                                                                type="text"
-                                                                onClick={() => handleCompleteMilestone(item.id)}
-                                                            >
-                                                                (Hoàn tác)
-                                                            </Button>
-                                                        )}
-                                                    </Space>
-                                                ) : (
-                                                    <Space>
-                                                        {isSubmitted ? <Tag color="processing">Đã nộp file</Tag> : <Tag color="default">Chưa nộp file</Tag>}
-                                                        
-                                                        {/* Nút Đánh dấu hoàn thành */}
-                                                        {isLeader && (
-                                                            <Button 
-                                                                type="primary" 
-                                                                size="small" 
-                                                                ghost 
-                                                                icon={<TrophyOutlined />}
-                                                                onClick={() => handleCompleteMilestone(item.id)}
-                                                            >
-                                                                Đánh dấu Hoàn thành
-                                                            </Button>
-                                                        )}
-                                                    </Space>
-                                                )}
-                                            </div>
-                                            {/* 👆 HẾT KHU VỰC MỚI */}
-
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #eee', paddingTop: 8 }}>
-                                                {isLecturer ? (
-                                                    <Space>
-                                                        <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewSubmissions(item.id)}>Xem bài</Button>
-                                                        <Button type="text" icon={<EditOutlined />} onClick={() => openEditModal(item)} style={{ color: '#faad14' }}>Sửa</Button>
-                                                        <Popconfirm title="Xóa cột mốc này?" onConfirm={() => handleDelete(item.id)} okText="Xóa" cancelText="Hủy">
-                                                            <Button type="text" danger icon={<DeleteOutlined />}>Xóa</Button>
-                                                        </Popconfirm>
-                                                    </Space>
-                                                ) : (
-                                                    <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                                                        <Space>
-                                                            {myCP?.submissionUrl && (
-                                                                <a href={myCP.submissionUrl} target="_blank" rel="noreferrer"><LinkOutlined /> Xem file</a>
-                                                            )}
-                                                            
-                                                            {/* Nút mở Modal Checkpoint */}
-                                                            <Button 
-                                                                icon={<UnorderedListOutlined />} 
-                                                                onClick={() => {
-                                                                    setSelectedMilestoneForCP(item);
-                                                                    setIsCheckpointModalOpen(true);
-                                                                }}
-                                                            >
-                                                                Checkpoints (Việc nhỏ)
-                                                            </Button>
-                                                        </Space>
-
-                                                        {/* Nút nộp bài (Ẩn khi đã hoàn thành giai đoạn) */}
-                                                        {isLeader && !isCompleted && (
-                                                            <Button type="primary" size="small" icon={<UploadOutlined />} onClick={() => openSubmitModal(item.id)}>
-                                                                {isSubmitted ? "Nộp lại" : "Nộp báo cáo"}
-                                                            </Button>
-                                                        )}
-                                                        
-                                                        {!isLeader && (
-                                                            <Tooltip title="Chỉ Nhóm trưởng mới được nộp">
-                                                                <Button size="small" disabled>Nộp báo cáo</Button>
-                                                            </Tooltip>
-                                                        )}
-                                                    </Space>
-                                                )}
-                                            </div>
-                                        </Card>
-                                    </Timeline.Item>
-                                );
-                            })}
-                        </Timeline>
+                        {milestones.length === 0 ? (
+                            <Empty description="Chưa có lộ trình" />
+                        ) : (
+                            // ✅ FIX 2: Sử dụng prop items thay vì children để fix lỗi deprecated
+                            <Timeline items={timelineItems} />
+                        )}
                     </div>
                 </Spin>
 
@@ -535,37 +636,46 @@ const MilestonePage = () => {
                         </div>
                     </Form>
                 </Modal>
-
+                
                 {/* MODAL 4: XEM BÀI NỘP */}
-                <Modal 
-                    title="Danh sách bài nộp của lớp" 
-                    open={isViewSubmissionsOpen} 
-                    onCancel={() => setIsViewSubmissionsOpen(false)} 
-                    footer={null} 
-                    width={800}
-                >
+                <Modal title="Danh sách bài nộp & Chấm điểm" open={isViewSubmissionsOpen} onCancel={() => setIsViewSubmissionsOpen(false)} footer={null} width={900}>
                     <Table 
                         dataSource={submissionList} 
-                        rowKey="id"
+                        rowKey="id" 
                         columns={[
-                            { title: 'Nhóm (Team ID)', dataIndex: 'teamId', render: t => <Tag color="blue">{t}</Tag> },
-                            { title: 'Ngày nộp', dataIndex: 'submittedAt', render: d => d ? dayjs(d).format('HH:mm DD/MM/YYYY') : '' },
-                            { title: 'Ghi chú', dataIndex: 'note' },
+                            { title: 'Nhóm',dataIndex: 'teamName', render: (text, record) => (<Tag color="blue">{text ? text : record.teamId}</Tag>) },
+                            { title: 'Ngày nộp', dataIndex: 'submittedAt', render: d => d ? dayjs(d).format('HH:mm DD/MM') : '' },
+                            { title: 'File', dataIndex: 'submissionUrl', render: u => u ? <a href={u} target="_blank">Tải file</a> : <Text type="secondary">Trống</Text> },
+                            { title: 'Điểm', dataIndex: 'score', render: s => s ? <Tag color="green">{s}</Tag> : <Tag>Chưa chấm</Tag> },
+                            { title: 'Nhận xét', dataIndex: 'feedback', ellipsis: true },
                             { 
-                                title: 'File bài làm', 
-                                dataIndex: 'submissionUrl', 
-                                render: (url) => url ? (
-                                    <a href={url} target="_blank" rel="noopener noreferrer">
-                                        <Button type="primary" size="small" icon={<DownloadOutlined />}>Tải xuống</Button>
-                                    </a>
-                                ) : <Text type="secondary">Chưa nộp file</Text>
+                                title: 'Thao tác', 
+                                render: (_, record) => (
+                                    <Button type="primary" size="small" onClick={() => openGradeModal(record)}>
+                                        Chấm điểm
+                                    </Button>
+                                ) 
                             }
                         ]} 
-                        locale={{ emptyText: 'Chưa có nhóm nào nộp bài cho cột mốc này' }}
                     />
                 </Modal>
 
-                {/* MODAL 5: AI */}
+                {/* MODAL 5: CHẤM ĐIỂM */}
+                <Modal title={`Chấm điểm cho nhóm: ${gradingTarget?.teamId}`} open={isGradeModalOpen} onCancel={() => setIsGradeModalOpen(false)} footer={null}>
+                    <Form form={gradeForm} onFinish={handleGradeSubmit} layout="vertical">
+                        <Form.Item name="score" label="Điểm số (0-10)" rules={[{ required: true }]}>
+                            <InputNumber min={0} max={10} step={0.1} style={{ width: '100%' }} />
+                        </Form.Item>
+                        <Form.Item name="feedback" label="Nhận xét/Góp ý">
+                            <Input.TextArea rows={4} placeholder="Nhập nhận xét của giảng viên..." />
+                        </Form.Item>
+                        <div style={{ textAlign: 'right' }}>
+                            <Button type="primary" htmlType="submit">Lưu kết quả</Button>
+                        </div>
+                    </Form>
+                </Modal>
+
+                {/* MODAL 6: AI */}
                 <AiMilestoneModal 
                     isOpen={isAiModalOpen} 
                     onClose={() => setIsAiModalOpen(false)} 
@@ -574,7 +684,7 @@ const MilestonePage = () => {
                     onSuccess={() => { setIsAiModalOpen(false); fetchMilestones(); }} 
                 />
 
-                {/* ✅ MODAL 6: CHECKPOINTS MANAGER (Đã tích hợp) */}
+                {/* MODAL 7: CHECKPOINTS MANAGER */}
                 <CheckpointModal 
                     isOpen={isCheckpointModalOpen}
                     onClose={() => setIsCheckpointModalOpen(false)}
@@ -583,6 +693,7 @@ const MilestonePage = () => {
                     teamMembers={teamMembers}
                     isLeader={isLeader}
                     currentUser={myUsername}
+                    isLecturer={isLecturer}
                 />
 
             </Content>

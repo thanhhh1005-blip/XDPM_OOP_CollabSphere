@@ -23,4 +23,7 @@ public class SubTask {
     private Long milestoneId; // Thuộc về cột mốc nào
     
     private String teamId; // ✅ QUAN TRỌNG: Checkpoint này của Team nào (Vì 1 milestone có nhiều team cùng làm)
+
+    private Double score;
+    private String comment;
 }

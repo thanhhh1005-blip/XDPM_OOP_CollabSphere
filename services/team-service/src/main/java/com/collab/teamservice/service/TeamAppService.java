@@ -39,43 +39,44 @@ public class TeamAppService {
     // 0. HÀM MAP DỮ LIỆU (QUAN TRỌNG NHẤT)
     // =========================================================================
     private TeamResponse mapToResponse(Team team) {
-        // A. Copy dữ liệu cơ bản
-        TeamResponse response = TeamResponse.builder()
-                .id(team.getId())
-                .name(team.getName())
-                .classId(team.getClassId())
-                .projectId(team.getProjectId())
-                .leaderId(team.getLeaderId())
-                .status(team.getStatus().name())
-                .createdAt(team.getCreatedAt()) // Giả sử Entity có field này
-                .updatedAt(team.getUpdatedAt())
-                .build();
-
-        // B. Lấy tên Dự án (Gọi sang Project Service)
-        if (team.getProjectId() != null && !team.getProjectId().isEmpty()) {
-            try {
-                ProjectDTO project = projectServiceClient.getProjectById(team.getProjectId());
-                if (project != null) {
-                    response.setProjectName(project.getTitle()); // Lấy title từ ProjectDTO
-                }
-            } catch (Exception e) {
-                log.error("Lỗi lấy thông tin Project ID {}: {}", team.getProjectId(), e.getMessage());
-                response.setProjectName("Không thể tải tên dự án");
-            }
+    // 1. QUAN TRỌNG NHẤT: Gán Team Name ngay lập tức
+    // Dù đoạn dưới có lỗi trời sập thì cái 'name' này đã được an toàn
+    TeamResponse response = TeamResponse.builder()
+            .id(team.getId())
+            .name(team.getName()) // ✅ Đây là cái bạn cần! Nó lấy từ DB Team, không liên quan Project
+            .classId(team.getClassId())
+            .projectId(team.getProjectId())
+            .leaderId(team.getLeaderId())
+            .status(team.getStatus().name())
+            .build();
+    System.out.println("🛠️ Mapping Team ID: " + team.getId() + " với tên: " + team.getName());
+    // 2. Gọi Project Service (File Client của bạn ở trên)
+    if (team.getProjectId() != null) {
+        // Gọi client. Vì Client đã try-catch và trả về null nếu lỗi,
+        // nên ở đây ta chỉ cần check null là xong.
+        ProjectDTO project = projectServiceClient.getProjectById(team.getProjectId());
+        
+        if (project != null) {
+            response.setProjectName(project.getTitle());
+        } else {
+            // Nếu Client trả về null (do lỗi 404), ta set tên mặc định
+            response.setProjectName("Không xác định (Lỗi Project)");
         }
-
-        // C. Lấy tên Trưởng nhóm (Gọi sang Identity Service)
-        if (team.getLeaderId() != null && !team.getLeaderId().isEmpty()) {
-            try {
-                String leaderName = identityClient.getFullNameByUsername(team.getLeaderId());
-                response.setLeaderName(leaderName);
-            } catch (Exception e) {
-                response.setLeaderName(team.getLeaderId()); // Fallback về ID nếu lỗi
-            }
-        }
-
-        return response;
     }
+
+    // 3. Gọi Identity Service (Lấy tên Leader)
+    // Tương tự, cũng nên bọc try-catch hoặc check null
+    if (team.getLeaderId() != null) {
+        try {
+            String leaderName = identityClient.getFullNameByUsername(team.getLeaderId());
+            response.setLeaderName(leaderName);
+        } catch (Exception e) {
+            response.setLeaderName(team.getLeaderId()); // Fallback về ID
+        }
+    }
+
+    return response;
+}
 
     // =========================================================================
     // 1. CÁC HÀM GET (Đã sửa để trả về TeamResponse)
@@ -120,12 +121,25 @@ public class TeamAppService {
          return getTeamsByStudent(userId); // Dùng chung logic với hàm trên
     }
 
-    @Transactional(readOnly = true)
     public TeamResponse getById(String id) {
-        Team team = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Team not found: " + id));
-        return mapToResponse(team);
-    }
+    // 1. In ra ID nhận được (kẹp giữa dấu [] để xem có dấu cách thừa không)
+    System.out.println("🔍 TeamAppService đang tìm ID: [" + id + "]"); 
+
+    // 2. Trim() thử xem sao (Cắt bỏ khoảng trắng thừa nếu có)
+    String cleanId = id.trim(); 
+
+    Team team = repo.findById(cleanId)
+            .orElseThrow(() -> {
+                // 3. Nếu không thấy, in log báo động trước khi chết
+                System.err.println("❌ Database báo: KHÔNG TÌM THẤY team với ID: [" + cleanId + "]");
+                return new RuntimeException("Team not found: " + cleanId);
+            });
+
+    // 4. Nếu tìm thấy
+    System.out.println("✅ Database báo: TÌM THẤY team tên là: " + team.getName());
+    
+    return mapToResponse(team);
+}
 
     // =========================================================================
     // 2. CÁC HÀM WRITE (CREATE / UPDATE / DELETE)
