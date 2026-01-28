@@ -16,10 +16,10 @@ public class TeamResponse {
     private Long classId;
     
     private String projectId;
-    private String projectName; // 👈 Đây là cái bạn đang thiếu
+    private String projectName; 
     
     private String leaderId;
-    private String leaderName;  // 👈 Thêm cái này cho tiện hiển thị
+    private String leaderName;
     
     private String status;
     private Instant createdAt;

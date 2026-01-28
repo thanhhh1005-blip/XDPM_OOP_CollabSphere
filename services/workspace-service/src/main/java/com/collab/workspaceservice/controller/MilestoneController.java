@@ -47,7 +47,6 @@ public class MilestoneController {
 
     @Autowired 
     private TeamClient teamClient;
-    // ✅ SỬA LỖI 1: Thêm ("classId") vào đây
     @GetMapping("/class/{classId}")
     public ApiResponse<List<Milestone>> getByClass(@PathVariable("classId") Long classId) {
         return new ApiResponse<>(1000, "Thành công", milestoneService.getByClassId(classId));
@@ -58,7 +57,6 @@ public class MilestoneController {
         return new ApiResponse<>(1000, "Tạo thành công", milestoneService.createManual(milestone));
     }
 
-    // ✅ SỬA LỖI 2: Thêm ("classId") vào đây nếu dùng
     @PostMapping("/ai-generate")
     public ApiResponse<List<Milestone>> createByAI(
             @RequestParam("classId") Long classId,
@@ -67,7 +65,6 @@ public class MilestoneController {
         return new ApiResponse<>(1000, "AI đã tạo lộ trình", milestoneService.generateByAI(classId, description));
     }
     
-    // ✅ SỬA LỖI 3: Thêm ("id")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable("id") Long id) {
         milestoneService.delete(id);
@@ -79,18 +76,16 @@ public class MilestoneController {
         try {
             TeamResponse team = teamClient.getTeamById(teamId);
             if (team != null && team.getName() != null) {
-                return team.getName(); // Trả về "Nhóm Siêu Đẳng"
+                return team.getName(); 
             }
         } catch (Exception e) {
             System.err.println("⚠️ Không gọi được TeamService: " + e.getMessage());
         }
-        return "Nhóm " + teamId; // Nếu lỗi thì trả về ID cũ
+        return "Nhóm " + teamId; 
     }
-    // --- PHẦN CHECKPOINT (NỘP BÀI) ---
 
     @PostMapping("/checkpoint/submit")
     public ApiResponse<Checkpoint> submitCheckpoint(@RequestBody Checkpoint req) {
-        // ... (Giữ nguyên logic lưu DB cũ của bạn) ...
         Checkpoint existing = checkpointRepo.findByMilestoneIdAndTeamId(req.getMilestoneId(), req.getTeamId());
         Checkpoint savedCp;
         if (existing != null) {
@@ -105,21 +100,17 @@ public class MilestoneController {
             savedCp = checkpointRepo.save(req);
         }
 
-        // 👇 SỬA ĐOẠN GỬI MAIL: Lấy tên nhóm trước
         String teamName = getTeamName(req.getTeamId());
         sendNotificationToTeacher(teamName, "vừa nộp bài (Link)", req.getNote()); // Truyền teamName vào
 
         return new ApiResponse<>(1000, "Nộp bài thành công", savedCp);
     }
 
-    // 2. API: GIẢNG VIÊN XEM DANH SÁCH NỘP
-    // 2. API: LẤY DANH SÁCH BÀI NỘP (Hỗ trợ cả GV và SV)
     @GetMapping("/{id}/checkpoints")
     public ApiResponse<List<CheckpointDTO>> getCheckpoints(
             @PathVariable("id") Long id,
             @RequestParam(value = "teamId", required = false) String teamId
     ) {
-        // 1. Lấy dữ liệu thô (Entity) từ Database
         List<Checkpoint> entities;
         if (teamId != null && !teamId.isEmpty()) {
             Checkpoint cp = checkpointRepo.findByMilestoneIdAndTeamId(id, teamId);
@@ -128,14 +119,12 @@ public class MilestoneController {
             entities = checkpointRepo.findByMilestoneId(id);
         }
 
-        // 2. 🔥 QUAN TRỌNG: Chuyển Entity -> DTO (Để lấy được tên nhóm)
         List<CheckpointDTO> dtos = entities.stream().map(cp -> {
             return CheckpointDTO.builder()
                     .id(cp.getId())
                     .milestoneId(cp.getMilestoneId())
                     .teamId(cp.getTeamId())
                     
-                    // 👇 GỌI HÀM LẤY TÊN MÀ CHÚNG TA ĐÃ VIẾT
                     .teamName(getTeamName(cp.getTeamId())) 
                     
                     .status(cp.getStatus())
@@ -147,17 +136,14 @@ public class MilestoneController {
                     .build();
         }).collect(Collectors.toList());
 
-        // 3. 👇 TRẢ VỀ "dtos" (ĐÃ CHUYỂN ĐỔI) CHỨ KHÔNG PHẢI "entities" HAY "result"
         return new ApiResponse<>(1000, "Lấy danh sách thành công", dtos);
     }
 
-    // 3. API: LẤY TRẠNG THÁI (Để tô màu xanh cho SV)
     @GetMapping("/checkpoint/status")
     public ApiResponse<List<Checkpoint>> getCheckpointStatus(@RequestParam("teamId") String teamId) {
         return new ApiResponse<>(1000, "Thành công", checkpointRepo.findByTeamId(teamId));
     }
 
-    // API NỘP BÀI CÓ FILE (QUAN TRỌNG)
     @PostMapping(value = "/checkpoint/submit-file", consumes = {"multipart/form-data"})
     public ApiResponse<Checkpoint> submitCheckpointWithFile(
             @RequestParam("milestoneId") Long milestoneId,
@@ -191,7 +177,7 @@ public class MilestoneController {
             savedCp = checkpointRepo.save(newCp);
         }
 
-        // 👇 GỌI HÀM GỬI MAIL
+        // GỌI HÀM GỬI MAIL
         String teamName = getTeamName(teamId);
         sendNotificationToTeacher(teamName, "vừa nộp bài (File)", note);
         return new ApiResponse<>(1000, "Nộp bài thành công", savedCp);
@@ -214,23 +200,21 @@ public class MilestoneController {
             @PathVariable Long id,
             @RequestBody Milestone req
     ) {
-        // Tìm milestone cũ
+
         Milestone existing = milestoneService.getById(id); // Đảm bảo Service có hàm getById
         if (existing == null) throw new RuntimeException("Không tìm thấy Milestone");
 
-        // Cập nhật thông tin
+
         existing.setTitle(req.getTitle());
         existing.setDescription(req.getDescription());
         existing.setWeekNumber(req.getWeekNumber());
         existing.setStartDate(req.getStartDate());
         existing.setEndDate(req.getEndDate());
-        
-        // Lưu lại
+
         return new ApiResponse<>(1000, "Cập nhật thành công", milestoneService.save(existing)); 
-        // Lưu ý: Service cần có hàm save (bạn có thể dùng lại repo.save)
+        
     }
 
-    // File: MilestoneController.java
 
     @PostMapping("/complete/{id}")
     public ApiResponse<Checkpoint> completeMilestone(
@@ -239,7 +223,6 @@ public class MilestoneController {
     ) {
         Checkpoint cp = checkpointRepo.findByMilestoneIdAndTeamId(milestoneId, teamId);
         
-        // 1. Nếu chưa có record checkpoint nào -> Tạo mới (Mặc định là chưa xong)
         if (cp == null) {
             cp = Checkpoint.builder()
                     .milestoneId(milestoneId)
@@ -248,13 +231,10 @@ public class MilestoneController {
                     .build();
         }
 
-        // 2. LOGIC TOGGLE (BẬT/TẮT)
         if ("COMPLETED".equals(cp.getStatus())) {
-            // A. Nếu đang HOÀN THÀNH -> Cho phép HỦY (Undo)
             cp.setStatus("IN_PROGRESS");
             return new ApiResponse<>(1000, "Đã hủy trạng thái hoàn thành.", checkpointRepo.save(cp));
         } else {
-            // B. Nếu chưa hoàn thành -> Kiểm tra điều kiện để HOÀN THÀNH
             List<SubTask> tasks = subTaskRepository.findByMilestoneIdAndTeamId(milestoneId, teamId);
             
             if (tasks.isEmpty()) {
@@ -284,19 +264,15 @@ public class MilestoneController {
         cp.setScore(gradeReq.getScore());
         cp.setFeedback(gradeReq.getFeedback());
         
-        // --- LOGIC GỬI MAIL CHO SINH VIÊN ---
         try {
-            // Lấy tên nhóm đẹp
             String teamName = getTeamName(teamId); 
             
-            // Tìm email sinh viên (Vẫn hardcode student2 hoặc logic tìm leader của bạn)
             String studentUsername = "student2"; 
             ApiResponse<UserDTO> response = identityClient.getUser(studentUsername);
             
             if (response != null && response.getResult() != null) {
                 String emailSinhVien = response.getResult().getEmail();
                 
-                // Dùng teamName trong tiêu đề và nội dung
                 String subject = "📢 Kết quả chấm điểm cho " + teamName;
                 String content = "<h3>Giảng viên đã chấm điểm!</h3>" +
                                  "<p>Nhóm: <b>" + teamName + "</b></p>" + // Hiện tên nhóm
@@ -314,19 +290,15 @@ public class MilestoneController {
 
     @GetMapping("/class/{classId}/stats")
     public ApiResponse<Map<Long, Long>> getMilestoneStats(@PathVariable("classId") Long classId) {
-        // 1. Lấy tất cả milestone của lớp
         List<Milestone> milestones = milestoneService.getByClassId(classId);
         if (milestones.isEmpty()) {
             return new ApiResponse<>(1000, "Thành công", new HashMap<>());
         }
 
-        // 2. Lấy danh sách ID
         List<Long> ids = milestones.stream().map(Milestone::getId).collect(Collectors.toList());
 
-        // 3. Gọi Repo đếm
         List<Object[]> counts = checkpointRepo.countSubmissionsByMilestoneIds(ids);
 
-        // 4. Chuyển List<Object[]> thành Map<ID, Count>
         Map<Long, Long> stats = new HashMap<>();
         for (Object[] row : counts) {
             stats.put((Long) row[0], (Long) row[1]);

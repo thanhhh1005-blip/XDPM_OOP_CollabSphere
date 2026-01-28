@@ -12,11 +12,8 @@ import java.io.IOException;
 @Service
 public class NifiClient {
 
-    // Hàm này nhận file và tên endpoint (ví dụ: "classes", "subjects")
     public void sendFile(MultipartFile file, String endpoint) {
-        // Nếu chạy Docker thì dùng "http://nifi:8091"
-        // Nếu chạy Local thì dùng "http://localhost:8091"
-        String nifiUrl = "http://localhost:8091/contentListener/" + endpoint;
+        String nifiUrl = "http://localhost:8099/contentListener/" + endpoint;
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpPost uploadFile = new HttpPost(nifiUrl);

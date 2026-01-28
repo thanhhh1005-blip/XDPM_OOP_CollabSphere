@@ -14,20 +14,19 @@ public class Milestone {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title;       // Ví dụ: Giai đoạn 1 - Khởi tạo
+    private String title;      
     
     @Column(length = 1000)
-    private String description; // Ví dụ: Nộp tài liệu SRS...
+    private String description; 
 
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 
-    private Long classId;       // Cột mốc này thuộc về lớp nào
+    private Long classId;       
     
-    // Tiêu chí đánh giá (có thể lưu dạng JSON string hoặc text đơn giản)
     @Column(length = 2000)
     private String criteria; 
     
-    private String createdBy;   // Người tạo (Giảng viên)
+    private String createdBy; 
     private Integer weekNumber;
 }

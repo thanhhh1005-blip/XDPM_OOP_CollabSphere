@@ -42,10 +42,6 @@ public class ProjectPlanResponse {
         this.milestones = milestones;
     }
 
-    // ==========================
-    // INNER CLASS: MILESTONE
-    // (Định nghĩa cấu trúc của từng giai đoạn)
-    // ==========================
     public static class Milestone {
         
         @JsonProperty("phase_number")
@@ -58,7 +54,7 @@ public class ProjectPlanResponse {
         private String duration;
 
         @JsonProperty("description")
-        private String description; // Mô tả giai đoạn (nếu AI có trả về)
+        private String description;
 
         @JsonProperty("tasks")
         private List<String> tasks;

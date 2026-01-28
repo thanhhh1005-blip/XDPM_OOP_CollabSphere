@@ -17,7 +17,11 @@ const TeamCreate = () => {
   const [students, setStudents] = useState([]); // [{studentId, fullName, leaderUsed?}]
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [loadingStudents, setLoadingStudents] = useState(false);
-
+  // Logic kiểm tra xem sinh viên đã tham gia bất kỳ nhóm nào chưa
+const isStudentAlreadyInTeam = (student) => {
+  // Bạn có thể gộp tất cả các điều kiện backend trả về ở đây
+  return student.hasTeam || student.leaderUsed || student.isMember; 
+};
   // meta: projects
   const [projects, setProjects] = useState([]); // [{id,title,status,assigned}]
   const [loadingProjects, setLoadingProjects] = useState(false);
@@ -25,7 +29,7 @@ const TeamCreate = () => {
   // Auth
   const auth = useMemo(() => getAuthInfo() || {}, []);
   const role = auth.role;
-  const userId = auth.userId;
+  const userId = auth.username;
 
   const token =
     auth.token ||
@@ -33,14 +37,29 @@ const TeamCreate = () => {
     localStorage.getItem("token") ||
     localStorage.getItem("accessToken");
 
-  const headers = useMemo(
-    () => ({
-      "X-ROLE": role,
-      "X-USER-ID": userId,
-      Authorization: token ? `Bearer ${token}` : undefined,
-    }),
-    [role, userId, token]
-  );
+  const headers = useMemo(() => {
+  // Lấy auth info
+  const authInfo = getAuthInfo() || {};
+  const role = authInfo.role;
+  const userId = authInfo.username;
+  const token = authInfo.token || authInfo.accessToken || 
+                localStorage.getItem("token") || 
+                localStorage.getItem("accessToken");
+
+  // ❌ KHÔNG trả về null nữa - luôn trả về object
+  const finalHeaders = {
+    "X-ROLE": role || "",
+    "X-USER-ID": userId || "",
+  };
+
+  // Chỉ thêm Authorization nếu có token
+  if (token) {
+    finalHeaders.Authorization = `Bearer ${token}`;
+  }
+
+  console.log("📋 Headers được tạo:", finalHeaders);
+  return finalHeaders;
+}, [])
 
   // ===== API =====
   const GW = "http://localhost:8080";
@@ -53,23 +72,49 @@ const TeamCreate = () => {
   // 1. Load Classes
   // =========================
   useEffect(() => {
-    const loadClasses = async () => {
-      try {
-        setLoadingClasses(true);
-        const res = await axios.get(META_CLASSES_API, { headers });
-        // Xử lý an toàn dù API trả về mảng hay object
-        const data = Array.isArray(res.data) ? res.data : (res.data?.result || []);
-        setClasses(data);
-      } catch (e) {
-        console.error(e);
-        message.error("Không tải được danh sách lớp");
-      } finally {
-        setLoadingClasses(false);
+  const loadClasses = async () => {
+    try {
+      setLoadingClasses(true);
+      
+      console.log("🚀 Đang gọi API:", META_CLASSES_API);
+      console.log("📋 Với headers:", headers);
+      
+      const res = await axios.get(META_CLASSES_API, { headers });
+      
+      console.log("✅ Response nhận được:", res.data);
+      
+      // Xử lý response data
+      const data = Array.isArray(res.data) 
+        ? res.data 
+        : (res.data?.result || []);
+      
+      console.log("📊 Danh sách lớp đã parse:", data);
+      setClasses(data);
+      
+      if (data.length === 0) {
+        message.warning("Không tìm thấy lớp nào. Đảm bảo bạn đã đăng nhập với role LECTURER.");
       }
-    };
-    loadClasses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      
+    } catch (e) {
+      console.error("❌ Lỗi chi tiết:", e);
+      console.error("❌ Response lỗi:", e.response?.data);
+      console.error("❌ Status code:", e.response?.status);
+      
+      if (e.response?.status === 400) {
+        message.error("Headers không hợp lệ. Vui lòng đăng nhập lại.");
+      } else if (e.response?.status === 401) {
+        message.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+      } else {
+        message.error("Không tải được danh sách lớp: " + (e.message || "Lỗi không xác định"));
+      }
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
+
+  // Chỉ load khi component mount
+  loadClasses();
+}, []);
 
   // =========================
   // 2. Load Projects (Chuẩn hóa logic)
@@ -239,7 +284,7 @@ const TeamCreate = () => {
                   optionFilterProp="label"
                   options={classes.map((c) => ({
                     value: c.id,
-                    label: c.classCode,
+                    label: c.className ? `${c.classCode} - ${c.className}` : c.classCode,
                   }))}
                   onChange={onChangeClass}
                 />
@@ -254,11 +299,21 @@ const TeamCreate = () => {
                   disabled={!form.getFieldValue("classId")}
                   showSearch
                   optionFilterProp="label"
-                  options={students.map((s) => ({
-                    value: s.studentId,
-                    label: `${s.id} - ${s.fullName}`,
-                    disabled: !!s.leaderUsed,
-                  }))}
+                  options={students.map((s) => {
+                      // Logic tương tự: Đã có nhóm (dù vai trò gì) thì không được làm leader nhóm mới
+                      const isBusy = s.hasTeam || s.leaderUsed; 
+                      return {
+                          value: s.studentId,
+                          label: `${s.id || s.studentId} - ${s.fullName}`,
+                          disabled: isBusy, // 👈 Disable
+                      };
+                  })}
+                  optionRender={(option) => (
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <span>{option.label}</span>
+                          {option.data.disabled && <Tag color="default">Đã có nhóm</Tag>}
+                      </div>
+                  )}
                 />
               </Form.Item>
 
@@ -276,10 +331,29 @@ const TeamCreate = () => {
                   disabled={!form.getFieldValue("classId")}
                   showSearch
                   optionFilterProp="label"
-                  options={students.map((s) => ({
-                    value: s.studentId,
-                    label: `${s.id} - ${s.fullName || s.studentId}`,
-                  }))}
+                  // 👇 LOGIC QUAN TRỌNG Ở ĐÂY
+                  options={students.map((s) => {
+                      // Check xem sinh viên đã có nhóm chưa (dựa vào cờ backend trả về)
+                      // Nếu backend trả về leaderUsed và memberUsed riêng, hãy gộp lại:
+                      // const isBusy = s.leaderUsed || s.memberUsed || s.hasTeam;
+                      
+                      // Giả sử backend trả về field 'hasTeam' (đã bao gồm cả leader và member)
+                      const isBusy = s.hasTeam || s.leaderUsed; 
+
+                      return {
+                          value: s.studentId,
+                          label: `${s.id || s.studentId} - ${s.fullName}`,
+                          disabled: isBusy, // 👈 Disable nếu đã có nhóm
+                          isBusy: isBusy // Lưu prop này để dùng lúc render custom nếu cần
+                      };
+                  })}
+                  // 👇 (Tùy chọn) Custom hiển thị để người dùng biết tại sao bị mờ
+                  optionRender={(option) => (
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <span>{option.label}</span>
+                          {option.data.disabled && <Tag color="default">Đã có nhóm</Tag>}
+                      </div>
+                  )}
                 />
               </Form.Item>
 

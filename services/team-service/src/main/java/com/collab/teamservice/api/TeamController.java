@@ -8,6 +8,8 @@ import com.collab.teamservice.repo.TeamRepository;
 import com.collab.teamservice.api.dto.CreateTeamReq;
 import com.collab.teamservice.api.dto.TeamResponse;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -73,23 +75,28 @@ public class TeamController {
     return service.update(id, name, leaderId, memberIds);
   }
 
-  // API lấy danh sách team của sinh viên cụ thể
   @GetMapping("/student/{username}")
   public ApiResponse<List<TeamResponse>> getMyTeams(@PathVariable("username") String username) {
-      // Bọc ApiResponse cho đồng bộ
       return new ApiResponse<>(1000, "Danh sách team sinh viên", service.getTeamsByStudent(username));
   }
 
-  // GET /api/v1/teams/lecturer/{username}
   @GetMapping("/lecturer/{username}")
   public ApiResponse<List<TeamResponse>> getTeamsByLecturer(@PathVariable("username") String username) {
-      // Bọc ApiResponse cho đồng bộ
       return new ApiResponse<>(1000, "Danh sách team giảng viên", service.getTeamsByLecturer(username));
   }
 
-  // ✅ GIỮ LẠI HÀM MỚI NÀY (GET /api/v1/teams/class/{classId})
   @GetMapping("/class/{classId}")
   public ApiResponse<List<Team>> getTeamsByClass(@PathVariable("classId") Long classId) {
       return new ApiResponse<>(1000, "Danh sách Team của lớp", teamRepository.findByClassId(classId));
   }
+  @GetMapping("/{id}/name")
+  public ResponseEntity<String> getTeamName(@PathVariable String id) {
+      // THÊM DÒNG NÀY ĐỂ DEBUG
+      System.out.println(">>> TEAM-SERVICE ĐÃ NHẬN REQUEST LẤY TÊN ID: " + id);
+      
+      return teamRepository.findById(id)
+              .map(team -> ResponseEntity.ok(team.getName()))
+              .orElse(ResponseEntity.notFound().build());
+  }
+  
 }

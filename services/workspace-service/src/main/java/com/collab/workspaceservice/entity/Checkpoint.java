@@ -14,22 +14,22 @@ public class Checkpoint {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long milestoneId; // Thuộc về cột mốc nào
-    private String teamId;    // Nhóm nào nộp
+    private Long milestoneId; 
+    private String teamId;  
 
     @Column(columnDefinition = "TEXT")
-    private String submissionUrl; // Link nộp bài (Github, Docs...)
+    private String submissionUrl;
     
     @Column(columnDefinition = "TEXT")
-    private String note;          // Ghi chú của nhóm trưởng
+    private String note;          
 
-    // STATUS: PENDING, SUBMITTED, COMPLETED, LATE
+
     private String status; 
     
-    private LocalDateTime submittedAt; // Ngày nộp thực tế
+    private LocalDateTime submittedAt; 
     
-    private Double grade; // Điểm số giảng viên chấm (nếu có)
+    private Double grade; 
 
-    private Double score;      // Điểm số (VD: 8.5)
+    private Double score;     
     private String feedback;
 }

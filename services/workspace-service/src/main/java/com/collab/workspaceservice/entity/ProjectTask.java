@@ -13,13 +13,13 @@ public class ProjectTask {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title; // Tên công việc (VD: Tạo Database)
+    private String title; 
     
-    private String assignedTo; // Username của người làm (VD: student1)
+    private String assignedTo; 
     
-    private boolean isCompleted; // Trạng thái hoàn thành
+    private boolean isCompleted;
     
-    private Long milestoneId; // Thuộc về cột mốc nào
+    private Long milestoneId;
     
     private Long classId; 
 }

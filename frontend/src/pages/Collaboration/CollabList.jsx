@@ -65,7 +65,6 @@ const CollabList = () => {
 
             } catch (e) { 
                 console.error("Lỗi tải danh sách Collab:", e); 
-                // message.error("Không thể tải dữ liệu cộng tác");
             } finally {
                 setLoading(false);
             }
@@ -77,7 +76,6 @@ const CollabList = () => {
     }, [user.username, role]);
 
     const enterRoom = (type, id, name) => {
-        // type: 'TEAM' hoặc 'CLASS'
         navigate(`/collaboration/${type}_${id}?name=${name}`);
     };
 
@@ -95,7 +93,6 @@ const CollabList = () => {
                             description={
                                 <div>
                                     <Tag color="blue">{item.classCode || 'Dự án'}</Tag>
-                                    {/* Nếu muốn hiện thêm tên Leader hoặc số thành viên thì thêm ở đây */}
                                 </div>
                             }
                         />

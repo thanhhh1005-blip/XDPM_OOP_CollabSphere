@@ -13,7 +13,7 @@ import ResourcePage from './pages/Resource/ResourcePage';
 /* ===================== USER MANAGEMENT ===================== */
 import UserManagement from './pages/User/UserManagement';
 import UserProfile from './pages/User/UserProfile';
-
+import ClassSchedule from './pages/Education/ClassSchedule';
 // Các trang khác
 import AiPlanning from './pages/AI/AiPlanning';
 import WorkspaceList from './pages/Workspace/WorkspaceList';
@@ -42,34 +42,31 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Layout Chính (Sidebar + Navbar sẽ hiện ở đây) */}
         <Route element={<MainLayout />}>
-            
-            {/* 👇 Route của User */}
             <Route path="/users" element={<UserManagement />} />
             <Route path="/profile" element={<UserProfile />} />
-            
-            {/* 👇 Route Workspace & Education */}
             <Route path="/workspace" element={<WorkspaceList />} />
             <Route path="/workspace/:id" element={<TaskBoard />} />
             <Route path="/workspace/:id/class/:classId/board" element={<TaskBoard />} />
+            
             <Route path="/collaboration" element={<CollabList />} />
             <Route path="/collaboration/:roomId" element={<CollabPage />} />
-            <Route path="milestones" element={<MilestonePage />} />          {/* Dòng 1: Cho phép vào trang trắng */}
-            <Route path="milestones/:classId" element={<MilestonePage />} />   {/* Dòng 2: Cho phép vào trang với classId */}
+            <Route path="milestones" element={<MilestonePage />} />          
+            <Route path="milestones/:classId" element={<MilestonePage />} />   
             <Route path="/ai-planning" element={<AiPlanning />} />
             <Route path="/classes" element={<ClassManager />} />
             <Route path="/subjects" element={<SubjectManager />} />
 
-            {/* 👇 Route team */}
             <Route path="/resources" element={<ResourcePage />} />
-            {/* <Route path="/collaborations/*" element={<CollaborationPage />} /> */}
-            <Route path="/projects" element={<ProjectList />} />   {/* ✅ ADD */}
-            <Route path="/projects/new" element={<ProjectForm />} /> {/* ✅ ADD */}
+            <Route path="/projects" element={<ProjectList />} />  
+            <Route path="/projects/new" element={<ProjectForm />} /> 
             <Route path="/teams" element={<TeamList />} />
             <Route path="/teams/new" element={<TeamCreate />} />
             <Route path="/teams/:id" element={<TeamDetail />} />
             <Route path="/teams/:id/edit" element={<TeamEdit />} />
+            <Route path="/schedule/:classId" element={<ClassSchedule />} />
+            <Route path="/schedule" element={<ClassSchedule />} />
+            <Route path="/education/class/:classId/schedule" element={<ClassSchedule />} />
         </Route>
 
         {/* ===== Fallback (Trang 404 hoặc về Login) ===== */}

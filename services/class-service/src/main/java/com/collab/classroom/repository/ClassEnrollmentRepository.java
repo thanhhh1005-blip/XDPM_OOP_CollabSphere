@@ -13,10 +13,9 @@ public interface ClassEnrollmentRepository extends JpaRepository<ClassEnrollment
     // 1. Kiểm tra tồn tại
     boolean existsByClassIdAndStudentId(Long classId, String studentId);
 
-    // 2. Lấy danh sách (Hỗ trợ hàm getStudentsByClass bị thiếu)
+    // 2. Lấy danh sách 
     List<ClassEnrollment> findByClassId(Long classId);
 
-    // 3. 👇 HÀM QUAN TRỌNG ĐỂ XÓA (Tìm bản ghi để Service gọi delete())
     Optional<ClassEnrollment> findByClassIdAndStudentId(Long classId, String studentId);
 
     List<ClassEnrollment> findByStudentId(String studentId);

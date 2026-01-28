@@ -4,22 +4,21 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ai_generation_logs") // 1. Trỏ vào bảng DB thật
+@Table(name = "ai_generation_logs")
 public class AiGenerationLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 2. Map cột 'request_content' -> thành biến 'question' (Frontend cần tên này)
+   
     @Column(name = "request_content", columnDefinition = "TEXT")
     private String question; 
 
-    // 3. Map cột 'json_response' -> thành biến 'answer' (Frontend cần tên này)
+
     @Column(name = "json_response", columnDefinition = "LONGTEXT") 
     private String answer;   
 
-    // 4. Map cột 'created_at' -> thành biến 'timestamp' (Frontend cần tên này)
     @Column(name = "created_at")
     private LocalDateTime timestamp;
 

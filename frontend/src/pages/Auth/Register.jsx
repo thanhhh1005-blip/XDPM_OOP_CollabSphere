@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { register, loginWithGoogle } from '../../services/authService'; // 👈 Import thêm loginWithGoogle
+import { register, loginWithGoogle } from '../../services/authService';
 
 // 👇 IMPORT FIREBASE & PROVIDER
 import { auth } from '../../configs/firebase';
@@ -263,7 +263,6 @@ const Register = () => {
                  <GoogleIcon />
                  <span>Đăng ký bằng Google</span>
               </button>
-              {/* 👆 KẾT THÚC PHẦN NÚT GOOGLE 👆 */}
 
 
               {/* Login Link */}

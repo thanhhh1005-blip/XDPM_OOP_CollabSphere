@@ -13,16 +13,13 @@ public class AuthenticationRequestInterceptor implements RequestInterceptor {
 
     @Override
     public void apply(RequestTemplate template) {
-        // 1. Lấy thông tin request hiện tại (đang nằm trong Thread hiện tại)
         ServletRequestAttributes attributes = 
             (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         
         if (attributes != null) {
             HttpServletRequest request = attributes.getRequest();
-            // 2. Lấy Header "Authorization" (chứa Bearer Token)
             String authHeader = request.getHeader("Authorization");
 
-            // 3. Nếu có Token, nhét nó vào Header của Feign Client
             if (StringUtils.hasText(authHeader)) {
                 template.header("Authorization", authHeader);
             }

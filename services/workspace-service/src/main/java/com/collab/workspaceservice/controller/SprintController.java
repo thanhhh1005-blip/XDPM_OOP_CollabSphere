@@ -40,7 +40,6 @@ public class SprintController {
         return new ApiResponse<>(1000, "List sprints", sprintRepository.findByProjectId(projectId));
     }
 
-    // --- ĐÃ XÓA HÀM CŨ TẠI ĐÂY ĐỂ TRÁNH LỖI ---
 
     @GetMapping
     public ApiResponse<Iterable<Sprint>> getAllSprints() {
@@ -55,7 +54,6 @@ public class SprintController {
     @DeleteMapping("/{id}")
     @Transactional
     public ApiResponse<Void> deleteSprint(@PathVariable("id") Long id) {
-        // Giải phóng các task đang thuộc sprint này về lại Backlog
         List<Task> tasks = taskRepository.findBySprintId(id);
         for (Task t : tasks) {
             t.setSprint(null);
@@ -65,10 +63,9 @@ public class SprintController {
         return new ApiResponse<>(1000, "Đã xóa Sprint thành công", null);
     }
 
-    // ✅ GIỮ LẠI HÀM MỚI NÀY (Hỗ trợ lọc theo classId và teamId)
     @GetMapping("/by-workspace/{workspaceId}")
     public ApiResponse<List<Sprint>> getSprintsByWorkspace(
-            @PathVariable("workspaceId") Long workspaceId, // <--- THÊM ("workspaceId") VÀO ĐÂY
+            @PathVariable("workspaceId") Long workspaceId,
             @RequestParam(name = "classId", required = false) Long classId,
             @RequestParam(name = "teamId", required = false) String teamId
     ) {
@@ -79,7 +76,6 @@ public class SprintController {
         } else if (teamId != null && !teamId.isEmpty()) {
             sprints = sprintRepository.findByWorkspaceIdAndTeamId(workspaceId, teamId);
         } else {
-            // Trường hợp không có cả 2 -> Trả về rỗng
         }
 
         return new ApiResponse<>(1000, "Success", sprints);

@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import lombok.extern.slf4j.Slf4j;
 
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/classes")
 @RequiredArgsConstructor
+@Slf4j
 public class ClassRoomController {
 
     private final ClassRoomService classRoomService;
@@ -110,12 +112,12 @@ public class ClassRoomController {
     }
 
     @GetMapping("/teacher/{username}/ids")
-    public List<Long> getClassIds(@PathVariable("username") String username) {
-        return classRoomService.getClassesByTeacher(username)
-                .stream()
-                .map(dto -> dto.getId())
-                .toList();
-    }
+public List<Long> getClassIds(@PathVariable("username") String username) {
+    return classRoomService.getClassesByTeacher(username)
+            .stream()
+            .map(dto -> dto.getId())
+            .toList();
+}
 
     @GetMapping("/{classId}/workspace-members")
     public ResponseEntity<List<ClassMemberDTO>> getWorkspaceMembers(@PathVariable("classId") Long classId) {
@@ -124,8 +126,8 @@ public class ClassRoomController {
         
         List<ClassMemberDTO> members = new ArrayList<>();
 
-        // 2. Thêm Giảng viên vào list (Role: TEACHER)
-        // Lưu ý: classroom.getTeacherId() trả về String (username hoặc id)
+        // 2. Thêm Giảng viên vào list 
+
         members.add(new ClassMemberDTO(classroom.getTeacherId(), "TEACHER", "Giảng viên (" + classroom.getTeacherId() + ")"));
 
         // 3. Lấy danh sách Sinh viên
@@ -136,4 +138,35 @@ public class ClassRoomController {
 
         return ResponseEntity.ok(members);
     }
+    @GetMapping("/my-list")
+    public ResponseEntity<List<ClassroomDTO>> getMyClassList(
+            @RequestHeader(value = "X-USER-ID", required = false) String userId,
+            @RequestHeader(value = "X-ROLE", required = false) String role
+    ) {
+        log.info("🔍 /my-list được gọi - Role: {}, UserId: {}", role, userId);
+        
+        if (userId == null || userId.isBlank()) {
+            log.error("❌ X-USER-ID bị thiếu hoặc rỗng");
+            return ResponseEntity.badRequest().build();
+        }
+        
+        if (role == null || role.isBlank()) {
+            log.error("❌ X-ROLE bị thiếu hoặc rỗng");
+            return ResponseEntity.badRequest().build();
+        }
+        
+        if ("LECTURER".equalsIgnoreCase(role)) {
+            List<ClassroomDTO> classes = classRoomService.getClassesByTeacher(userId);
+            log.info("✅ Tìm thấy {} lớp cho giảng viên {}", classes.size(), userId);
+            return ResponseEntity.ok(classes);
+        }
+        
+        if ("ADMIN".equalsIgnoreCase(role)) {
+            return ResponseEntity.ok(classRoomService.getAllClasses());
+        }
+
+        log.warn("⚠️ Role không được hỗ trợ: {}", role);
+        return ResponseEntity.ok(List.of());
+    }
+    
 }

@@ -20,7 +20,7 @@ public class TaskController {
     @Autowired
     private TaskRepository taskRepository;
 
-    @Autowired // <--- THÊM CÁI NÀY
+    @Autowired 
     private SprintRepository sprintRepository;
 
     @Autowired
@@ -37,32 +37,29 @@ public class TaskController {
         task.setWorkspace(ws);
         
         if (teamId != null) task.setTeamId(teamId);
-        if (classId != null) task.setClassId(classId); // Lưu UUID dạng chuỗi
+        if (classId != null) task.setClassId(classId);
         task.setStatus("BACKLOG");
         return new ApiResponse<>(1000, "Create success", taskRepository.save(task));
     }
     
-    // API quan trọng nhất: Cập nhật Status VÀ Sprint
     @PutMapping("/{taskId}/status")
     public ApiResponse<Task> updateTaskStatus(
             @PathVariable("taskId") Long taskId, 
             @RequestParam("status") String status,
-            @RequestParam(name = "sprintId", required = false) Long sprintId // <--- THÊM THAM SỐ NÀY
+            @RequestParam(name = "sprintId", required = false) Long sprintId 
     ) {
         Task task = taskRepository.findById(taskId).orElse(null);
         if (task == null) {
             return new ApiResponse<>(1000, "Task not found", null);
         }
         
-        // 1. Cập nhật trạng thái
         task.setStatus(status);
         
-        // 2. Cập nhật Sprint (ĐÂY LÀ ĐOẠN EM ĐANG THIẾU)
         if (sprintId != null) {
             Sprint sprint = sprintRepository.findById(sprintId).orElse(null);
             task.setSprint(sprint);
         } else if ("BACKLOG".equals(status)) {
-            task.setSprint(null); // Về kho thì xóa sprint
+            task.setSprint(null);
         }
 
         return new ApiResponse<>(1000, "Status updated", taskRepository.save(task));
@@ -72,13 +69,12 @@ public class TaskController {
     @Transactional
     public ApiResponse<Task> assignTask(
         @PathVariable("id") Long id,
-        @RequestParam("assigneeId") Long assigneeId
+        @RequestParam("assigneeId") String assigneeId
     ) {
         Task task = taskRepository.findById(id).orElseThrow();
         task.setAssigneeId(assigneeId);
         return new ApiResponse<>(1000, "Assigned successfully", taskRepository.save(task));
     }
-    // API lấy Task (Hỗ trợ lọc)
     @GetMapping
     public ApiResponse<Iterable<Task>> getTasks(
             @RequestParam("workspaceId") Long workspaceId,

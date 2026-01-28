@@ -10,10 +10,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserEventListener {
 
-    /**
-     * Dùng cấu hình 'bindings' để: 
-     * Nếu chưa có Queue, chưa có Exchange, chưa có Binding -> Tự tạo hết luôn!
-     */
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(value = "user_workspace_queue", durable = "true"),
             exchange = @Exchange(value = "user_exchange", type = "topic"),
@@ -23,6 +19,5 @@ public class UserEventListener {
         System.out.println(">>> WORKSPACE SERVICE: Nhận tin nhắn đồng bộ!");
         System.out.println("Đang xử lý User: " + userDto.getFullName());
         
-        // Logic xử lý tiếp theo của em...
     }
 }

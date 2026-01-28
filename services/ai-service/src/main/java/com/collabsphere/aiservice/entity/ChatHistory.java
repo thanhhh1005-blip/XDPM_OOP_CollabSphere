@@ -10,10 +10,10 @@ public class ChatHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "TEXT") // Dùng TEXT để lưu câu hỏi dài
+    @Column(columnDefinition = "TEXT") 
     private String question;
 
-    @Column(columnDefinition = "TEXT") // Dùng TEXT để lưu câu trả lời dài
+    @Column(columnDefinition = "TEXT") 
     private String answer;
 
     private LocalDateTime timestamp;
@@ -33,6 +33,6 @@ public class ChatHistory {
 
     @PrePersist
     protected void onCreate() {
-        timestamp = LocalDateTime.now(); // Tự động lấy giờ hiện tại
+        timestamp = LocalDateTime.now();
     }
 }

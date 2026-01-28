@@ -6,10 +6,8 @@ public class MilestoneResponse {
     private String projectName;
     private List<Milestone> milestones;
 
-    // Constructor rỗng
     public MilestoneResponse() {}
 
-    // Inner class (Class con)
     public static class Milestone {
         private String title;
         private String description;

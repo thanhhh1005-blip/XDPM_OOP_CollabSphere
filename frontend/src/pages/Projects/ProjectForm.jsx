@@ -11,8 +11,8 @@ export default function ProjectForm() {
 
   // --- STATE QUẢN LÝ DỮ LIỆU ---
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState(""); // Mô tả ngắn
-  const [syllabusContent, setSyllabusContent] = useState(""); // Nội dung đề cương
+  const [description, setDescription] = useState(""); 
+  const [syllabusContent, setSyllabusContent] = useState(""); 
 
   // --- STATE QUẢN LÝ LỖI (VALIDATION) ---
   const [errors, setErrors] = useState({

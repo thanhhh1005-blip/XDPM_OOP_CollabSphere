@@ -30,7 +30,6 @@ export default function ProjectDetail() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, mockRole, mockUserId])
 
   return (

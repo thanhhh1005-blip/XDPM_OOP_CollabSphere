@@ -9,8 +9,8 @@ import org.springframework.context.annotation.Import;
 import com.collab.shared.config.SharedConfig;
 
 @SpringBootApplication
-@EnableFeignClients // 2. QUAN TRỌNG: Bắt buộc phải có dòng này để kích hoạt SubjectClient
-@ComponentScan(basePackages = {"com.collab.classroom", "com.collab.shared"}) // 3. Quét thêm module shared cho chắc chắn
+@EnableFeignClients 
+@ComponentScan(basePackages = {"com.collab.classroom", "com.collab.shared"})
 @Import(SharedConfig.class)
 public class ClassServiceApplication {
 
@@ -18,5 +18,4 @@ public class ClassServiceApplication {
         SpringApplication.run(ClassServiceApplication.class, args);
     }
 
-    // Bạn có thể xóa Bean RestTemplate nếu không dùng, vì mình đã dùng Feign Client rồi
 }

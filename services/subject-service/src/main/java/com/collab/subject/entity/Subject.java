@@ -17,17 +17,17 @@ public class Subject {
     private Long id;
 
     @Column(name = "subject_code", unique = true, nullable = false)
-    private String code; // Mã môn (VD: SE104)
+    private String code; 
 
     @Column(nullable = false)
-    private String name; // Tên môn học
+    private String name; 
 
-    private int credits; // Số tín chỉ
+    private int credits; 
 
-    @Column(columnDefinition = "TEXT") // Để lưu mô tả dài
+    @Column(columnDefinition = "TEXT") 
     private String description;
 
     @Builder.Default
     @Column(name = "is_active")
-    private Boolean isActive = true; // Mặc định môn học mới tạo sẽ Active
+    private Boolean isActive = true; 
 }

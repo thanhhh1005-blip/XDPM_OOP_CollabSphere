@@ -18,23 +18,20 @@ public class SubTaskController {
 
     private final SubTaskRepository subTaskRepo;
 
-    // 1. Lấy danh sách (SỬA LẠI: Thêm "milestoneId" và "teamId")
     @GetMapping
     public ApiResponse<List<SubTask>> getSubTasks(
-            @RequestParam("milestoneId") Long milestoneId, // 👈 Thêm ("milestoneId")
-            @RequestParam("teamId") String teamId          // 👈 Thêm ("teamId")
+            @RequestParam("milestoneId") Long milestoneId, 
+            @RequestParam("teamId") String teamId          
     ) {
         return new ApiResponse<>(1000, "Thành công", subTaskRepo.findByMilestoneIdAndTeamId(milestoneId, teamId));
     }
 
-    // 2. Tạo Checkpoint mới
     @PostMapping
     public ApiResponse<SubTask> create(@RequestBody SubTask req) {
         req.setCompleted(false);
         return new ApiResponse<>(1000, "Tạo checkpoint thành công", subTaskRepo.save(req));
     }
 
-    // 3. Đánh dấu hoàn thành (SỬA LẠI: Thêm "id")
     @PutMapping("/{id}/toggle")
     public ApiResponse<SubTask> toggle(@PathVariable("id") Long id) { // 👈 Thêm ("id")
         SubTask task = subTaskRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy"));
@@ -42,9 +39,8 @@ public class SubTaskController {
         return new ApiResponse<>(1000, "Đã cập nhật trạng thái", subTaskRepo.save(task));
     }
 
-    // 4. Xóa Checkpoint (SỬA LẠI: Thêm "id")
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@PathVariable("id") Long id) { // 👈 Thêm ("id")
+    public ApiResponse<Void> delete(@PathVariable("id") Long id) { 
         subTaskRepo.deleteById(id);
         return new ApiResponse<>(1000, "Đã xóa", null);
     }
@@ -64,7 +60,6 @@ public class SubTaskController {
             long total = tasks.size();
             long completed = tasks.stream().filter(SubTask::isCompleted).count();
             
-            // Công thức: (Số task xong / Tổng số task được giao) * 100
             double percent = total == 0 ? 0 : ((double) completed / total) * 100;
             contributionMap.put(user, Math.round(percent * 10.0) / 10.0); // Làm tròn 1 số lẻ
         });
@@ -72,15 +67,14 @@ public class SubTaskController {
         return new ApiResponse<>(1000, "Tính toán thành công", contributionMap);
     }
 
-    // ✅ API: GIẢNG VIÊN CHẤM ĐIỂM SUBTASK (CHECKPOINT NHỎ)
     @PutMapping("/{id}/grade")
     public ApiResponse<SubTask> gradeSubTask(
             @PathVariable("id") Long id,
-            @RequestBody SubTask gradeReq // Gửi { score: 10, comment: "Làm kỹ" }
+            @RequestBody SubTask gradeReq 
     ) {
         SubTask task = subTaskRepo.findById(id).orElseThrow(() -> new RuntimeException("Task not found"));
         task.setScore(gradeReq.getScore());
-        task.setComment(gradeReq.getComment()); // Dùng field 'comment' thay vì feedback cho subtask
+        task.setComment(gradeReq.getComment()); 
         return new ApiResponse<>(1000, "Đã chấm điểm task", subTaskRepo.save(task));
     }
 }

@@ -24,13 +24,13 @@ public class RabbitMQConfig {
         return new Queue(USER_QUEUE, true); // true = bền vững, không mất khi restart
     }
 
-    // 3. Nối Thùng thư vào Bưu điện (Binding)
+
     @Bean
     public Binding binding(Queue userQueue, TopicExchange userExchange) {
         return BindingBuilder.bind(userQueue).to(userExchange).with(USER_ROUTING_KEY);
     }
 
-    // 4. Quan trọng: Tự động chuyển đổi Object sang JSON để gửi đi
+    
     @Bean
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();

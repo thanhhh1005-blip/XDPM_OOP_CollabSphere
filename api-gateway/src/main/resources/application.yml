@@ -32,7 +32,7 @@ spring:
           predicates:
             - Path=/ws/**
         
-        # 3. Evaluation (8083) - Sửa host thành localhost
+        # 3. Evaluation (8083) 
         - id: evaluation-service
           uri: http://localhost:8083 
           predicates:
@@ -42,7 +42,7 @@ spring:
         - id: class-service
           uri: http://localhost:8084
           predicates:
-            - Path=/api/classes/** 
+            - Path=/api/classes/**, /api/schedules/**
 
         # 5. Subject (8085)
         - id: subject-service
@@ -56,7 +56,7 @@ spring:
           predicates:
             - Path=/api/identity/**,/api/users/**
           filters:
-            - StripPrefix=2  # 👈 
+            - StripPrefix=2  
 
         # 7. AI Service (8087)
         - id: ai-service
@@ -64,7 +64,7 @@ spring:
           predicates:
             - Path=/api/ai/**
 
-        # 8. Resource Service (8088) - THÊM MỚI CÁI NÀY
+        # 8. Resource Service (8088) 
         - id: resource-service
           uri: http://localhost:8088
           predicates:
@@ -88,9 +88,8 @@ spring:
         - id: collaboration-service
           uri: http://localhost:8090
           predicates:
-            - Path=/api/collab/**  # <-- Sửa từ 'collaborations' thành 'collab' cho khớp với Controller
-
-        # 👇 THÊM ĐOẠN NÀY ĐỂ VẼ BẢNG TRẮNG ĐƯỢC 👇
+            - Path=/api/collab/** 
+            
         - id: collab-websocket
           uri: ws://localhost:8090
           predicates:

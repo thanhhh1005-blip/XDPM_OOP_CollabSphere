@@ -17,8 +17,6 @@ public class RabbitMQSender {
         message.put("to", toEmail);
         message.put("subject", subject);
         message.put("body", body);
-
-        // Bắn tin nhắn vào hàng đợi "email_queue"
         rabbitTemplate.convertAndSend("notification.queue", message);
         System.out.println("🚀 Đã đẩy yêu cầu gửi mail tới RabbitMQ: " + toEmail);
     }

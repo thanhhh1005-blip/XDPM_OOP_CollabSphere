@@ -10,7 +10,7 @@ const WorkspaceList = () => {
     const navigate = useNavigate();
     // Lấy thông tin user từ localStorage
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const role = user.role || (user.roles && user.roles[0]); // Lấy role (LECTURER/STUDENT)
+    const role = user.role || (user.roles && user.roles[0]);
 
     const [loading, setLoading] = useState(false);
     
@@ -18,7 +18,7 @@ const WorkspaceList = () => {
     const [myClasses, setMyClasses] = useState([]);
     const [classMap, setClassMap] = useState({});
 
-    // API Meta: Lấy map tên lớp (để hiển thị tên lớp đẹp hơn)
+    
     const fetchClassesMap = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -50,7 +50,6 @@ const WorkspaceList = () => {
                 }
 
                 const resClass = await axios.get(classUrl, { headers });
-                // Lưu danh sách lớp vào biến tạm để dùng ngay bên dưới
                 const classesData = resClass.data || []; 
                 setMyClasses(classesData);
 
@@ -58,17 +57,14 @@ const WorkspaceList = () => {
                 if (role === 'LECTURER' || role === 'TEACHER') {
                     // ==> LOGIC CHO GIẢNG VIÊN: Lấy tất cả team của các lớp mình dạy
                     if (classesData.length > 0) {
-                        // Tạo một mảng các Promise để gọi API song song cho nhanh
                         const teamPromises = classesData.map(cls => 
                             axios.get(`http://localhost:8080/api/v1/teams/class/${cls.id}`, { headers })
                                  .then(res => res.data.result || []) // Giả sử backend trả về ApiResponse chuẩn
                                  .catch(() => []) // Nếu lỗi lớp nào thì bỏ qua lớp đó, không sập app
                         );
 
-                        // Chờ tất cả API chạy xong
                         const teamsArrays = await Promise.all(teamPromises);
                         
-                        // Gộp các mảng con thành 1 mảng lớn (flat)
                         const allTeams = teamsArrays.flat();
                         setMyTeams(allTeams);
                     } else {
@@ -121,9 +117,7 @@ const WorkspaceList = () => {
                 }
 
             } else {
-                // Nếu chưa có workspace (lần đầu), gọi API tạo mới luôn (Auto-create logic)
                 message.warning("Đang khởi tạo không gian làm việc...");
-                // Bạn có thể thêm logic gọi API create workspace ở đây nếu backend chưa tự tạo
             }
         } catch (e) {
             console.error("Lỗi kết nối Workspace:", e);

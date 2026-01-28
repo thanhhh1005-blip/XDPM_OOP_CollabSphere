@@ -10,17 +10,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/ai/milestones") // 👈 Khớp với Frontend
+@RequestMapping("/api/ai/milestones") 
 @RequiredArgsConstructor
 public class AiMilestoneController {
 
     private final MilestoneService milestoneService;
 
-    // API: POST /generate-and-save
     @PostMapping("/generate-and-save")
     public ApiResponse<List<Milestone>> generateAndSave(@RequestBody AiGenerateRequest request) {
         
-        // Gọi Service xử lý
         List<Milestone> result = milestoneService.generateFromSyllabus(
                 request.getClassId(),
                 request.getSyllabusContent(),

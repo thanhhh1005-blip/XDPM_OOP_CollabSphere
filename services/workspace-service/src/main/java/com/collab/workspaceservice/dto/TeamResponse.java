@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TeamResponse {
     private String id;
-    private String name; // Chúng ta cần nhất cái này
+    private String name; 
     private String leaderId;
 }

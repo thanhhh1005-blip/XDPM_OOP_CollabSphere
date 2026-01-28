@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { message } from "antd"; // Giữ lại message để thông báo
+import { message } from "antd";
 
 import { login, loginWithGoogle } from '../../services/authService';
 
@@ -68,7 +68,7 @@ const Login = () => {
             console.log("User Info:", userToStore);
         }
         
-        navigate("/workspace");
+        navigate("/profile");
       } else {
         setError("Không nhận được token xác thực.");
       }

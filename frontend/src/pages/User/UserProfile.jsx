@@ -14,7 +14,7 @@ const UserProfile = () => {
         email: '',
         fullName: '',
         avatar: 'https://i.pravatar.cc/150?u=default',
-        role: '' // Role sẽ được hiển thị trên thẻ
+        role: ''
     });
 
     const [passData, setPassData] = useState({ old: '', new: '', confirm: '' });
@@ -48,7 +48,6 @@ const UserProfile = () => {
         setLoading(true);
         try {
             await updateProfile(user.id, { 
-                // Không gửi username lên nữa
                 fullName: user.fullName, 
                 email: user.email 
             });

@@ -7,6 +7,5 @@ import java.util.List;
 
 @Repository
 public interface MilestoneRepository extends JpaRepository<Milestone, Long> {
-    // Lấy danh sách cột mốc của 1 lớp, sắp xếp theo ngày kết thúc
     List<Milestone> findByClassIdOrderByEndDateAsc(Long classId);
 }

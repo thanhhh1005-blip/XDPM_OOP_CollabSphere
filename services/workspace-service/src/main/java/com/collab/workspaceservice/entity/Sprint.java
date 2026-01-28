@@ -24,12 +24,10 @@ public class Sprint {
     @JsonIgnore
     private Milestone milestone;
 
-    // --- SỬA Ở ĐÂY ---
-    // Bỏ "nullable = false" đi. 
-    // Lý do: Sprint của Team có thể không cần lưu classId trực tiếp (vì đã link qua Workspace -> Team -> Class)
+    
     @Column(name = "class_id") 
     private Long classId; 
-    // -----------------
+  
 
     @Column(name = "team_id", length = 36)
     private String teamId;

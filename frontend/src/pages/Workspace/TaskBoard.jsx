@@ -48,7 +48,6 @@ const TaskBoard = () => {
 
       // A. XỬ LÝ ID (Lấy Team ID nếu đang ở chế độ Nhóm)
       if (!isClassMode) {
-          // Nếu là chế độ TEAM: Cần lấy thông tin Workspace để tìm teamId
           const wsRes = await axios.get(`${API_BASE}/workspaces/${workspaceId}`, config);
           teamIdToUse = wsRes.data.result?.teamId;
           
@@ -58,30 +57,23 @@ const TaskBoard = () => {
       }
 
       // B. LẤY SPRINTS (ĐÃ SỬA: Tách biệt Sprint Lớp & Sprint Team)
-      // -----------------------------------------------------------
       let sprintUrl = `${API_BASE}/sprints/by-workspace/${workspaceId}`;
 
       // Logic ghép tham số:
       if (isClassMode) {
-          // 1. Nếu đang ở LỚP -> Gửi classId
           sprintUrl += `?classId=${classId}`;
       } else if (teamIdToUse) {
-          // 2. Nếu đang ở NHÓM -> Gửi teamId (vừa lấy được ở bước A)
           sprintUrl += `?teamId=${teamIdToUse}`;
       }
 
-      // Gọi API Sprint với URL đã lọc
       const sprRes = await axios.get(sprintUrl, config);
       setSprints(sprRes.data.result || []);
 
-      // Logic chọn sprint mặc định
       if (sprRes.data.result?.length > 0) {
-          // Nếu chưa chọn sprint nào thì chọn cái đầu tiên
           if (!selectedSprintId) {
              setSelectedSprintId(sprRes.data.result[0].id);
           }
       } else {
-          // Nếu không có sprint nào -> Reset về null
           setSelectedSprintId(null);
       }
       // -----------------------------------------------------------
@@ -89,11 +81,9 @@ const TaskBoard = () => {
 
       // C. Lấy Members (Logic rẽ nhánh như cũ)
       if (isClassMode) {
-          // API LẤY THÀNH VIÊN LỚP (GV + SV)
           const memRes = await axios.get(`${API_CLASS}/${classId}/workspace-members`, config);
           setMembers(memRes.data.result || memRes.data || []);
       } else if (teamIdToUse) {
-          // API LẤY THÀNH VIÊN TEAM
           const memRes = await axios.get(`http://localhost:8080/api/v1/teams/${teamIdToUse}/members`, config);
           setMembers(memRes.data.result || memRes.data || []);
       }
@@ -120,7 +110,6 @@ const TaskBoard = () => {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // --- 2. XỬ LÝ SPRINT ---
-  // --- 2. XỬ LÝ SPRINT (ĐÃ SỬA LỖI 500) ---
   const handleCreateSprint = async () => {
     try {
         const payload = { 
@@ -132,11 +121,11 @@ const TaskBoard = () => {
         if (isClassMode && classId) {
             // Tạo cho LỚP
             payload.classId = classId;
-            payload.teamId = null; // Đảm bảo teamId rỗng
+            payload.teamId = null; 
         } else if (!isClassMode && currentTeamId) {
             // Tạo cho NHÓM
             payload.teamId = currentTeamId;
-            payload.classId = null; // Đảm bảo classId rỗng
+            payload.classId = null; 
         } else {
             message.error("Không xác định được ngữ cảnh (Lớp/Team) để tạo Sprint");
             return;
@@ -165,7 +154,6 @@ const TaskBoard = () => {
 
   // --- 3. XỬ LÝ TASK ---
   const handleCreateTask = async () => {
-    // Validate trước khi tạo
     if (!isClassMode && !currentTeamId) {
         message.error("Lỗi: Không tìm thấy Team ID"); return;
     }
@@ -173,7 +161,6 @@ const TaskBoard = () => {
     try {
       let createUrl = `${API_BASE}/tasks?workspaceId=${workspaceId}`;
       
-      // Ghép tham số tùy theo chế độ
       if (isClassMode) {
           createUrl += `&classId=${classId}`;
       } else {
@@ -200,14 +187,16 @@ const TaskBoard = () => {
     } catch (e) { message.error("Lỗi cập nhật"); }
   };
 
-  const handleAssignUser = async (userId) => {
+const handleAssignUser = async (userId) => {
     try {
         await axios.put(`${API_BASE}/tasks/${selectedTask.id}/assign?assigneeId=${userId}`, {}, config);
         message.success("Đã giao việc thành công!");
         setIsAssignModalOpen(false);
         fetchData();
-    } catch (e) { message.error("Lỗi giao việc"); }
-  };
+    } catch (e) { 
+        message.error("Lỗi giao việc"); 
+    }
+};
 
   // --- RENDER ---
   const renderColumn = (title, status, color, isBacklog = false) => {

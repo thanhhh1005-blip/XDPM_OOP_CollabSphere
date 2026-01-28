@@ -42,8 +42,8 @@ public class TeamMetaController {
 
     return students.stream()
         .map(s -> {
-          Long enrollId = s.id();       // id enrollment
-          String sid = s.studentId();   // sv011...
+          Long enrollId = s.id();     
+          String sid = s.studentId();   
 
           String fullName = null;
           try {
@@ -53,7 +53,6 @@ public class TeamMetaController {
 
           boolean leaderUsed = usedLeaders.contains(sid);
 
-          // ✅ ĐÚNG 4 FIELD, ĐÚNG THỨ TỰ
           return new StudentOption(enrollId, sid, fullName, leaderUsed);
         })
         .toList();

@@ -10,17 +10,15 @@ import {
     removeStudentFromClass 
 } from '../../services/classService'; 
 import { getAllSubjects } from '../../services/subjectService';
-
-// Import hàm từ UserService
 import { getLecturers, getStudents } from '../../services/userService'; 
 
 const ClassManager = () => {
     // --- 0. LẤY ROLE NGƯỜI DÙNG ---
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const isLecturer = user.role === 'LECTURER'; // true nếu là Giảng viên
-    console.log(">>> CHECK ROLE:", user.role, "| isLecturer:", isLecturer); // <--- THÊM DÒNG NÀY
+    const isLecturer = user.role === 'LECTURER'; 
+    console.log(">>> CHECK ROLE:", user.role, "| isLecturer:", isLecturer); 
     console.log("FULL USER INFO:", user);
-    const currentUsername = user.username || user.sub; // Đảm bảo lấy đúng username
+    const currentUsername = user.username || user.sub; 
 
 
     // --- STATE DỮ LIỆU ---
@@ -66,7 +64,7 @@ const ClassManager = () => {
             let classPromise;
             
             if (isLecturer) {
-                // 2. Dùng 'config' vừa định nghĩa ở trên vào đây
+
                 console.log(">>> Gọi API Lọc theo GV");
                 classPromise = axios.get(`http://localhost:8080/api/classes/teacher/${currentUsername}`, config)
                                     .then(res => res.data); 
@@ -75,7 +73,6 @@ const ClassManager = () => {
                 classPromise = getAllClasses();
             }
 
-            // Chạy song song các API khác
             const [classData, subjectData, lecturerData, studentData] = await Promise.all([
                 classPromise,
                 getAllSubjects(),
@@ -136,10 +133,8 @@ const ClassManager = () => {
         }
     };
 
-    // --- Sửa tại ClassManager.jsx ---
 
 const handleAddStudent = async (values) => {
-    // values.studentIds lúc này phải là ['sv1', 'sv2', ...]
     console.log("Danh sách ID gửi đi:", values.studentIds); 
 
     if (!values.studentIds || values.studentIds.length === 0) {
@@ -151,7 +146,6 @@ const handleAddStudent = async (values) => {
         const token = localStorage.getItem('token');
         const config = { headers: { Authorization: `Bearer ${token}` } };
         
-        // 👇 Đổi URL thành bulk-enroll
         const url = `http://localhost:8080/api/classes/${selectedClassId}/bulk-enroll`;
         
         console.log("Đang gửi mảng sinh viên:", values.studentIds);
@@ -261,10 +255,8 @@ const handleAddStudent = async (values) => {
             title: 'Actions', key: 'actions',
             render: (_, record) => (
                 <Space>
-                    {/* Nút Xem Sinh Viên: Ai cũng được thấy */}
                     <Tooltip title="View Students"><Button size="small" icon={<EyeOutlined />} onClick={() => handleViewStudents(record.id)} /></Tooltip>
                     
-                    {/* 👇 ẨN TOÀN BỘ CÁC NÚT THAO TÁC (THÊM, SỬA, XÓA) NẾU LÀ GIẢNG VIÊN */}
                     {!isLecturer && (
                         <>
                             <Tooltip title="Enroll Student">

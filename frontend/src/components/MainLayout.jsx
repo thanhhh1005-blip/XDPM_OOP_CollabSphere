@@ -10,7 +10,8 @@ import {
   TeamOutlined,
   FolderOutlined,   //  Resource
   EditOutlined,
-  LogoutOutlined // <--- 1. THÊM ICON ĐĂNG XUẤT
+  LogoutOutlined, // <--- 1. THÊM ICON ĐĂNG XUẤT
+  CalendarOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import ChatRoom from './ChatRoom';
@@ -83,15 +84,16 @@ const MainLayout = () => {
   const items = [
     { key: '/workspace', icon: <ProjectOutlined />, label: 'Quản lý Sprint', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
     { key: '/collaboration', icon: <EditOutlined />, label: 'Cộng tác nhóm', roles: ['STUDENT', 'LECTURER'],onlyIfHasGroup: true},
-    { key: '/projects', icon: <FolderOutlined />, label: 'Dự án', roles: ['LECTURER', 'HEAD_DEPARTMENT'] },
+    { key: '/projects', icon: <FolderOutlined />, label: 'Dự án', roles: ['STUDENT', 'LECTURER', 'ADMIN', 'HEAD_DEPARTMENT', 'STAFF'] },
     { key: '/teams', icon: <TeamOutlined />, label: 'Team', roles: ['LECTURER', 'STUDENT'] },
     { key: '/milestones', icon: <ReadOutlined />, label: 'Lộ trình & Cột mốc', roles: ['STUDENT', 'LECTURER'] },
     { key: '/classes', icon: <TeamOutlined />, label: 'Quản lý Lớp học', roles: ['STAFF', 'ADMIN','LECTURER'] },
     {key: '/ai-planning', icon: <BulbOutlined />, label: 'AI Lập kế hoạch', roles: ['LECTURER'] },
     { key: '/subjects', icon: <BookOutlined />, label: 'Quản lý Môn học', roles: ['ADMIN', 'STAFF'] },
     { key: '/users', icon: <UserOutlined />, label: 'Quản lý Người dùng', roles: ['ADMIN'] },
-    { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
+    { key: '/profile', icon: <UserOutlined />, label: 'Hồ sơ cá nhân', roles: ['STUDENT', 'LECTURER', 'ADMIN', 'STAFF', 'HEAD_DEPARTMENT'] },
     { key: '/resources', icon: <FolderOutlined />, label: 'Kho Tài liệu', roles: ['STUDENT', 'LECTURER', 'ADMIN'] },
+    { key: '/schedule', icon: <CalendarOutlined />, label: 'Lịch Review', roles: ['STUDENT', 'LECTURER', 'STAFF', 'ADMIN'] },
   ];
   const filteredItems = items.filter(item => {
     const hasRole = item.roles.includes(userRole);

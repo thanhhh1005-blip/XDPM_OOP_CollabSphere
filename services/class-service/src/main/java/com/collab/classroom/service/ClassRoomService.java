@@ -126,36 +126,31 @@ public class ClassRoomService {
     }
 
     public List<ClassroomDTO> getClassesByTeacher(String teacherId) {
-        List<ClassRoom> entities = classRoomRepository.findByTeacherId(teacherId);
-        
-        List<ClassroomDTO> dtos = entities.stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-
-        // Điền thêm thông tin Môn học (cho đẹp)
-        dtos.forEach(this::enrichClassroomDTO);
-        return dtos;
+    if (teacherId == null || teacherId.isBlank()) {
+        return List.of();
     }
+
+    String sanitizedId = teacherId.trim();
+
+    List<ClassRoom> entities = classRoomRepository.findByTeacherId(sanitizedId);
     
+    return entities.stream()
+            .map(this::mapToDTO)
+            .peek(this::enrichClassroomDTO) 
+            .collect(Collectors.toList());
+    }
+
     public List<ClassEnrollment> getStudentsByClass(Long classId) {
         return classEnrollmentRepository.findByClassId(classId);
     }
-
-    // =========================================================================
-    // 3. IMPORT EXCEL (ĐÃ SỬA ĐỂ DÙNG NIFI) 🚀
-    // =========================================================================
     public void importClasses(MultipartFile file) {
         if (file.isEmpty()) throw new RuntimeException("File excel rỗng!");
         
-        // Gọi sang NiFi Client, bắn vào endpoint "classes"
         nifiClient.sendFile(file, "classes");
         
         log.info("Đã chuyển file Excel sang NiFi xử lý thành công!");
     }
 
-    // =========================================================================
-    // 4. QUẢN LÝ SINH VIÊN (ADD & REMOVE)
-    // =========================================================================
     public void addStudentToClass(Long classId, String studentId) {
         if (!classRoomRepository.existsById(classId)) {
             throw new RuntimeException("Lớp học không tồn tại!");

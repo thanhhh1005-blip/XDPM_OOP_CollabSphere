@@ -9,11 +9,10 @@ const ProjectList = () => {
 
   // --- LẤY THÔNG TIN USER ---
   const auth = getAuthInfo() || {};
-  // Lưu ý: Nếu bạn đang test, hãy chắc chắn role trong localStorage đúng là 'LECTURER' hoặc 'HEAD_DEPARTMENT'
   const { role } = auth; 
 
   const isLecturer = role === 'LECTURER';
-  const isHead = role === 'HEAD_DEPARTMENT'; // Role Trưởng bộ môn
+  const isHead = role === 'HEAD_DEPARTMENT';
   const isStudent = role === 'STUDENT';
 
   const API_BASE_URL = 'http://localhost:8080/api/v1/projects';
@@ -83,7 +82,7 @@ const ProjectList = () => {
 
   // --- HELPER HIỂN THỊ BADGE ---
   const getStatusBadge = (status) => {
-    const s = status || 'DRAFT'; // Mặc định là DRAFT nếu null
+    const s = status || 'DRAFT';
     let color = '#374151'; 
     let bg = '#f3f4f6';
 

@@ -7,8 +7,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@Data // Tự tạo Getter, Setter
-@NoArgsConstructor // 👈 QUAN TRỌNG: Tạo constructor rỗng cho Jackson dùng
+@Data 
+@NoArgsConstructor 
 @AllArgsConstructor
 public class CreateTeamReq {
     private String name;

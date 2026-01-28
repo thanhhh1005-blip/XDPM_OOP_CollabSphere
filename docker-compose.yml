@@ -62,19 +62,18 @@ services:
     image: apache/nifi:1.25.0
     container_name: collab-nifi
     ports:
-      - "8443:8443" # Cổng Web UI (HTTPS)
-      - "8091:8091" # Cổng nhận file từ Spring Boot (HTTP)
+      - "8443:8443" 
+      - "8099:8099" 
     environment:
       - NIFI_WEB_HTTP_PORT=
       - NIFI_WEB_HTTPS_PORT=8443
       - SINGLE_USER_CREDENTIALS_USERNAME=admin
-      - SINGLE_USER_CREDENTIALS_PASSWORD=password12345678 # Pass >= 12 ký tự
+      - SINGLE_USER_CREDENTIALS_PASSWORD=password12345678 
       - NIFI_SENSITIVE_PROPS_KEY=12345678901234567890123456789012
-    networks:          # 👈 Quan trọng: Phải chung mạng với MySQL
+    networks:        
       - collab-network
     volumes:
-      - nifi_data:/opt/nifi/nifi-current/conf # (Optional) Lưu cấu hình để không mất khi restart
-
+      - nifi_data:/opt/nifi/nifi-current/conf
 volumes:
   mysql_data:
   minio_data:

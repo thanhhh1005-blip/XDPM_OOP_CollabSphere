@@ -14,15 +14,15 @@ public class SubTask {
     private Long id;
 
     @Column(nullable = false)
-    private String title; // Tên Checkpoint (VD: Thiết kế DB)
+    private String title; 
     
-    private String assignedTo; // Username người làm
+    private String assignedTo; 
     
-    private boolean isCompleted; // Trạng thái hoàn thành
+    private boolean isCompleted; 
     
-    private Long milestoneId; // Thuộc về cột mốc nào
+    private Long milestoneId; 
     
-    private String teamId; // ✅ QUAN TRỌNG: Checkpoint này của Team nào (Vì 1 milestone có nhiều team cùng làm)
+    private String teamId; 
 
     private Double score;
     private String comment;

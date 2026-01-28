@@ -18,11 +18,10 @@ public class WorkspaceServiceClient {
 
     public void createClassWorkspace(Long classId) {
         try {
-            // "Vibe" code: teamId để NULL thể hiện đây là không gian chung
             WorkspaceCreationRequest request = WorkspaceCreationRequest.builder()
                     .classId(classId)
-                    .teamId(null)         // <--- QUAN TRỌNG
-                    .settingConfig("{\"type\": \"CLASS_COMMON\"}") // Đánh dấu config
+                    .teamId(null)        
+                    .settingConfig("{\"type\": \"CLASS_COMMON\"}") 
                     .build();
 
             restTemplate.postForObject(workspaceServiceUrl, request, ApiResponse.class);

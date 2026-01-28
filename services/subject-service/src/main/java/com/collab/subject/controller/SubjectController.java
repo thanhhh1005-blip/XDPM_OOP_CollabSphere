@@ -35,10 +35,9 @@ public class SubjectController {
         return ResponseEntity.ok(subjectService.getSubjectById(id));
     }
 
-    // --- BỔ SUNG: API CẬP NHẬT ---
     @PutMapping("/{id}")
     public ResponseEntity<SubjectDTO> updateSubject(
-            @PathVariable("id") Long id, // Quan trọng: phải có ("id")
+            @PathVariable("id") Long id,
             @RequestBody SubjectDTO dto
     ) {
         return ResponseEntity.ok(subjectService.updateSubject(id, dto));
@@ -46,7 +45,7 @@ public class SubjectController {
 
     // --- BỔ SUNG: API XÓA ---
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteSubject(@PathVariable("id") Long id) { // Quan trọng: phải có ("id")
+    public ResponseEntity<String> deleteSubject(@PathVariable("id") Long id) {
         subjectService.deleteSubject(id);
         return ResponseEntity.ok("Đã xóa môn học ID: " + id);
     }
@@ -58,7 +57,6 @@ public class SubjectController {
         return ResponseEntity.ok("Import dữ liệu thành công!");
     }
 
-    // API tìm môn học theo Mã (Để Class-Service gọi)
     @GetMapping("/code/{code}")
     public ResponseEntity<SubjectDTO> getSubjectByCode(@PathVariable("code") String code) { // Nên thêm ("code") cho an toàn
         return ResponseEntity.ok(subjectService.getSubjectByCode(code));

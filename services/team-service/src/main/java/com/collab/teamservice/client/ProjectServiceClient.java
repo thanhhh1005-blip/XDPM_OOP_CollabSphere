@@ -13,13 +13,11 @@ import org.springframework.http.HttpMethod;
 public class ProjectServiceClient {
     private final RestTemplate restTemplate;
     
-    // Sửa port 8081 thành port thật của Project Service
     private final String PROJECT_URL = "http://localhost:8081/api/projects"; 
 
     public ProjectDTO getProjectById(String projectId) {
         if (projectId == null || projectId.isEmpty()) return null;
         try {
-            // Gọi GET /api/projects/{id}
             return restTemplate.exchange(
                     PROJECT_URL + "/" + projectId,
                     HttpMethod.GET,

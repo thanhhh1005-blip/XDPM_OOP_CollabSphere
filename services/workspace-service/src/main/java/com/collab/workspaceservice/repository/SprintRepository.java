@@ -12,6 +12,5 @@ public interface SprintRepository extends JpaRepository<Sprint, Long> {
     List<Sprint> findByWorkspaceId(Long workspaceId);
     List<Sprint> findByWorkspaceIdAndClassId(Long workspaceId, Long classId);
 
-    // 2. Tìm Sprint của TEAM (Rạch ròi: Phải đúng teamId)
     List<Sprint> findByWorkspaceIdAndTeamId(Long workspaceId, String teamId);
 }

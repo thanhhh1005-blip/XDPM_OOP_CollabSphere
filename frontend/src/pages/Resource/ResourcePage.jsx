@@ -1,11 +1,8 @@
 import React from 'react';
-import ResourceManager from '../../components/ResourceManager'; // Import component quản lý file
+import ResourceManager from '../../components/ResourceManager';
 
 const ResourcePage = () => {
-    // 💡 Mẹo: Sau này bạn có thể lấy scope và scopeId từ URL 
-    // (Ví dụ: /resources/CLASS/SE104) dùng useParams() của react-router-dom
-    
-    // Hiện tại mình đang để cứng để test trước
+
     const currentScope = "CLASS"; 
     const currentId = "SE104";
 

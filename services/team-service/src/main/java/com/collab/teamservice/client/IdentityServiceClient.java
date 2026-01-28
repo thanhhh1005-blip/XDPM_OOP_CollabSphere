@@ -8,7 +8,6 @@ public class IdentityServiceClient {
 
   private final RestTemplate restTemplate = new RestTemplate();
 
-  // TODO: sửa đúng endpoint identity-service của bạn
   private static final String BASE = "http://localhost:8080/api/v1/users";
 
   public record UserDTO(String username, String fullName) {}
